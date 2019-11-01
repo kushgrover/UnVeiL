@@ -14,7 +14,7 @@
 
 \begin{document}
 
-\subsection{Problem Setup}
+\section{Problem Setup}
 
 Let $X$ be a bounded open subset of $\Real^n$ and let $X_\obs \subset X$ be the obstacle region. $X_\free = X \setminus X_\obs$ is called the obstacle-free space. 
 
@@ -31,7 +31,7 @@ Consider a spec given as an \jana{LTL/sc-LTL?} formula over $\AP$.
 
 The problem is to find \jana{a path/an optimal path?} that satisifes the spec. The problem can be solved using straightforward extension to existing algorithms. \jana{Our contribution is a more efficient procedure that ???}
 
-\subsection{Solution/Contribution draft}
+\section{Solution/Contribution draft}
 
 We get a simulation, we project it to the automaton, see what went wrong (is violated or not satisfied yet), in the next try we aim at spotting where the wrong item can be fixed by a different decision.
 
@@ -72,7 +72,7 @@ Formulae beyond safety: things like $\varphi=GF(a\wedge Xb)\wedge FG(c\wedge dUe
 Rabinizer tracks the evolution of both parenthesised expressions and after an $a$ this advises us to go for $b$ althought requirement to be satisfied is still exactly $\varphi$.
 
 \begin{figure}[h]
-	\includegraphics[scale=0.4]{auto}\caption{Models for the second automata example}
+	\includegraphics[scale=0.4]{Fig/auto}\caption{Models for the second automata example}
 \end{figure}
 
 \paragraph{Example 2}
@@ -133,5 +133,9 @@ Jana's notes from the call:
 		\State (2) $\mustnot$ could be written as $\must$ into a sink ``:-(''
 	\end{algorithmic}
 \end{algorithm}
+
+\section{Case study}
+
+\includegraphics[scale=0.2]{Fig/small-office}
 
 \end{document}
