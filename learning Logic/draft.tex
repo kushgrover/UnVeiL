@@ -134,8 +134,28 @@ Jana's notes from the call:
 	\end{algorithmic}
 \end{algorithm}
 
-\section{Case study}
+\subsection{A mini case study}
 
-\includegraphics[scale=0.2]{Fig/small-office}
+Let us consider an office space with several rooms as illustrated in Fig. \ref{fig:office}. There are different objects in the office rooms. For simplicity, let us assume that each of the objects is either a desk (illustrated as a rectangle), or a chair (illustrated as a square), or a waste bin (illustrated as a circle). Consider a fully actuated robot with the initial position $x_0 \in \mathbb{R}^2$. We assume that the robot can recognize if it is close to a certain type of object or landmark in the environment; by close, we mean that the robot's state intersect with the object's/landmark's $\epsilon$-inflation (illustrated as dashed and dotted lines).
+
+The set of atomic propositions is as follows:
+\begin{itemize}
+\item $\mathit{Room}_1,\ldots,\mathit{Room}_6, \mathit{Hall}$, stand for being in a particular room or in a hallway
+\item $\mathit{Desk}$ stands for being close to a desk
+\item $\mathit{Chair}$ stands for being close to a chair
+\item $\mathit{Bin}$ stands for being close to a bin
+\item $\mathit{Corner}$ stands for being close to a corner
+\item $\mathit{Wall}$ stands for being close to a wall
+\end{itemize}
+
+The specification for the robot's behavior is given by the LTL formula:
+$$G F (\mathit{Room}_1 \wedge \mathit{Bin}) \wedge \ldots \wedge G F (\mathit{Room}_6 \wedge \mathit{Bin}).$$
+
+\begin{figure}
+\centering
+\includegraphics[width=\linewidth]{Fig/small-office} \caption{A mini case study office environment illustration.}
+\label{fig:office}
+\end{figure}
+
 
 \end{document}
