@@ -9,7 +9,7 @@ import java.util.StringTokenizer;
 import transitionSystem.MarkovChain;
 
 /**
- * @author kush
+ * @author Kush Grover
  *
  */
 public class MarkovChainParser
@@ -20,7 +20,7 @@ public class MarkovChainParser
 		MarkovChain mc=new MarkovChain();
 		
 		
-		BufferedReader apFileReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/atomicPropositions.ap"));
+		BufferedReader apFileReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example 1/atomicPropositions.ap"));
         String line=apFileReader.readLine();
 		
 		while(line!=null) {
@@ -30,7 +30,7 @@ public class MarkovChainParser
 		apFileReader.close();
 		
 		
-        BufferedReader statesFileReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/markovChainStates.st"));
+        BufferedReader statesFileReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example 1/markovChainStates.st"));
         line = statesFileReader.readLine(); //read 1st line, number of states
         mc.setSize(Integer.parseInt(line));
        
@@ -58,7 +58,7 @@ public class MarkovChainParser
         
         
         
-        BufferedReader transitionsFileReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/markovChainTransitions.tr"));
+        BufferedReader transitionsFileReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example 1/markovChainTransitions.tr"));
         line = transitionsFileReader.readLine();
         int numOfTransitions=Integer.parseInt(line);
         int firstState,secondState;

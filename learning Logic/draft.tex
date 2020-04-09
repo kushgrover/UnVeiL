@@ -3,6 +3,18 @@
 \usepackage{algorithmicx,algorithm}
 \usepackage[noend]{algpseudocode}
 \usepackage{amssymb,amsmath}
+\usepackage{tikz}
+\usetikzlibrary{automata, positioning, arrows}
+
+\tikzset{
+	->, % makes the edges directed
+	>=stealth', % makes the arrow heads bold
+	node distance=3cm, % specifies the minimum distance between two nodes. Change if necessary.
+	every state/.style={thick, fill=gray!10}, % sets the properties for each ’state’ node
+	initial text=$ $, % sets the text that appears on the start arrow
+}
+
+
 
 
 \newcommand{\jana}[1]{{\color{magenta} #1}}
@@ -65,6 +77,8 @@ We get a simulation, we project it to the automaton, see what went wrong (is vio
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}
+
+
 
 \paragraph{Example 1}
 Formulae beyond safety: things like $\varphi=GF(a\wedge Xb)\wedge FG(c\wedge dUe)$ do not even have a deterministic B\"uchi automaton, not to mention a DFA, so how to measure progress is not clear form classical approaches. 
@@ -134,6 +148,66 @@ Jana's notes from the call:
 	\end{algorithmic}
 \end{algorithm}
 
+
+
+\begin{algorithm}
+	\caption{Current Implementation: MAIN}\label{alg:current_main}
+	\begin{algorithmic}[1]
+		\State build trivial automaton
+		\Repeat
+		\State $adviceBDD$=\Call{ask}{$fromStates$} \Comment{Set of good transitions}
+		\State sample a bit to find a transition in $adviceBDD$ ($p \rightarrow q$)
+		\State \Call{learn}{$p,q$}
+		\State $fromStates = fromStates\vee q$
+		\Until{sampled all the way to satisfaction of the property}
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+	\caption{Current Implementation: LEARN}\label{alg:current_learn}
+	\begin{algorithmic}[1]
+		\Procedure{learn}{$s_1,s_2$}
+		\If{$\Call{getLevel}{s_1,s_2}$ $!=3$}\Comment{Possible levels: 0,1,2,3}
+		\State $\Call{setLevel}{s_1,s_2,3}$
+		\State $DOC^c=\{a\in APSystem\mid \neg(s_1(a)\oplus s_2(a))\}$\Comment{Used for $restrict$}
+		\State $R=restrict(s_1,DOC^c)$\Comment{states smilar to $s_1$}
+		\State $newTransitions=R \wedge \neg R' \bigwedge\limits_{a\in DOC^c} a\leftrightarrow a' \wedge level=2$
+		\State $productAutomaton $ $\vee= (newTransitions \wedge propertyBDD)$
+		\EndIf
+		\State $counter(s_1)++$
+		\If {$counter(s_1)>threshold$}
+		\For{$s\in S: (s_1,s) \wedge productAutomataBDD = false$}
+		\State \Call{addTransition} {$s_1,s,1$}
+		\EndFor
+		\EndIf
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+	\caption{Current Implementation: ASK}\label{alg:current_ask}
+	\begin{algorithmic}[1]
+		\Procedure{ask}{$fromStates$}
+		\State $finalStates=$\Call{$findFinalStates$}{$productAutomataBDD\wedge fromStates$}
+		\State $reachableStates.add(finalStates)$ 
+		\State $reachableStates.add(preFinalStates)$\Comment{required for transition acceptance}
+		\State $allReachableStates=currentStates[0]$
+		\State $i=1$
+		\While{$! (\neg allReachableStates \wedge \Call{pre}{allReachableStates}).isZero()$}
+			\State $reachableStates.add(\Call{pre}{reachableStates[i]})$
+			\State\Comment{add $(i+1)$th element}
+			\State $allReachableStates$ $\vee =reachableStates[i+1]$
+			\State $i++$
+			
+		\EndWhile
+		\State $fromStates$ $\wedge=allReachableStates$
+		\State$toState=\Call{img}{fromStates}\wedge reachableStates[i]$
+		\State \Return{$getTransitions(fromStates, toStates)$}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
 \subsection{A mini case study}
 
 Let us consider an office space with several rooms as illustrated in Fig. \ref{fig:office}. There are different objects in the office rooms. For simplicity, let us assume that each of the objects is either a desk (illustrated as a rectangle), or a chair (illustrated as a square), or a waste bin (illustrated as a circle). Consider a fully actuated robot with the initial position $x_0 \in \mathbb{R}^2$. We assume that the robot can recognize if it is close to a certain type of object or landmark in the environment; by close, we mean that the robot's state intersect with the object's/landmark's $\epsilon$-inflation (illustrated as dashed and dotted lines).
@@ -156,6 +230,8 @@ $$G F (\mathit{Room}_1 \wedge \mathit{Bin}) \wedge \ldots \wedge G F (\mathit{Ro
 \includegraphics[width=\linewidth]{Fig/small-office} \caption{A mini case study office environment illustration.}
 \label{fig:office}
 \end{figure}
+
+\subsection{A sample run of the algorithm}
 
 
 \end{document}

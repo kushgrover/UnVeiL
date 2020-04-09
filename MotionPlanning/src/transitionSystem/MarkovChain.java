@@ -3,6 +3,9 @@ package transitionSystem;
 import java.util.ArrayList;
 import java.util.List;
 
+import net.sf.javabdd.BDD;
+import net.sf.javabdd.BDDFactory;
+
 
 public class MarkovChain{
 	private ArrayList<String> apList;
@@ -47,7 +50,7 @@ public class MarkovChain{
 		return size;
 	}
 	
-	public int getInitial() {
+	public int getInitialState() {
 		return initial;
 	}
 	
@@ -98,8 +101,9 @@ public class MarkovChain{
 			for(int j=0;j<currentEdges.size();j++) {
 				totalProb+=currentEdges.get(j).prob;
 			}
-			if(totalProb!=1.0) {
-				throw new Exception("Error: MarkovChainNotComplete");
+			if(totalProb-1.0>0.00001 || 1-totalProb>0.00001) {
+				System.out.println(totalProb);
+				throw new Exception("Error: MarkovChainNotComplete: state "+i);
 			}
 		}
 	}
@@ -133,4 +137,29 @@ public class MarkovChain{
 		return apForStateArray;
 	}
 
+	public BDD getBDDForState(BDDFactory factory, int state, int varsBeforeSystemVars) {
+		int[] toStateAP=findAPForState(state);
+		BDD toStateBDD=factory.one();
+        for(int i=0;i<apList.size();i++) {
+        	if(arraySearch(toStateAP,i)) {
+        		toStateBDD.andWith(factory.ithVar(i+varsBeforeSystemVars));
+        	}
+        	else {
+        		toStateBDD.andWith(factory.ithVar(i+varsBeforeSystemVars).not());
+        	}
+        }
+        return toStateBDD;
+	}
+
+
+
+	private boolean arraySearch(int[] array, int i)
+	{
+		for(int j=0;j<array.length;j++) {
+			if(array[j]==i) {
+				return true;
+			}
+		}
+		return false;
+	}
 }

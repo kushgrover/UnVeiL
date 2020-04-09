@@ -26,6 +26,7 @@ public class TS{
 //	private BDDDomain[] bddDomainForLearnedAutomata;
 	private int initial;
 	private ArrayList<ArrayList<String>> labelling;
+	private int varsUsedInBuchiAutomata;
 	
 	public TS(BDDFactory factory, 
 				int cacheSize, 
@@ -63,19 +64,23 @@ public class TS{
 		this.labelling=labelling;
 	}
 	
-	public void addTransitionFromListOfAP(int[] currentState, int[] nextState, int varsBuchi){
+	public void setVarsUsedInBuchiAutomata(int varsUsedInBuchiAutomata) {
+		this.varsUsedInBuchiAutomata=varsUsedInBuchiAutomata;
+	}
+	
+	public void addTransitionFromListOfAP(int[] currentState, int[] nextState){
 		
 		BDD currentStateBDD=factory.one();
 		BDD nextStateBDD=factory.one();
-		System.out.println("vasrBuhci= "+varsBuchi);
+//		System.out.println("varsBuhci= "+varsUsedInBuchiAutomata);
 		
 		for(int i=0;i<currentState.length;i++) {
-			currentStateBDD=currentStateBDD.and(factory.ithVar(currentState[i]+varsBuchi));
+			currentStateBDD=currentStateBDD.and(factory.ithVar(currentState[i]+varsUsedInBuchiAutomata));
 //			System.out.println("currentState "+i+" "+currentState[i]);
 //			currentStateBDD.andWith(bddDomainForLearnedAutomata[0].ithVar(currentState[i]));
 		}
 		for(int i=0;i<nextState.length;i++) {
-			nextStateBDD=nextStateBDD.and(factory.ithVar(size+nextState[i]+varsBuchi));
+			nextStateBDD=nextStateBDD.and(factory.ithVar(size+nextState[i]+varsUsedInBuchiAutomata));
 //			System.out.println("nextState "+i+" "+nextState[i]);
 //			nextStateBDD.andWith(bddDomainForLearnedAutomata[1].ithVar(nextState[i]));
 		}

@@ -3,19 +3,14 @@ package transitionSystem.TSparser;
 //package jhoafparser.examples;
 
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import jhoafparser.ast.AtomLabel;
 import jhoafparser.ast.BooleanExpression;
-import jhoafparser.consumer.HOAConsumer;
-import jhoafparser.consumer.HOAConsumerException;
-import jhoafparser.consumer.HOAConsumerNull;
 import jhoafparser.consumer.HOAConsumerStore;
-import jhoafparser.consumer.HOAIntermediate;
 import jhoafparser.parser.HOAFParser;
 import jhoafparser.parser.generated.ParseException;
-import jhoafparser.storage.StoredAutomaton;
-import jhoafparser.storage.StoredEdgeWithLabel;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDDDomain;
 import net.sf.javabdd.BDDFactory;
@@ -27,9 +22,10 @@ public class BuchiAutomataParser{
 	BDDFactory factory;
 	int numberOfStates=0;
 	int acceptingSets=0;
-	int[] varArray=new int[3];
-	int numberOfVarsUsed;
+	int numVars[]=new int[4];
 	BDDDomain[] bddDomain;
+	ArrayList<String> apListSystem, apListProperty;
+	int levelOfTransitions;
 
 	public class addEdgeToBDD extends HOAConsumerStore{
 		public addEdgeToBDD() {
@@ -42,23 +38,23 @@ public class BuchiAutomataParser{
 									java.util.List<java.lang.Integer> conjSuccessors, 
 									java.util.List<java.lang.Integer> accSignature) {
 
-			BDD temp=factory.one();
-			
+			BDD newEdge=factory.one();
 			for(Integer i : conjSuccessors) {
-				temp=factory.one();
-				temp.andWith(bddDomain[0].ithVar(stateId));
-				temp.andWith(bddDomain[1].ithVar(i));
+				newEdge=factory.one();
+				newEdge.andWith(bddDomain[0].ithVar(stateId));
+				newEdge.andWith(bddDomain[1].ithVar(i));
 				
 				try {
-					temp.andWith(bddDomain[2].ithVar(accSignature.get(i)+1));
-					System.out.println("added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {"+accSignature.get(i)+"}");
+					newEdge.andWith(bddDomain[2].ithVar(accSignature.get(0)+1));
+//					System.out.println("Added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {"+accSignature.get(0)+"}");
 				}
 				catch(NullPointerException E) {
-					temp.andWith(bddDomain[2].ithVar(0));
-					System.out.println("added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {}");
+					newEdge.andWith(bddDomain[2].ithVar(0));
+//					System.out.println("Added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {}");
 				}
-//				temp.printDot();
-				buchiBDD.orWith(temp);
+				newEdge.andWith(getBDDFromLabel(labelExpr));
+				
+				buchiBDD.orWith(newEdge);
 			}
 			
 		}
@@ -93,36 +89,78 @@ public class BuchiAutomataParser{
 				
 			}
 		}
+		
+		public void getAPListProperty() {
+			apListProperty=(ArrayList<String>) this.getStoredAutomaton().getStoredHeader().getAPs();
+		}
 	}
 	
 	public BuchiAutomataParser(BDDFactory factory, 
 								InputStream inputStream1, 
-								InputStream inputStream2) throws ParseException{
-		
+								InputStream inputStream2, 
+								ArrayList<String> apListSystem,
+								int levelOfTransitions) throws ParseException{
+		this.apListSystem=apListSystem;
 		buchiBDD=factory.zero();
 		this.factory=factory;
+		this.levelOfTransitions=levelOfTransitions;
 		CountStates countStates=new CountStates();
 		HOAFParser.parseHOA(inputStream1, countStates);
-		initializeBDDDomain();
+		countStates.getAPListProperty();
+		initializeBDDVariables();
 		addEdgeToBDD newConsumer=new addEdgeToBDD();
 		HOAFParser.parseHOA(inputStream2, newConsumer);
-//		buchiBDD.printDot();
 	}
 
-	private void initializeBDDDomain(){
+	private void initializeBDDVariables(){
 		acceptingSets++;
-//		numberOfVarsUsed=2*numberOfStates+acceptingSets+1;
-		varArray=new int[] {numberOfStates, numberOfStates, acceptingSets+1};
-		bddDomain=factory.extDomain(varArray);
-		numberOfVarsUsed=2*bddDomain[0].varNum()+bddDomain[2].varNum();
+		bddDomain=factory.extDomain(new int[] {numberOfStates, 
+				numberOfStates, 
+				acceptingSets+1, 
+				levelOfTransitions});
+		factory.extVarNum(2*apListSystem.size()+apListProperty.size());
+		numVars[0]=2*bddDomain[0].varNum()+bddDomain[2].varNum();
+		numVars[1]=bddDomain[3].varNum();
+		numVars[2]=apListProperty.size();
+		numVars[3]=2*apListSystem.size();
 	}
 	
-	public BDD getBuchiBDD() {
+	public BDD getPropertyBDD() {
 		return buchiBDD;
 	}
 	
-	public int getNumberOfVars() {
-		return numberOfVarsUsed;
+	public int[] getNumVars() {
+		return numVars;
 	}
 	
+	public ArrayList<String> getAPListProperty(){
+		return apListProperty;
+	}
+	
+	public ArrayList<String> getAPListSystem(){
+		return apListSystem;
+	}
+	
+	public BDD getBDDFromLabel(BooleanExpression<AtomLabel> labelExpr) {
+		BDD label=factory.zero();
+
+		if(labelExpr.isAtom()) {
+			label=getIthVarLabel(labelExpr.getAtom().getAPIndex());
+		}
+		else if(labelExpr.isNOT()) {
+			label=getIthVarLabel(labelExpr.getLeft().getAtom().getAPIndex()).not();
+		}
+		else if(labelExpr.isAND()){
+			label=getBDDFromLabel(labelExpr.getLeft()).andWith(getBDDFromLabel(labelExpr.getRight()));
+		}
+		else if(labelExpr.isOR()) {
+			label=getBDDFromLabel(labelExpr.getLeft()).orWith(getBDDFromLabel(labelExpr.getRight()));
+		}
+		return label;
+	}
+	
+	private BDD getIthVarLabel(int i) {
+		return factory.ithVar(i+numVars[0]+numVars[1]);
+	}
+
 }
