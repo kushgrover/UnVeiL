@@ -3,12 +3,14 @@ package transitionSystem;
 import java.util.ArrayList;
 import java.util.List;
 
+import modules.DefaultExperiment;
+import modules.Experiments;
 import net.sf.javabdd.BDD;
-import net.sf.javabdd.BDDFactory;
+import net.sf.javabdd.BDD.BDDIterator;
 
 
 public class MarkovChain{
-	private ArrayList<String> apList;
+	private ArrayList<String> apListSystem;
 	private int size;
 	private int initial;
 	private ArrayList<ArrayList<String>> labelling;
@@ -28,22 +30,20 @@ public class MarkovChain{
 	
 	
 	public MarkovChain() {
-		apList=new ArrayList<String>();
+		apListSystem=new ArrayList<String>();
 		size=0;
 		initial=-1;
 		labelling=new ArrayList<ArrayList<String>>();
 		edges=new ArrayList<ArrayList<Edge>>();
 	}
 	
-	
-	
-	public MarkovChain(ArrayList<String> apList){
-		this.apList=apList;
+	public MarkovChain(ArrayList<String> apListSystem){
+		this.apListSystem=apListSystem;
 	}
 	
 	
 	public ArrayList<String> getApList(){
-		return apList;
+		return apListSystem;
 	}
 	
 	public int getSize() {
@@ -62,8 +62,8 @@ public class MarkovChain{
 		return edges;
 	}
 	
-	public void setApList(ArrayList<String> apList){
-		this.apList=apList;
+	public void setApList(ArrayList<String> apListSystem){
+		this.apListSystem=apListSystem;
 	}
 	
 	public void setSize(int size) {
@@ -132,20 +132,20 @@ public class MarkovChain{
 		currentAPList.remove(0);
 		int[] apForStateArray=new int[currentAPList.size()];
 		for(int i=0;i<currentAPList.size();i++) {
-			apForStateArray[i]=apList.indexOf(currentAPList.get(i));
+			apForStateArray[i]=apListSystem.indexOf(currentAPList.get(i));
 		}
 		return apForStateArray;
 	}
 
-	public BDD getBDDForState(BDDFactory factory, int state, int varsBeforeSystemVars) {
+	public BDD getBDDForState(int state) {
 		int[] toStateAP=findAPForState(state);
-		BDD toStateBDD=factory.one();
-        for(int i=0;i<apList.size();i++) {
+		BDD toStateBDD=ProductAutomaton.factory.one();
+        for(int i=0;i<apListSystem.size();i++) {
         	if(arraySearch(toStateAP,i)) {
-        		toStateBDD.andWith(factory.ithVar(i+varsBeforeSystemVars));
+        		toStateBDD.andWith(ProductAutomaton.factory.ithVar(i+ProductAutomaton.varsBeforeSystemVars));
         	}
         	else {
-        		toStateBDD.andWith(factory.ithVar(i+varsBeforeSystemVars).not());
+        		toStateBDD.andWith(ProductAutomaton.factory.ithVar(i+ProductAutomaton.varsBeforeSystemVars).not());
         	}
         }
         return toStateBDD;
@@ -161,5 +161,100 @@ public class MarkovChain{
 			}
 		}
 		return false;
+	}
+
+
+
+	
+//	
+	public ArrayList<String> findAPForState(BDD state, Experiments exper) throws Exception {
+		ArrayList<String> apListState=new ArrayList<String>();
+		for(int i=0;i<ProductAutomaton.numAPSystem;i++) {
+			if(! ProductAutomaton.ithVarSystemPre(i).and(state).isZero()) {
+				apListState.add(apListSystem.get(i));
+			}
+		}
+		return apListState;
+	}
+	
+	public int getStateNumber(ArrayList<String> apListState) {
+		ArrayList<String> temp;
+		int num;
+		for(int i=0;i<size;i++) {
+			temp=labelling.get(i);
+			if(temp.size()!=apListState.size()+1) {
+				continue;
+			}
+			num=0;
+			for(int j=1;j<temp.size();j++) {
+				for(int k=0;k<apListState.size();k++) {
+					if(temp.get(j).equals(apListState.get(k))) {
+						num++;
+					}
+				}
+			}
+			if(num==apListState.size()) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+
+	
+	public BDD sample(BDD fromStates, BDD toStates, Experiments exper) throws Exception{
+		ProductAutomaton productAutomaton=exper.getProductAutomaton();
+		BDD fromStatesCopy=fromStates.id();
+		BDDIterator iterator=fromStatesCopy.iterator(ProductAutomaton.allPreSystemVars());
+		BDD fromState=null, toState=null, transition=null;
+		int thresholdSampling=20;
+		int fromStateNum, toStateNum;
+		while(iterator.hasNext()) {
+			fromState=(BDD) iterator.next();
+			ArrayList<String> listOfAP=findAPForState(fromState, exper);
+			fromStateNum=getStateNumber(listOfAP);
+			if(fromStateNum!=-1) {
+				for(int i=0;i<thresholdSampling;i++) {
+					toStateNum=sampleFromState(fromStateNum);
+					toState=getBDDForState(toStateNum);
+					if(toState.and(toStates).isZero()) {
+						continue;
+					}
+					transition=fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
+					if(transition.and(productAutomaton.sampledTransitions).isZero()) {
+						System.out.println("Sampled helpful transition: "+labelling.get(fromStateNum)+"---->"+labelling.get(toStateNum));
+						return transition;
+					}
+				}
+			}
+		}
+		return null;
+	}
+
+	public BDD sample(BDD fromStates, DefaultExperiment exper) throws Exception{
+		BDD fromStatesCopy=fromStates.id();
+		int thresholdSampling=20;
+		BDDIterator iterator =fromStatesCopy.iterator(ProductAutomaton.allPreSystemVars());
+		while(iterator.hasNext()) {
+			BDD fromState=(BDD) iterator.next();
+			ArrayList<String> listOfAP=findAPForState(fromState, exper);
+			int fromStateNum=getStateNumber(listOfAP);
+			if(fromStateNum!=-1) {
+				int toStateNum=-1;
+				BDD toState=null,transition=null;
+				int k=0;
+				while(k<=thresholdSampling) {
+					toStateNum=sampleFromState(fromStateNum);
+					toState=getBDDForState(toStateNum);
+					transition=fromState.and(exper.getProductAutomaton().changePreSystemVarsToPostSystemVars(toState));
+					if(transition.and(exper.getProductAutomaton().sampledTransitions).isZero()) {
+						System.out.println("Sampled transition: "+labelling.get(fromStateNum)+"---->"+labelling.get(toStateNum));
+						return transition;
+					}
+					k++;
+				}
+			}
+		}
+		return null;
 	}
 }

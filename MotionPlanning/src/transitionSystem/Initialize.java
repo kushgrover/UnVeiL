@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import jhoafparser.parser.generated.ParseException;
+import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDDFactory;
 import transitionSystem.TSparser.BuchiAutomataParser;
 
@@ -25,9 +26,10 @@ public class Initialize
 	public Initialize(BDDFactory factory, 
 			int threshold, 
 			int levelOfTransitions, 
-			ArrayList<String> apListSystem) throws IOException, ParseException{
+			ArrayList<String> apListSystem,
+			String directory) throws Exception{
 		
-		BufferedReader propertyReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example 1/property.pr"));
+		BufferedReader propertyReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/"+directory+"/property.pr"));
         String propertyString=propertyReader.readLine();
         propertyReader.close();
         System.out.println("\nProperty to satisfty: "+propertyString);
@@ -75,6 +77,7 @@ public class Initialize
 		ProductAutomaton.apListSystem=propertyParser.getAPListSystem();
 		ProductAutomaton.numAPSystem=ProductAutomaton.apListSystem.size();
 		productAutomaton=new ProductAutomaton(propertyParser.getPropertyBDD());
+        productAutomaton.setInitState(propertyParser.getInitStateProperty());
 	}
 	
 

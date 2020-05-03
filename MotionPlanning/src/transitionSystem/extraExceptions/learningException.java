@@ -1,6 +1,6 @@
 package transitionSystem.extraExceptions;
 
-public class transitionException extends Exception
+public class learningException extends Exception
 {
 
 	/**
@@ -8,30 +8,30 @@ public class transitionException extends Exception
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public transitionException()
+	public learningException()
 	{
 		// TODO Auto-generated constructor stub
 	}
 
-	public transitionException(String message)
+	public learningException(String message)
 	{
 		super(message);
 		// TODO Auto-generated constructor stub
 	}
 
-	public transitionException(Throwable cause)
+	public learningException(Throwable cause)
 	{
 		super(cause);
 		// TODO Auto-generated constructor stub
 	}
 
-	public transitionException(String message, Throwable cause)
+	public learningException(String message, Throwable cause)
 	{
 		super(message, cause);
 		// TODO Auto-generated constructor stub
 	}
 
-	public transitionException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
+	public learningException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
 	{
 		super(message, cause, enableSuppression, writableStackTrace);
 		// TODO Auto-generated constructor stub

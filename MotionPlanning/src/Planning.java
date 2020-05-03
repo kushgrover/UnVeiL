@@ -18,39 +18,89 @@ public class Planning{
 
 	public static void main(String[] args) throws Exception{
 		
-		final boolean verbose=true;
+		double startTime = System.nanoTime();
+		
+//		final boolean verbose=true;
 		int levelOfTransitions=4;
 		int threshold=20;
 		final int cacheSizeForBDDFactory=10000;
 		BDDFactory factory= BuDDyFactory.init(20,cacheSizeForBDDFactory);
 		
-		MarkovChain mc=MarkovChainParser.markovChainParser();
+		MarkovChain mc=MarkovChainParser.markovChainParser(args[0]);
 		mc.checkMarkovChain();
 		
-		// Creates propertyBDD and initializes productAutomaton
-        Initialize initialize= new Initialize(factory, threshold, levelOfTransitions, mc.getApList());
-        DefaultExperiment exper1=new DefaultExperiment(initialize.getProductAutomaton());
+		
+		
+        Initialize initialize= new Initialize(factory, threshold, levelOfTransitions, mc.getApList(), args[0]);
+        DefaultExperiment exper=new DefaultExperiment(initialize.getProductAutomaton());
+        ProductAutomaton productAutomaton=exper.getProductAutomaton();
         
-		int numVars[]=ProductAutomaton.numVars;
         
-        BDD currentStates=mc.getBDDForState(factory, mc.getInitialState(), numVars[0]+numVars[1]+numVars[2]);
+        BDD initStateSystem=mc.getBDDForState(mc.getInitialState());
+        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem));
+        BDD currentStates=initStateSystem.id();
+        
+        productAutomaton.getBDD().andWith(exper.addFilters());
+        
+        double timeForSampling=0, preTimeSampling=0, postTimeSampling=0;
+        int iterationNumber=0;
+        while(true) { //until the property is satisfied
 
-        int fromState=mc.getInitialState();
-        int toState=mc.sampleFromState(fromState);
-        BDD fromStateBDD=mc.getBDDForState(factory, fromState, numVars[0]+numVars[1]+numVars[2]);
-        BDD toStateBDD=mc.getBDDForState(factory, toState, numVars[0]+numVars[1]+numVars[2]);
-        
-        
-        for(int i=0;i<100;i++) {
-        	exper1.learn(fromStateBDD, toStateBDD);
-        	fromState=toState;
-        	toState=mc.sampleFromState(fromState);
-        	fromStateBDD=mc.getBDDForState(factory, fromState, numVars[0]+numVars[1]+numVars[2]);
-        	toStateBDD=mc.getBDDForState(factory, toState, numVars[0]+numVars[1]+numVars[2]);
+        	ArrayList<BDD> reachableStates=exper.ask(currentStates);
+        	int currentPathLength=1;
+        	BDD transition=null, fromStates=null, toStates=null;
+        	while(currentPathLength<reachableStates.size()) {
+        		fromStates=currentStates.and(reachableStates.get(currentPathLength));
+        		toStates=reachableStates.get(currentPathLength-1);
+        		preTimeSampling = System.nanoTime();
+        		transition=mc.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), exper);
+        		postTimeSampling = System.nanoTime();
+        		timeForSampling+=postTimeSampling-preTimeSampling;
+        		if(transition!=null) {
+        			break;
+        		} else {
+        			currentPathLength++;
+        		}
+        	}	
+        	if(transition==null) {
+        		preTimeSampling = System.nanoTime();
+        		transition=mc.sample(currentStates, exper);
+        		postTimeSampling = System.nanoTime();
+        		timeForSampling+=postTimeSampling-preTimeSampling;
+        	}
+        	if(transition==null) {
+        		System.out.println("I am SCREWED!");
+        		break;
+        	}
+        	currentStates=currentStates.or(productAutomaton.getSecondStateSystem(transition));
+        	transition=exper.learn(productAutomaton.getFirstStateSystem(transition), productAutomaton.getSecondStateSystem(transition));
+//        	transition.printDot();
+        	if(productAutomaton.findAcceptingPath()) {
+        		System.out.println("Yay!!!!!");
+        		break;
+        	}
+        	
+        	
+        	initialize.getProductAutomaton().createDot(iterationNumber);
+        	iterationNumber++;
         }
 
-        initialize.getProductAutomaton().createDot(0);
-        exper1.ask(factory.ithVar(8));
-		factory.done();
+		
+		
+        factory.done();
+		
+		
+		
+		double endTime = System.nanoTime();
+		System.out.print("\n\nTotal time taken (in ms):");
+        System.out.println((endTime-startTime)/1000000);
+        System.out.print("Time taken sampling (in ms):");
+        System.out.println((timeForSampling)/1000000);
+        System.out.print("Time taken other than sampling (in ms):");
+        System.out.println((endTime-startTime-timeForSampling)/1000000);
+
 	}
+
+	
+	
 }

@@ -8,6 +8,7 @@ import java.util.List;
 
 import jhoafparser.ast.AtomLabel;
 import jhoafparser.ast.BooleanExpression;
+import jhoafparser.consumer.HOAConsumerException;
 import jhoafparser.consumer.HOAConsumerStore;
 import jhoafparser.parser.HOAFParser;
 import jhoafparser.parser.generated.ParseException;
@@ -18,7 +19,7 @@ import net.sf.javabdd.BDDFactory;
 
 
 public class BuchiAutomataParser{
-	BDD buchiBDD;
+	BDD buchiBDD, initStatesProperty;
 	BDDFactory factory;
 	int numberOfStates=0;
 	int acceptingSets=0;
@@ -58,6 +59,15 @@ public class BuchiAutomataParser{
 			}
 			
 		}
+		
+		@Override
+		public void addStartStates(List<Integer> stateConjunction) throws HOAConsumerException
+		{
+			for(int i: stateConjunction) {
+				initStatesProperty=initStatesProperty.or(bddDomain[0].ithVar(i));
+			}
+		}
+		
 	}
 	public class CountStates extends HOAConsumerStore{
 		public CountStates() {
@@ -102,6 +112,7 @@ public class BuchiAutomataParser{
 								int levelOfTransitions) throws ParseException{
 		this.apListSystem=apListSystem;
 		buchiBDD=factory.zero();
+		initStatesProperty=factory.zero();
 		this.factory=factory;
 		this.levelOfTransitions=levelOfTransitions;
 		CountStates countStates=new CountStates();
@@ -161,6 +172,10 @@ public class BuchiAutomataParser{
 	
 	private BDD getIthVarLabel(int i) {
 		return factory.ithVar(i+numVars[0]+numVars[1]);
+	}
+
+	public BDD getInitStateProperty() {
+		return initStatesProperty;
 	}
 
 }

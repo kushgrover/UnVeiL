@@ -2,24 +2,22 @@ package printing;
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.IOException;
-
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import transitionSystem.ProductAutomaton;
-import transitionSystem.extraExceptions.stateException;
+import transitionSystem.extraExceptions.StateException;
 
 public class PrintProductAutomaton
 {
 	ProductAutomaton productAutomaton;
 	BufferedWriter writer;
 	boolean flag[];
-	public PrintProductAutomaton(ProductAutomaton productAutomaton,int num) throws IOException, stateException{
-		flag=new boolean[productAutomaton.numberOfStates()];
+	public PrintProductAutomaton(ProductAutomaton productAutomaton,int num) throws Exception{
+		flag=new boolean[ProductAutomaton.getNumStates()];
 		writer = new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/productAutomaton"+num+".dot"));
 		
 		this.productAutomaton=productAutomaton;
-		BDD productAutomatonBDD=productAutomaton.getBDD();
+		BDD productAutomatonBDD=productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(3));
 		
 		int[] numVars=ProductAutomaton.numVars;
 		int totalVars=0;
@@ -42,7 +40,7 @@ public class PrintProductAutomaton
 		writer.close();
 	}
 
-	private void addTransitionToDotFile(BDD transition) throws IOException, stateException{
+	private void addTransitionToDotFile(BDD transition) throws Exception{
 		
 		BDD fromState=productAutomaton.removeAllExceptPreVars(transition);
 		BDD toState=productAutomaton.removeAllExceptPostVars(transition);
@@ -63,20 +61,20 @@ public class PrintProductAutomaton
 		int level=transition.scanVar(ProductAutomaton.transitionLevelDomain()).intValue();
 		String labelString=getTransitionLabelString(transition);
 		if(level==3) {
-			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=red, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
+			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=green, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
 		}
-		else if(level==2) {
-			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=blue, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
-		}
-		else if(level==1) {
-			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=green, label=\""+ labelString+" ("+acceptingSet+")\"];\n");;
-		}
-		else if(level==0) {
-			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
-		}
+//		else if(level==2) {
+//			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=blue, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
+//		}
+//		else if(level==1) {
+//			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=red, label=\""+ labelString+" ("+acceptingSet+")\"];\n");;
+//		}
+//		else if(level==0) {
+//			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, ,color=black, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
+//		}
 	}
 	
-	private String getTransitionLabelString(BDD transition){
+	private String getTransitionLabelString(BDD transition) throws Exception{
 		boolean flag=false;
 		String labelString="";
 		BDD label=productAutomaton.removeAllExceptLabelVars(transition);
@@ -103,10 +101,10 @@ public class PrintProductAutomaton
 		return labelString;
 	}
 
-	private String stateLabelString(BDD state) throws stateException {
+	private String stateLabelString(BDD state) throws Exception {
 		String stateLabel=Integer.toString(state.scanVar(ProductAutomaton.propertyDomainPre()).intValue());
 		if(state.pathCount()!=1) {
-			throw new stateException("More than one state");
+			throw new StateException("More than one state");
 		}
 		for(int i=0;i<ProductAutomaton.numAPSystem;i++) {
 			if(! state.and(ProductAutomaton.ithVarSystemPre(i)).equals(ProductAutomaton.factory.zero())) {
