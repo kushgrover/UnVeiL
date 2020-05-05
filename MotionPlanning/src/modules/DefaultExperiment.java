@@ -3,7 +3,6 @@ package modules;
 
 import java.util.ArrayList;
 import net.sf.javabdd.BDD;
-import net.sf.javabdd.BDD.BDDIterator;
 import net.sf.javabdd.BDDFactory;
 import transitionSystem.ProductAutomaton;
 import transitionSystem.extraExceptions.learningException;
@@ -43,6 +42,7 @@ public class DefaultExperiment implements Experiments{
 			productAutomaton.sampledTransitions=productAutomaton.sampledTransitions.or(transition);
 			productAutomaton.removeTransition(fromState, toState);
 			transition=productAutomaton.addTransition(fromState, toState, 3);
+			productAutomaton.sampledProductTransitions=productAutomaton.sampledProductTransitions.or(transition);
 		}
 		else {
 			throw new learningException("Transition already learned");
@@ -52,17 +52,13 @@ public class DefaultExperiment implements Experiments{
 		
 		
 		int counter=productAutomaton.increaseCounter(productAutomaton.getFirstState(fromState));
+		
+		
+		
+		// never tested this
 		if(counter>ProductAutomaton.threshold) {
 			productAutomaton.setLevel(fromState,1);
 		}
-//		BDDIterator iterator=productAutomaton.removeAllExceptPreVars(similarTransitions).iterator(ProductAutomaton.allPreVars());
-//		while(iterator.hasNext()) {
-//			BDD temp=(BDD) iterator.next();
-//			int counter=productAutomaton.increaseCounter(productAutomaton.getFirstState(temp));
-//			if(counter>ProductAutomaton.threshold) {
-//				productAutomaton.setLevel(temp,1);
-//			}
-//		}
 		return transition;
 	}
 
@@ -129,21 +125,21 @@ public class DefaultExperiment implements Experiments{
 		BDD h=ProductAutomaton.ithVarSystemPre(0);
 		BDD r1=ProductAutomaton.ithVarSystemPre(1);
 		BDD r2=ProductAutomaton.ithVarSystemPre(2);
-//		BDD r3=ProductAutomaton.ithVarSystemPre(3);
-//		BDD r4=ProductAutomaton.ithVarSystemPre(4);
-//		BDD c=ProductAutomaton.ithVarSystemPre(5);
-		BDD r3=ProductAutomaton.factory.zero();
-		BDD r4=ProductAutomaton.factory.zero();
-		BDD c=ProductAutomaton.factory.zero();
+		BDD r3=ProductAutomaton.ithVarSystemPre(3);
+		BDD r4=ProductAutomaton.ithVarSystemPre(4);
+		BDD r5=ProductAutomaton.ithVarSystemPre(5);
+		BDD r6=ProductAutomaton.ithVarSystemPre(6);
+		BDD c=ProductAutomaton.ithVarSystemPre(5);
 		BDD t=ProductAutomaton.ithVarSystemPre(3);
 		BDD b=ProductAutomaton.ithVarSystemPre(4);
-		BDD filter1=h.imp((r1.or(r2).or(r3).or(r4).or(b).or(c).or(t)).not());
-		BDD filter2=r1.imp((h.or(r2).or(r3).or(r4)).not());
-		BDD filter3=r2.imp((h.or(r1).or(r3).or(r4)).not());
-//		BDD filter4=r3.imp((h.or(r1).or(r2).or(r4)).not());
-//		BDD filter5=r4.imp((h.or(r1).or(r2).or(r3)).not());
-//		BDD filter=filter1.and(filter2).and(filter3).and(filter4).and(filter5);
-		BDD filter=filter1.and(filter2).and(filter3);
+		BDD filter1=h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b).or(c).or(t)).not());
+		BDD filter2=r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
+		BDD filter3=r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
+		BDD filter4=r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
+		BDD filter5=r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
+		BDD filter6=r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
+		BDD filter7=r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
+		BDD filter=filter1.and(filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
 		BDD filterPrime=productAutomaton.changePreVarsToPostVars(filter);
 		return filter.and(filterPrime);
 	}

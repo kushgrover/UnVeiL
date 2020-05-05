@@ -154,12 +154,29 @@ Jana's notes from the call:
 	\caption{Current Implementation: MAIN}\label{alg:current_main}
 	\begin{algorithmic}[1]
 		\State build trivial automaton
-		\Repeat
-		\State $adviceBDD$=\Call{ask}{$fromStates$} \Comment{Set of good transitions}
-		\State sample a bit to find a transition in $adviceBDD$ ($p \rightarrow q$)
-		\State \Call{learn}{$p,q$}
-		\State $fromStates = fromStates\vee q$
-		\Until{sampled all the way to satisfaction of the property}
+		\State $currentStates=initState$
+		\While{true}
+			\State $reachableStates=\Call{ask}{currentStates}$ 
+			\State \Comment{array of states backward reachable from final states}
+			\State $pathLength=1$
+			\While{$pathLength<reachableStates.size()$}
+				\State $fromStates=currentStates\wedge reachableStates[pathLength]$
+				\State $toStates=reachableStates[pathLength-1]$
+				\State$t:=(p,q')=\Call{Sample}{fromStates, toStates}$
+				\If{$t$ $!=null$}
+					\State break
+				\EndIf 
+				\State $pathLength++$
+			\EndWhile
+		\If{$t==null$}
+		\State $t=\Call{Sample}{currentStates}$
+		\EndIf
+		\State $currentStates$ $\vee= q$
+		\State $\Call{learn}{p,q}$
+		\If{accepting path exists}
+		\State \Return{$path$}
+		\EndIf
+		\EndWhile
 	\end{algorithmic}
 \end{algorithm}
 
@@ -167,17 +184,22 @@ Jana's notes from the call:
 	\caption{Current Implementation: LEARN}\label{alg:current_learn}
 	\begin{algorithmic}[1]
 		\Procedure{learn}{$s_1,s_2$}
-		\If{$\Call{getLevel}{s_1,s_2}$ $!=3$}\Comment{Possible levels: 0,1,2,3}
-		\State $\Call{setLevel}{s_1,s_2,3}$
+		\State $t=s_1\wedge s_2'$
+		\State $sampledTransitions\ \vee = t$
+		\State $removeTransitions(t)$\Comment{remove transition of smaller level}
+		\State $t=\Call{addTransitions}{t,3}$	\Comment{$t$ will be converted to product automaton transitions}
+		
 		\State $DOC^c=\{a\in APSystem\mid \neg(s_1(a)\oplus s_2(a))\}$\Comment{Used for $restrict$}
-		\State $R=restrict(s_1,DOC^c)$\Comment{states smilar to $s_1$}
+		\State $R=remove(s_1,DOC^c)$\Comment{states smilar to $s_1$}
 		\State $newTransitions=R \wedge \neg R' \bigwedge\limits_{a\in DOC^c} a\leftrightarrow a' \wedge level=2$
+		\State\Comment{$\neg R':= \bigwedge\limits_{a \text{ in } R} \neg a'$}
+		\State $newTransitions$ $\wedge=\neg sampledTransitions$
 		\State $productAutomaton $ $\vee= (newTransitions \wedge propertyBDD)$
-		\EndIf
 		\State $counter(s_1)++$
 		\If {$counter(s_1)>threshold$}
-		\For{$s\in S: (s_1,s) \wedge productAutomataBDD = false$}
-		\State \Call{addTransition} {$s_1,s,1$}
+		\For{$s\in S: (s_1,s) \wedge sampledTransitions = false$}
+			\State \Call{removeTransitions}{$s_1,s_s$}
+			\State \Call{addTransition} {$s_1,s,1$}
 		\EndFor
 		\EndIf
 		\EndProcedure
@@ -190,20 +212,15 @@ Jana's notes from the call:
 	\begin{algorithmic}[1]
 		\Procedure{ask}{$fromStates$}
 		\State $finalStates=$\Call{$findFinalStates$}{$productAutomataBDD\wedge fromStates$}
-		\State $reachableStates.add(finalStates)$ 
+		\State $reachableStates.add(finalStates)$
 		\State $reachableStates.add(preFinalStates)$\Comment{required for transition acceptance}
-		\State $allReachableStates=currentStates[0]$
 		\State $i=1$
-		\While{$! (\neg allReachableStates \wedge \Call{pre}{allReachableStates}).isZero()$}
-			\State $reachableStates.add(\Call{pre}{reachableStates[i]})$
-			\State\Comment{add $(i+1)$th element}
-			\State $allReachableStates$ $\vee =reachableStates[i+1]$
+		\While{$\neg allReachableStates \wedge \Call{pre}{reachableStates[i]}\ !=\bot$}
+			\State $reachableStates.add(reachableStates[i]\vee \Call{pre}{reachableStates[i]})$
+			\State $allReachableStates\ \vee=reachableStates[i]$
 			\State $i++$
-			
 		\EndWhile
-		\State $fromStates$ $\wedge=allReachableStates$
-		\State$toState=\Call{img}{fromStates}\wedge reachableStates[i]$
-		\State \Return{$getTransitions(fromStates, toStates)$}
+		\State \Return{$reachableStates$}
 		\EndProcedure
 	\end{algorithmic}
 \end{algorithm}

@@ -40,9 +40,9 @@ public class Planning{
         productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem));
         BDD currentStates=initStateSystem.id();
         
-        productAutomaton.getBDD().andWith(exper.addFilters());
+//        productAutomaton.getBDD().andWith(exper.addFilters());
         
-        double timeForSampling=0, preTimeSampling=0, postTimeSampling=0;
+        double timeForSampling=0, preTimeSampling=0, postTimeSampling=0, pathTime=0;
         int iterationNumber=0;
         while(true) { //until the property is satisfied
 
@@ -74,19 +74,19 @@ public class Planning{
         	}
         	currentStates=currentStates.or(productAutomaton.getSecondStateSystem(transition));
         	transition=exper.learn(productAutomaton.getFirstStateSystem(transition), productAutomaton.getSecondStateSystem(transition));
-//        	transition.printDot();
-        	if(productAutomaton.findAcceptingPath()) {
+        	double pathStartTime=System.nanoTime();
+        	ArrayList<BDD> path=productAutomaton.findAcceptingPath();
+        	double pathEndTime=System.nanoTime();
+        	pathTime+=pathEndTime-pathStartTime;
+        	if(path!=null) {
+        		productAutomaton.printPath(path);
         		System.out.println("Yay!!!!!");
         		break;
         	}
-        	
-        	
         	initialize.getProductAutomaton().createDot(iterationNumber);
         	iterationNumber++;
         }
-
-		
-		
+        
         factory.done();
 		
 		
@@ -95,9 +95,11 @@ public class Planning{
 		System.out.print("\n\nTotal time taken (in ms):");
         System.out.println((endTime-startTime)/1000000);
         System.out.print("Time taken sampling (in ms):");
-        System.out.println((timeForSampling)/1000000);
+        System.out.println(timeForSampling/1000000);
         System.out.print("Time taken other than sampling (in ms):");
         System.out.println((endTime-startTime-timeForSampling)/1000000);
+        System.out.print("Path Time (in ms):");
+        System.out.println(pathTime/1000000);
 
 	}
 
