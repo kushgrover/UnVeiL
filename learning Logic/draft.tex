@@ -248,7 +248,29 @@ $$G F (\mathit{Room}_1 \wedge \mathit{Bin}) \wedge \ldots \wedge G F (\mathit{Ro
 \label{fig:office}
 \end{figure}
 
+
+
 \subsection{A sample run of the algorithm}
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{Fig/example} \caption{A smaller example to illustrate the algorithm}
+	\label{fig:example}
+\end{figure}
 
+Look at the system in Figure \ref{fig:example}. The property we want to satisfy for this system is $G F (r_1 \wedge b) \wedge G F (r_2\wedge b)$ and the deterministic B\"uchi automaton for this LTL formula is also given in Figure \ref{fig:example}. The algorithm stores the product automaton as a BDD, intially it is $\bot$. $currentStates$ stores the set of states we have seen till now which is initialized to $initState$. For this Example $initState=\{H,0\}$.
 
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{Fig/product2} \caption{Product automaton after 2 iterations}
+	\label{fig:product2}
+\end{figure}
+
+After sampling transitions $\{H\} \rightarrow \{r_1\}$ and $\{r_1\}\rightarrow \{r_1,b\}$ initially, the product automaton looks like figure \ref{fig:product2}. Now, in line 4, $ASK$ procedure returns a list of BDDs such that $i$th indexed element is a set of states from which there exist a path in the product automaton of length $i$ whose last transition is an accepting one. In lines 7-13, it tries to sample a transition. Initially it will try to sample a transition from states which are at distance 1 from the accepting transitions and then it will increase the length with each iteration. The procedure $SAMPLE$ on line 10 will sample transitions until it finds a transition from $fromStates$ to $toStates$ or it exceeds a given threshold time/number.
+If it is still not able to find any "good" transition then just sample randomly from any one of the state in $currentStates$ (line 14-15). Suppose it samples $\{r_1\}\rightarrow \{H\}$ next. Line 16 adds post of the sampled transition i.e $\{H\}$ into $currentSates$. Line 17 adds the sampled transition of level 3 in the product automaton and a few other "similar" transitions of level 2. For our example the product automaton after 3rd iteration look like figure \ref{fig:product3}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\linewidth]{Fig/product3} \caption{Product automaton after 3 iterations}
+	\label{fig:product3}
+\end{figure}
 \end{document}
