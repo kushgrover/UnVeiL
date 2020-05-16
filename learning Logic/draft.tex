@@ -284,14 +284,14 @@ For the example given in Figure \ref{fig:office}, without considering $wall$ ato
 		
 		\item Use RRG instead of RRT so that we can go back also.
 		
-		\item \textbf{What we need from the SAMPLE procedure:} Given a pair of set of states (fromStates, toStates) in the abstract system (formulas over the APs of the system), SAMPLE should return a newly sampled transition from a state where 'fromState' is \textit{true} to a state where 'toState' is \textit{true}. It maybe the case that such a transition doesn't exist or probability of it being sampled is very small, in that case, return \emph{null} after some given threshold time/samples.\newline
+		\item \textbf{What we need from the SAMPLE procedure:} Given a pair of set of states (fromStates, toStates) in the abstract system (formulas over the APs of the system), SAMPLE should return a newly sampled transition from a state where `fromState' is \textit{true} to a state where `toState' is \textit{true}. It maybe the case that such a transition doesn't exist or probability of it being sampled is very small, in that case, return \emph{null} after some given threshold time/samples.\newline
 		\textbf{How do we do this with RRG?}
 		\begin{itemize}
 			\item Each node in the graph ($G$) will store the APs associated with it. 
-			\item If the whole tree is stored as a BDD, finding nodes where 'fromStates' is very easy but storing it in a BDD is very difficult. \kush{Find a way to do both the things efficiently.}
+			\item If the whole tree is stored as a BDD, finding nodes where `fromStates' is very easy but storing it in a BDD is very difficult. \kush{Find a way to do both the things efficiently.}
 		\end{itemize}
 		
-		\item \textbf{Jan's idea:} We can keep track of the sampled transitions till now and get their ranking (finding ranking for each sampled transition will require some time because it might have to pass through the whole list of 'reachableStates'). Sample 50 (some threshold) transitions and add the one with the best rank. \kush{What will happen to the other transitions? Would we keep all of them in the memory (maintain a min-heap maybe)?}
+		\item \textbf{Jan's idea:} We can keep track of the sampled transitions till now and get their ranking (finding ranking for each sampled transition will require some time because it might have to pass through the whole list of `reachableStates'). Sample 50 (some threshold) transitions and add the one with the best rank. \kush{What will happen to the other transitions? Would we keep all of them in the memory (maintain a min-heap maybe)?}
 	\end{itemize}
 
 
