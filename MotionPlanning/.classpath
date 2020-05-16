@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+		<attributes>
+			<attribute name="module" value="true"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="Examples"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/javabdd/JavaBDD/javabdd-1.0b2.jar" sourcepath="/home/kush/Projects/robotmotionplanning/javabdd source"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/owl/build/install/owl/lib/owl-19.XX-development.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/jhoafparser-1.1.1.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>
