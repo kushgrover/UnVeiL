@@ -40,8 +40,6 @@ public class Planning{
         productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem));
         BDD currentStates=initStateSystem.id();
         
-//        productAutomaton.getBDD().andWith(exper.addFilters());
-        
         double timeForSampling=0, preTimeSampling=0, postTimeSampling=0, pathTime=0;
         int iterationNumber=0;
         while(true) { //until the property is satisfied
@@ -83,22 +81,22 @@ public class Planning{
         		System.out.println("Yay!!!!!");
         		break;
         	}
-        	initialize.getProductAutomaton().createDot(iterationNumber);
+//        	initialize.getProductAutomaton().createDot(iterationNumber);
         	iterationNumber++;
         }
         
         factory.done();
 		
-		
-		
-		double endTime = System.nanoTime();
+        double endTime = System.nanoTime();
+        
+		System.out.println("\nTotal sampled transitions = "+iterationNumber);
 		System.out.print("\n\nTotal time taken (in ms):");
         System.out.println((endTime-startTime)/1000000);
         System.out.print("Time taken sampling (in ms):");
         System.out.println(timeForSampling/1000000);
         System.out.print("Time taken other than sampling (in ms):");
         System.out.println((endTime-startTime-timeForSampling)/1000000);
-        System.out.print("Path Time (in ms):");
+        System.out.print("Path checking time (in ms):");
         System.out.println(pathTime/1000000);
 
 	}

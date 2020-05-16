@@ -164,8 +164,16 @@ public class ProductAutomaton{
 	
 //------------------------------------------------------------------------------------------------------------------	
 /**
- * For getters
+ * For getters and setters
  */
+	
+	/**
+	 * set the initial state
+	 * @param initStates
+	 */
+	public void setInitState(BDD initStates) {
+		this.initStates=initStates;
+	}
 	
 	/**
 	 * 
@@ -175,30 +183,45 @@ public class ProductAutomaton{
 		return productAutomatonBDD;
 	}
 	
+	/**
+	 * 
+	 * @return BDD representing the property automaton
+	 */
 	public static BDD getPropertyBDD() {
 		return propertyBDD;
 	}
 	
+	/**
+	 * 
+	 * @return set of initial states
+	 */
 	public BDD getInitStates() {
 		return initStates;
 	}
 	
+	/**
+	 * 
+	 * @return total number of states in the product automaton
+	 */
 	public static int getNumStates() {
 		return numStates;
-	}
-	
-	public BDD getSampledProductTransitions() {
-		return sampledProductTransitions;
 	}
 	
 	/**
 	 * 
 	 * @return number of states in the product automaton
 	 */
-	public static int numberOfStates(){
+	private static int numberOfStates(){
 		return (int) Math.pow(2, numAPSystem+propertyDomainPre().varNum());
 	}
 	
+	/**
+	 * 
+	 * @return all the sampled transitions in the product automaton
+	 */
+	public BDD getSampledProductTransitions() {
+		return sampledProductTransitions;
+	}
 	
 	/**
 	 * 
@@ -643,6 +666,16 @@ public class ProductAutomaton{
 		return changePostVarsToPreVars(removeAllExceptPostVars(productAutomatonBDD.and(states)));
 	}
 	
+	/**
+	 * 
+	 * @param i
+	 * @return first states of all accepting transitions of ith accepting set
+	 * @throws Exception
+	 */
+	public BDD getAcceptingStates(int i) throws Exception {
+		return removeAllExceptPreVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(i)));
+	}
+	
 	
 //-------------------------------------------------------------------------------------------------------------------
 
@@ -813,20 +846,9 @@ public class ProductAutomaton{
 	public int getLevel(BDD transition) throws TransitionException {
 		if(transition.pathCount()>1) {
 			throw new TransitionException("More than one transition");
-//			int highestLevel=-1;
-//			int currentLevel=-1;
-//			BDDIterator iterator= transition.iterator(allVars());
-//			while(iterator.hasNext()) {
-//				BDD nextTransition=(BDD) iterator.next();
-//				currentLevel=nextTransition.scanVar(acceptingSetDomain()).intValue();
-//				if(currentLevel>highestLevel) {
-//					highestLevel=currentLevel;
-//				}
-//			}
-//			return highestLevel;
 		}
 		else if(transition.pathCount()<1) {
-			return -1;
+			throw new TransitionException("No transition exists");
 		}
 		return transition.scanVar(transitionLevelDomain()).intValue();
 	}
@@ -880,6 +902,18 @@ public class ProductAutomaton{
 	}
 	
 	/**
+	 * Returns the list of accepting sets 
+	 * @param transition
+	 * @return
+	 */
+	public ArrayList<Integer> findAcceptingSets(BDD transition) {
+		int accSet=transition.scanVar(acceptingSetDomain()).intValue();
+		ArrayList<Integer>temp= new ArrayList<Integer>();
+		temp.add(accSet);
+		return temp;
+	}
+	
+	/**
 	 * <p>Add a transition in the product automaton</p>
 	 * @param fromState
 	 * @param toState
@@ -897,6 +931,12 @@ public class ProductAutomaton{
 		return transition;
 	}
 	
+	/**
+	 * Remove all transitions from "fromState" to "toState"
+	 * @param fromState
+	 * @param toState
+	 * @throws Exception
+	 */
 	public void removeTransition(BDD fromState, BDD toState) throws Exception {
 		if(! hasOnlyPreVars(fromState) || ! hasOnlyPreVars(toState)) {
 			throw new StateException("Extra vars appearing in a state BDD");
@@ -1016,6 +1056,14 @@ public class ProductAutomaton{
 		return changePostSystemVarsToPreSystemVars(removeAllExceptPostSystemVars(transition));
 	}
 	
+	/**
+	 * 
+	 * @param i
+	 * @return all accepting transitions of ith accepting set
+	 */
+	public BDD getAcceptingTransitions(int i) {
+		return productAutomatonBDD.and(acceptingSetDomain().ithVar(i));
+	}
 	
 //-----------------------------------------------------------------------------------------------------------------
 	
@@ -1027,7 +1075,7 @@ public class ProductAutomaton{
 	
 
 	/**
-	 * <p>Find the ID of a state</p>
+	 * <p>Find the ID of a system state</p>
 	 * @param fromState
 	 * @return ID of the state
 	 * @throws Exception 
@@ -1049,7 +1097,7 @@ public class ProductAutomaton{
 	}
 	
 	/**
-	 * <p>Find the ID of a state</p>
+	 * <p>Find the ID of a state in product automaton</p>
 	 * @param fromState
 	 * @return ID of the state
 	 * @throws Exception 
@@ -1070,6 +1118,12 @@ public class ProductAutomaton{
 		return stateID;
 	}
 
+	/**
+	 * 
+	 * @param id
+	 * @return BDD for the state with stateID id.
+	 * @throws Exception
+	 */
 	public BDD getStateFromID(int id) throws Exception {
 	
 		BDD state=factory.one();
@@ -1140,48 +1194,24 @@ public class ProductAutomaton{
 		new PrintProductAutomaton(this, i);
 	}
 
-
-
-
-
-	public ArrayList<Integer> findAcceptingSets(BDD transition) {
-		int accSet=transition.scanVar(acceptingSetDomain()).intValue();
-		ArrayList<Integer>temp= new ArrayList<Integer>();
-		temp.add(accSet);
-		return temp;
-	}
-
-
-
-
-
-	public void setInitState(BDD initStates) {
-		this.initStates=initStates;
-	}
-
-
-
-
-
-	public BDD getAcceptingStates(int i) throws Exception {
-		return removeAllExceptPreVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(i)));
-	}
-
-
-
-
-
+	/**
+	 * Print the accepting path
+	 * @param path
+	 * @throws Exception
+	 */
 	public void printPath(ArrayList<BDD> path) throws Exception {
 		new PrintAcceptingPath(path);
 	}
+	
+	
+	
+//-------------------------------------------------------------------------------------------------------------------
+
+	
+//-------------------------------------------------------------------------------------------------------------------	
 
 
-
-
-
-	public BDD getAcceptingTransitions(int j) {
-		return productAutomatonBDD.and(acceptingSetDomain().ithVar(j));
-	}
+	
 	
 }
 

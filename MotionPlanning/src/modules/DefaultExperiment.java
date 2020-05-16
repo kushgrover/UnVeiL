@@ -19,22 +19,31 @@ public class DefaultExperiment implements Experiments{
 	ProductAutomaton productAutomaton;
 	BDDFactory factory;
 	BDD productAutomatonBDD;
-	public DefaultExperiment(BDD propertyBDD, 
-			int[] numVars, 
-			ArrayList<String> apListProperty,
-			ArrayList<String> apListSystem) throws Exception
-	{
-		this.productAutomaton=new ProductAutomaton(propertyBDD);
-		this.factory=productAutomaton.getBDD().getFactory();
-		this.productAutomatonBDD=productAutomaton.getBDD();
-	}
 	
+
+//	public DefaultExperiment(BDD propertyBDD, 
+//			int[] numVars, 
+//			ArrayList<String> apListProperty,
+//			ArrayList<String> apListSystem) throws Exception
+//	{
+//		this.productAutomaton=new ProductAutomaton(propertyBDD);
+//		this.factory=productAutomaton.getBDD().getFactory();
+//		this.productAutomatonBDD=productAutomaton.getBDD();
+//	}
+	
+	/**
+	 * constructor
+	 * @param productAutomaton
+	 */
 	public DefaultExperiment(ProductAutomaton productAutomaton) {
 		this.productAutomaton=productAutomaton;
 		this.factory=productAutomaton.getBDD().getFactory();
 		this.productAutomatonBDD=productAutomaton.getBDD();
 	}
 
+	/**
+	 * LEARN procedure
+	 */
 	@Override
 	public BDD learn(BDD fromState, BDD toState) throws Exception {
 		BDD transition=fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
@@ -49,7 +58,7 @@ public class DefaultExperiment implements Experiments{
 		}
 		
 		learnSimilarTransitions(fromState, toState);
-		
+		  
 		
 		int counter=productAutomaton.increaseCounter(productAutomaton.getFirstState(fromState));
 		
@@ -62,6 +71,13 @@ public class DefaultExperiment implements Experiments{
 		return transition;
 	}
 
+	/**
+	 * procedure to add maybe (level 2) transitions give a transition from 'fromState' to 'toState'
+	 * @param fromState
+	 * @param toState
+	 * @return BDD representing the set of similar transitions
+	 * @throws Exception
+	 */
 	private BDD learnSimilarTransitions(BDD fromState, BDD toState) throws Exception{
 		BDD complementDomainOfChanges=allExceptDomainOfChanges(fromState,toState);
 		BDD fromStateSimilar=fromState.exist(complementDomainOfChanges);
@@ -86,10 +102,19 @@ public class DefaultExperiment implements Experiments{
 		transitions.andWith(allOtherVariablesWhichRemainEqual);
 		transitions=transitions.and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence());
 		transitions=transitions.and(productAutomaton.sampledTransitions.not());
-		productAutomaton.addTransitions(transitions);
+		
+		//adding filters here
+		productAutomaton.addTransitions(transitions.and(addFilters()));
 		return transitions;
 	}
 
+	/**
+	 * 
+	 * @param fromState
+	 * @param toState
+	 * @return complement of the set 'domain of changes'
+	 * @throws Exception
+	 */
 	private BDD allExceptDomainOfChanges(BDD fromState, BDD toState) throws Exception{
 		BDD complementDomainOfChanges=factory.one();
 		for(int i=0;i<ProductAutomaton.numAPSystem;i++) {
@@ -102,6 +127,10 @@ public class DefaultExperiment implements Experiments{
 		return complementDomainOfChanges;
 	}
 
+	
+	/**
+	 * ASK procedure
+	 */
 	@Override
 	public ArrayList<BDD> ask(BDD currentStates) throws Exception {
 		ArrayList<BDD> reachableStates=new ArrayList<BDD>();
@@ -121,6 +150,14 @@ public class DefaultExperiment implements Experiments{
 		return reachableStates;
 	}
 	
+	
+	
+	/**
+	 * Some filters for the states like H and r1 can never occur together
+	 * User gives it at the beginning
+	 * @return a BDD representing the formula for the filters
+	 * @throws Exception
+	 */
 	public BDD addFilters() throws Exception {
 		BDD h=ProductAutomaton.ithVarSystemPre(0);
 		BDD r1=ProductAutomaton.ithVarSystemPre(1);

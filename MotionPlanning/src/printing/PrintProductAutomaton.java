@@ -17,7 +17,7 @@ public class PrintProductAutomaton
 		writer = new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/productAutomaton"+num+".dot"));
 		
 		this.productAutomaton=productAutomaton;
-		BDD productAutomatonBDD=productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(3));
+		BDD productAutomatonBDD=productAutomaton.getBDD();
 		
 		int[] numVars=ProductAutomaton.numVars;
 		int totalVars=0;
@@ -63,15 +63,15 @@ public class PrintProductAutomaton
 		if(level==3) {
 			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=green, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
 		}
-//		else if(level==2) {
-//			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=blue, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
-//		}
-//		else if(level==1) {
-//			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=red, label=\""+ labelString+" ("+acceptingSet+")\"];\n");;
-//		}
-//		else if(level==0) {
-//			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, ,color=black, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
-//		}
+		else if(level==2) {
+			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=blue, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
+		}
+		else if(level==1) {
+			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, color=red, label=\""+ labelString+" ("+acceptingSet+")\"];\n");;
+		}
+		else if(level==0) {
+			writer.append(fromStateID+" -> "+ toStateID+" [style=filled, ,color=black, label=\""+ labelString+" ("+acceptingSet+")\"];\n");
+		}
 	}
 	
 	private String getTransitionLabelString(BDD transition) throws Exception{
