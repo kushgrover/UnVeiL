@@ -159,26 +159,27 @@ public class DefaultExperiment implements Experiments{
 	 * @throws Exception
 	 */
 	public BDD addFilters() throws Exception {
-		BDD h=ProductAutomaton.ithVarSystemPre(0);
-		BDD r1=ProductAutomaton.ithVarSystemPre(1);
-		BDD r2=ProductAutomaton.ithVarSystemPre(2);
-		BDD r3=ProductAutomaton.ithVarSystemPre(3);
-		BDD r4=ProductAutomaton.ithVarSystemPre(4);
-		BDD r5=ProductAutomaton.ithVarSystemPre(5);
-		BDD r6=ProductAutomaton.ithVarSystemPre(6);
-		BDD c=ProductAutomaton.ithVarSystemPre(5);
-		BDD t=ProductAutomaton.ithVarSystemPre(3);
-		BDD b=ProductAutomaton.ithVarSystemPre(4);
-		BDD filter1=h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b).or(c).or(t)).not());
-		BDD filter2=r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
-		BDD filter3=r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
-		BDD filter4=r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
-		BDD filter5=r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
-		BDD filter6=r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
-		BDD filter7=r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
-		BDD filter=filter1.and(filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
-		BDD filterPrime=productAutomaton.changePreVarsToPostVars(filter);
-		return filter.and(filterPrime);
+//		BDD h=ProductAutomaton.ithVarSystemPre(0);
+//		BDD r1=ProductAutomaton.ithVarSystemPre(1);
+//		BDD r2=ProductAutomaton.ithVarSystemPre(2);
+//		BDD r3=ProductAutomaton.ithVarSystemPre(3);
+//		BDD r4=ProductAutomaton.ithVarSystemPre(4);
+//		BDD r5=ProductAutomaton.ithVarSystemPre(5);
+//		BDD r6=ProductAutomaton.ithVarSystemPre(6);
+//		BDD c=ProductAutomaton.ithVarSystemPre(5);
+//		BDD t=ProductAutomaton.ithVarSystemPre(3);
+//		BDD b=ProductAutomaton.ithVarSystemPre(4);
+//		BDD filter1=h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b).or(c).or(t)).not());
+//		BDD filter2=r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
+//		BDD filter3=r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
+//		BDD filter4=r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
+//		BDD filter5=r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
+//		BDD filter6=r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
+//		BDD filter7=r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
+//		BDD filter=filter1.and(filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
+//		BDD filterPrime=productAutomaton.changePreVarsToPostVars(filter);
+//		return filter.and(filterPrime);
+		return factory.one();
 	}
 	
 	public ProductAutomaton getProductAutomaton() {
