@@ -3,6 +3,7 @@ package modules;
 
 import java.util.ArrayList;
 import net.sf.javabdd.BDD;
+import net.sf.javabdd.BDD.BDDIterator;
 import net.sf.javabdd.BDDFactory;
 import transitionSystem.ProductAutomaton;
 import transitionSystem.extraExceptions.learningException;
@@ -59,22 +60,27 @@ public class DefaultExperiment implements Experiments
 		}
 		else 
 		{
-			throw new learningException("Transition already learned");
+			return null;
+//			throw new learningException("Transition already learned");
 		}
 		
 		learnSimilarTransitions(fromState, toState);
 		  
 		
 //		int counter			= productAutomaton.increaseCounter(productAutomaton.getFirstState(fromState));
-		int counter			= productAutomaton.increaseCounter(fromState);
-		
-		
-		
-		// never tested this
-		if(counter > ProductAutomaton.threshold) 
+
+		BDDIterator ite = fromState.iterator(ProductAutomaton.allPreSystemVars());
+		int counter;
+		while(ite.hasNext())
 		{
-			productAutomaton.setLevel(fromState, 1);
+			counter			= productAutomaton.increaseCounter((BDD) ite.next());
+			// never tested this
+			if(counter > ProductAutomaton.threshold) 
+			{
+				productAutomaton.setLevel(fromState, 1);
+			}
 		}
+		
 		return transition;
 	}
 
@@ -150,21 +156,24 @@ public class DefaultExperiment implements Experiments
 	@Override
 	public ArrayList<BDD> ask(BDD currentStates) throws Exception 
 	{
-		ArrayList<BDD> reachableStates	= new ArrayList<BDD>();
-		reachableStates.add(productAutomaton.finalStates());
-		reachableStates.add(productAutomaton.preImageOfFinalStates());
-		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
-			return reachableStates;
-		}
-		
-		int i	= 1;
-		BDD backwardReachableStates		= productAutomaton.preImageOfFinalStates();
-		while(!productAutomaton.preImage(backwardReachableStates).and(backwardReachableStates.not()).isZero()) {
-			reachableStates.add(productAutomaton.preImage(reachableStates.get(i)));
-			i++;
-			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
-		}
-		return reachableStates;
+//		ArrayList<BDD> reachableStates	= new ArrayList<BDD>();
+//		reachableStates.add(productAutomaton.finalStates());
+//		reachableStates.add(productAutomaton.preImageOfFinalStates());
+//		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
+//			return reachableStates;
+//		}
+//		
+//		int i	= 1;
+//		BDD backwardReachableStates		= productAutomaton.preImageOfFinalStates();
+//		while(!productAutomaton.preImage(backwardReachableStates).and(backwardReachableStates.not()).isZero()) {
+//			reachableStates.add(productAutomaton.preImage(reachableStates.get(i)));
+//			i++;
+//			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
+//		}
+//		return reachableStates;
+		ArrayList<BDD> kush = new ArrayList<BDD>(); 
+		kush.add(ProductAutomaton.factory.one());
+		return kush;
 	}
 	
 	

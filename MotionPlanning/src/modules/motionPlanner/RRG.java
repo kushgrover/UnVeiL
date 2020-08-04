@@ -2,10 +2,10 @@ package modules.motionPlanner;
 
 
 
-import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import gnu.trove.TIntProcedure;
-import modules.DefaultExperiment;
+import modules.PlanningSettings;
+import modules.printing.ShowGraph;
 import net.sf.javabdd.BDD;
 import transitionSystem.ProductAutomaton;
 
@@ -34,12 +34,12 @@ public class RRG
 	ArrayList<Point> treePoints;
 	int numPoints;
 	
-	public RRG(Environment env, float eta) 
+	public RRG(Environment env) 
 	{
 		
 		this.env 				= env;
-		this.eta 				= eta;
-		float[] sub 			= new float[] {env.boundsX[1]-env.boundsX[0], env.boundsY[1]-env.boundsY[0]};
+		this.eta 				= (float) PlanningSettings.get("planning.eta");
+		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
 		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
 		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(DefaultEdge.class);
 		treePoints 				= new ArrayList<Point>();
@@ -56,7 +56,11 @@ public class RRG
 	{
 		BDD transitions 			= ProductAutomaton.factory.zero();
 		
+		
+		// Point
 		Point xRand					= convertPoint2DToPoint(xRand2D);
+		
+		
 		TIntProcedure kush			= new TIntProcedure()
 		{ 
 			public boolean execute(int i) 
@@ -65,7 +69,6 @@ public class RRG
 				Point2D xNearest2D	= convertPointToPoint2D(xNearest);
 				try 
 				{
-					System.out.println(Environment.getLabelling().getLabel(xNearest2D).and(fromStates).toString());
 					if(Environment.getLabelling().getLabel(xNearest2D).and(fromStates).isZero())
 					{
 						return false;
@@ -74,6 +77,7 @@ public class RRG
 				{
 					e.printStackTrace();
 				}
+				
 				Point2D xNew2D		= steer(xNearest2D, xRand2D);
 				Point xNew			= convertPoint2DToPoint(xNew2D);
 				
@@ -90,39 +94,41 @@ public class RRG
 				
 				if(env.collisionFree(xNearest2D, xNew2D))
 				{	
-					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
-					try {
-						System.out.println(Environment.getLabelling().getLabel(xNearest2D).toString() + " ---> " + Environment.getLabelling().getLabel(xNew2D).toString());
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
+//					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
+//					try {
+//						System.out.println(Environment.getLabelling().getLabel(xNearest2D).toString() + " ---> " + Environment.getLabelling().getLabel(xNew2D).toString());
+//					} catch (Exception e1) {
+//						e1.printStackTrace();
+//					}
 					final float radius;
 					if(numPoints > 1) 
 					{
-						radius				= (float) Math.min(gamma* Math.pow(Math.log(numPoints)/(numPoints), (0.5)), eta);
+						radius				= (float) Math.min(gamma * Math.pow(Math.log(numPoints)/(numPoints), (0.5)), eta);
 					} else 
 					{
-						radius				= 0.5f;
+						radius				= 0.1f;
 					}
-					final Vertex vertexS	= new Vertex(xNew2D);
-					graph.addVertex(vertexS);
-					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
-					tree.add(rect, numPoints);
-					treePoints.add(xNew);
-					numPoints++;
-					tree.nearest(xNew, 
+					final Vertex source	= new Vertex(xNew2D);
+					graph.addVertex(source);
+					
+					tree.nearestN(xNew, 
 							new TIntProcedure() 
 							{
 								public boolean execute(int i) 
 								{
 									Point neighbour			= treePoints.get(i);
 									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
+
+									if(neighbour2D.equals(xNew2D)) return true;
 									
 									if( distance(xNew, neighbour) <= radius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
 									{
-										Vertex vertexT		= new Vertex(neighbour2D);
-										graph.addVertex(vertexT);
-										graph.addEdge(vertexS, vertexT);
+										Vertex target		= new Vertex(neighbour2D);
+										graph.addVertex(target);
+										graph.addEdge(source, target);
+										
+//										System.out.println("Added Transition: " + xNew.toString() + " ---> " + neighbour.toString());
+										
 										BDD transition;
 										try {
 											transition 		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
@@ -136,12 +142,16 @@ public class RRG
 									return true;
 								}
 							}, 
-							java.lang.Float.POSITIVE_INFINITY);
+							100, java.lang.Float.POSITIVE_INFINITY);
+					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
+					tree.add(rect, numPoints);
+					treePoints.add(xNew);
+					numPoints++;
 				}
 		        return true;
 		    }
 		};
-		tree.nearestN(xRand, kush, 1, java.lang.Float.POSITIVE_INFINITY);
+		tree.nearest(xRand, kush, java.lang.Float.POSITIVE_INFINITY);
 		return transitions;
 	}
 	
@@ -185,7 +195,11 @@ public class RRG
 			return to;
 		} else 
 		{
-			return new Point2D.Float((float) (from.getX()+(eta*(to.getX()-from.getX())/d)), (float) (from.getY()+(eta*(to.getY()-from.getY())/d))); 
+			Point2D temp = new Point2D.Float((float) (from.getX()+((eta-0.00001)*(to.getX()-from.getX())/d)), (float) (from.getY()+((eta-0.00001)*(to.getY()-from.getY())/d)));
+			if((float) from.distance(temp)>0.051f) {
+				System.out.println("I am fucked");
+			}
+			return temp;
 		}
 	}
 
@@ -228,10 +242,8 @@ public class RRG
 	public BDD sample(ProductAutomaton productAutomaton) {
 		Point2D.Float p;
 		BDD transition;
-		int i 		= 0;
 		while(true)
 		{
-			i++;
 			p 			= env.sample();
 			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton);
 			if(! transition.isZero())
@@ -248,31 +260,51 @@ public class RRG
 	}
 	
 	
-	public static void main(String[] args) {
-		ArrayList<Path2D> kush = new ArrayList<Path2D>();
-		Path2D ritika = new Path2D.Float();
-		ritika.moveTo(0f, 1.05f);
-		ritika.lineTo(1f, 1.05f);
-		ritika.lineTo(1f, 1.95f);
-		ritika.lineTo(0f, 1.95f);
-		ritika.closePath();
-		kush.add(ritika);
-		System.out.println(ritika.contains(new Point2D.Float(0.1f, 1.5f)));
+
+
+
+	public void plotGraph() {
+		
+		
+		new ShowGraph(graph, env).setVisible(true);;
 	}
-//		
-//		String envFile="/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example1/environment.env";
-//		EnvironmentReader r = new EnvironmentReader(envFile);
-//		# Define state-space, start and goal'
-//	    float[] boundsX = new float[]{0.0f, 1.0f};
-//	    float[] boundsY = new float[]{0.0f, 1.0f};
-//	    obsList = ([(0, 0), (0, 0.1), (0.1, 0.1), (0.1, 0)],[(0.5, 0.5), (0.7, 0.5), (0.7, 0.8)])
-//	    Environment env=new Environment(new ArrayList<Path2D>(), boundsX, boundsY, null);
-//	    Point2D.Float xInit = env.sampleFree();
-//	    Point2D.Float xGoal = env.sampleFree();
-//	    # Generate RRG
-//	    System.out.print(xInit.toString());
-//	    RRG a = new RRG(env, xInit, 0.5f);
-	    
+	  
+	
+//	public static void main(String[] args)
+//	{
+//		RTree rand = new RTree();
+//		rand.init(null);
+//		rand.add(new Rectangle(0.1f, 0.1f, 0.1f, 0.1f), 0);
+//		rand.add(new Rectangle(1f, 1f, 1f, 1f), 1);
+//		rand.add(new Rectangle(0f, 1f, 0f, 1f), 2);
+//		rand.add(new Rectangle(1f, 0f, 1f, 0f), 3);
+//		rand.add(new Rectangle(0.5f, 0.5f, 0.5f, 0.5f), 4);
+//		rand.nearestN(new Point(0.2f, 0.2f), 
+//			new TIntProcedure() 
+//			{
+//
+//				@Override
+//				public boolean execute(int i) {
+//					System.out.println(i);
+//					return true;
+//				}
+//			}, 100, java.lang.Float.POSITIVE_INFINITY);
+//	}
+	
+	
+//	
+//	String envFile="/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example1/environment.env";
+//	EnvironmentReader r = new EnvironmentReader(envFile);
+//	# Define state-space, start and goal'
+//    float[] boundsX = new float[]{0.0f, 1.0f};
+//    float[] boundsY = new float[]{0.0f, 1.0f};
+//    obsList = ([(0, 0), (0, 0.1), (0.1, 0.1), (0.1, 0)],[(0.5, 0.5), (0.7, 0.5), (0.7, 0.8)])
+//    Environment env=new Environment(new ArrayList<Path2D>(), boundsX, boundsY, null);
+//    Point2D.Float xInit = env.sampleFree();
+//    Point2D.Float xGoal = env.sampleFree();
+//    # Generate RRG
+//    System.out.print(xInit.toString());
+//    RRG a = new RRG(env, xInit, 0.5f);	
 //	    # Build graph
 //	    tic = timeit.default_timer()
 //	    a.buildGraph(xGoal);

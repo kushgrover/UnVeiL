@@ -40,7 +40,7 @@ public class Initialize
         String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example1/property.pr";
 		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
 
-		rrg 						= new RRG(env, 1.0f); // eta = 1.0
+		rrg 						= new RRG(env);
 		
         ProductAutomaton.apListProperty			= prop.propertyParser.getAPListProperty();
 		ProductAutomaton.numVars				= prop.propertyParser.getNumVars();

@@ -15,7 +15,9 @@ import labelling.Label;
 public class Environment {
 	Shape bounds;
 	
-	float[] boundsX, boundsY;
+	private float[] boundsX;
+
+	private float[] boundsY;
 	
 	ArrayList<Path2D> obstacles;
 	Area allObs;
@@ -26,8 +28,8 @@ public class Environment {
 	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> obstacles, Point2D.Float init, Label labelling) 
 	{
 		this.bounds				= new Rectangle2D.Float(boundsX[0],boundsY[0],boundsX[1]-boundsX[0],boundsY[1]-boundsY[0]);
-		this.boundsX			= boundsX;
-		this.boundsY			= boundsY;
+		this.setBoundsX(boundsX);
+		this.setBoundsY(boundsY);
 		this.numOfObs			= obstacles.size();
 		this.obstacles 			= obstacles;
 //		allObs=new Area();
@@ -56,8 +58,8 @@ public class Environment {
 	
 	public Point2D.Float sample()
 	{
-		float x		= (float) (boundsX[0]+Math.random()*(boundsX[1]-boundsX[0]));
-		float y		= (float) (boundsY[0]+Math.random()*(boundsY[1]-boundsY[0]));
+		float x		= (float) (getBoundsX()[0]+Math.random()*(getBoundsX()[1]-getBoundsX()[0]));
+		float y		= (float) (getBoundsY()[0]+Math.random()*(getBoundsY()[1]-getBoundsY()[0]));
 		return new Point2D.Float(x,y);
 	}
 
@@ -82,7 +84,7 @@ public class Environment {
 		
 		for(int i=0; i<numOfObs; i++) 
 		{
-			PathIterator ite	= obstacles.get(i).getPathIterator(new AffineTransform());
+			PathIterator ite	= getObstacles().get(i).getPathIterator(new AffineTransform());
 			segmentType			= ite.currentSegment(coords1);
 			assert(segmentType == PathIterator.SEG_MOVETO);
 			
@@ -115,6 +117,26 @@ public class Environment {
 		
 		path.closePath();
 		return path.createTransformedShape(new AffineTransform());
+	}
+
+	public float[] getBoundsX() {
+		return boundsX;
+	}
+
+	public void setBoundsX(float[] boundsX) {
+		this.boundsX = boundsX;
+	}
+
+	public float[] getBoundsY() {
+		return boundsY;
+	}
+
+	public void setBoundsY(float[] boundsY) {
+		this.boundsY = boundsY;
+	}
+
+	public ArrayList<Path2D> getObstacles() {
+		return obstacles;
 	}
 	
 //	public static void main(String[] args) 

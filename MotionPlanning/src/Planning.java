@@ -1,16 +1,10 @@
 import net.sf.javabdd.BDD;
-import net.sf.javabdd.BDDFactory;
-import net.sf.javabdd.BuDDyFactory;
-
 import modules.DefaultExperiment;
 import modules.PlanningSettings;
 import modules.motionPlanner.Environment;
 import modules.motionPlanner.RRG;
 import transitionSystem.Initialize;
-import transitionSystem.MarkovChain;
 import transitionSystem.ProductAutomaton;
-import transitionSystem.TSparser.MarkovChainParser;
-
 import java.util.ArrayList;
 
 import labelling.Label;
@@ -40,14 +34,14 @@ public class Planning
         
         BDD initStateSystem					= label.getLabel(env.getInit());
         rrg.setStartingPoint(env.getInit());
-        productAutomaton.setInitState(initStateSystem);
+        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for init state in the produc
         BDD currentStates					= initStateSystem.id();
         
         double timeForSampling = 0, preTimeSampling = 0, postTimeSampling = 0, pathTime = 0;
         int iterationNumber					= 0;
         
         
-        while(true)  //until the property is satisfied
+        while(iterationNumber<2000)  //until the property is satisfied
         {
         	ArrayList<BDD> reachableStates	= exper.ask(currentStates);
         	int currentPathLength			= 1;
@@ -83,8 +77,6 @@ public class Planning
         		transition					= rrg.sample(productAutomaton);
         		postTimeSampling 			= System.nanoTime();
         		timeForSampling				+= postTimeSampling-preTimeSampling;
-//        		System.out.println("I am SCREWED!");
-//        		break;
         	}
         	if(transition == null) 
         	{
@@ -95,8 +87,7 @@ public class Planning
         	transition						= exper.learn(productAutomaton.getFirstStateSystem(transition), productAutomaton.getSecondStateSystem(transition));
         	double pathStartTime			= System.nanoTime();
         	ArrayList<BDD> path				= productAutomaton.findAcceptingPath();
-        	double pathEndTime				= System.nanoTime();
-        	pathTime						+= pathEndTime-pathStartTime;
+        	pathTime						+= System.nanoTime() - pathStartTime;
         	
         	if(path	!= null) 
         	{
@@ -104,23 +95,26 @@ public class Planning
         		System.out.println("Yay!!!!!");
         		break;
         	}
-//        	initialize.getProductAutomaton().createDot(iterationNumber);
         	iterationNumber++;
         }
         
+        double endTime = System.nanoTime();
+
+    	productAutomaton.createDot(iterationNumber);
+
         Initialize.getFactory().done();
 		
-        double endTime = System.nanoTime();
+//        rrg.plotGraph();
         
-		System.out.println("\nTotal sampled transitions = "+iterationNumber);
+		System.out.println("\nTotal sampled transitions = " + iterationNumber);
 		System.out.print("\n\nTotal time taken (in ms):");
-        System.out.println((endTime-startTime)/1000000);
+        System.out.println((endTime - startTime) / 1000000);
         System.out.print("Time taken sampling (in ms):");
-        System.out.println(timeForSampling/1000000);
+        System.out.println(timeForSampling / 1000000);
         System.out.print("Time taken other than sampling (in ms):");
-        System.out.println((endTime-startTime-timeForSampling)/1000000);
+        System.out.println((endTime - startTime - timeForSampling) / 1000000);
         System.out.print("Path checking time (in ms):");
-        System.out.println(pathTime/1000000);
+        System.out.println(pathTime / 1000000);
 
 	}
 

@@ -39,7 +39,6 @@ public class EmptinessCheck {
 	
 //	public boolean findAcceptingPath() throws Exception{
 	public ArrayList<BDD> findAcceptingPath() throws Exception{
-		productAutomaton.getInitStates().printDot();
 		push(null, productAutomaton.getInitStates());
 		while(! todo.isEmpty()) {
 			
