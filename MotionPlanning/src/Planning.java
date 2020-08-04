@@ -81,10 +81,10 @@ public class Planning{
         		System.out.println("Yay!!!!!");
         		break;
         	}
-//        	initialize.getProductAutomaton().createDot(iterationNumber);
         	iterationNumber++;
         }
-        
+    	initialize.getProductAutomaton().createDot(iterationNumber);
+
         factory.done();
 		
         double endTime = System.nanoTime();
