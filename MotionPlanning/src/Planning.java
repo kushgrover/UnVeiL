@@ -34,14 +34,14 @@ public class Planning
         
         BDD initStateSystem					= label.getLabel(env.getInit());
         rrg.setStartingPoint(env.getInit());
-        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for init state in the produc
+        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for init state in the product automaton
         BDD currentStates					= initStateSystem.id();
         
         double timeForSampling = 0, preTimeSampling = 0, postTimeSampling = 0, pathTime = 0;
         int iterationNumber					= 0;
         
         
-        while(iterationNumber<2000)  //until the property is satisfied
+        while(iterationNumber<5000)  //until the property is satisfied
         {
         	ArrayList<BDD> reachableStates	= exper.ask(currentStates);
         	int currentPathLength			= 1;

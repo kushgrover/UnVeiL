@@ -33,7 +33,8 @@ public class PropertyReader
 //      ProcessBuilder builder3 = new ProcessBuilder(command,"--deterministic",propertyString);
         
         // Using OWL
-        String command					= "/home/kush/Projects/robotmotionplanning/owl/build/install/owl/bin/ltl2ldba";
+//        String command					= "/home/kush/Projects/robotmotionplanning/owl/build/install/owl/bin/ltl2ldba";
+        String command 					= "/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/ltl2ldba";
         ProcessBuilder builder1 		= new ProcessBuilder(command, propertyString);
         ProcessBuilder builder2 		= new ProcessBuilder(command, propertyString);
         ProcessBuilder builder3 		= new ProcessBuilder(command, propertyString);
