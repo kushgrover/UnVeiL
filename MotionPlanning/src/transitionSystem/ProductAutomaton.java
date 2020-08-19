@@ -5,8 +5,8 @@ import net.sf.javabdd.BDDDomain;
 import net.sf.javabdd.BDDException;
 import net.sf.javabdd.BDDFactory;
 import net.sf.javabdd.BDDPairing;
-import printing.PrintAcceptingPath;
-import printing.PrintProductAutomaton;
+import modules.printing.PrintAcceptingPath;
+import modules.printing.PrintProductAutomaton;
 import transitionSystem.emptinessCheck.EmptinessCheck;
 import transitionSystem.extraExceptions.StateException;
 import transitionSystem.extraExceptions.TransitionException;
@@ -19,12 +19,13 @@ import java.util.ArrayList;
  *
  */
 
-public class ProductAutomaton{ 
+public class ProductAutomaton
+{
 	/**
 	 * <p>propertyBDD stores the property automaton
 	 * numVars[0] = number of vars used in property automaton
 	 * numVars[1] = number of vars used in transition level
-	 * numVars[2] = number of vars used in label of transitions in property automaton=number of atomic props used in property automaton
+	 * numVars[2] = number of vars used in label of transitions in property automaton = number of atomic props used in property automaton
 	 * numVars[3] = number of vars used in system automaton = 2 * numAPSystem
 	 * threshold and counter are to add level 1 transitions
 	 * apListProperty and apListSystem are lists of atomic props used in property and automaton resp.</p>
@@ -35,7 +36,7 @@ public class ProductAutomaton{
 	public BDD sampledTransitions, sampledProductTransitions;
 	public static BDDFactory factory;
 	public static int numVars[];
-	public static int numAPSystem, threshold, levelOfTransitions, varsBeforeSystemVars, numAllVars;
+	public static int numAPSystem, threshold, maxLevelOfTransitions, varsBeforeSystemVars, numAllVars;
 	public static ArrayList<String> apListProperty, apListSystem;
 	static BDDPairing oldToNewPairing, newToOldPairing, statesToLabelPairing, newVarToOldVarSystemPairing, oldVarToNewVarSystemPairing;
 	int[] counter;
@@ -48,24 +49,25 @@ public class ProductAutomaton{
 	 * @param propertyBDD BDD for the property automaton
 	 * @throws Exception 
 	 */
-	public ProductAutomaton(BDD propertyBDD) throws Exception{	
-		ProductAutomaton.propertyBDD=propertyBDD;
-		this.productAutomatonBDD=factory.zero();
-		this.sampledTransitions=factory.zero();
-		this.sampledProductTransitions=factory.zero();
+	public ProductAutomaton(BDD propertyBDD) throws Exception
+	{
+		ProductAutomaton.propertyBDD	= propertyBDD;
+		this.productAutomatonBDD		= factory.zero();
+		this.sampledTransitions			= factory.zero();
+		this.sampledProductTransitions	= factory.zero();
 		
-		varsBeforeSystemVars=numVars[0]+numVars[1]+numVars[2];
-		numAllVars=varsBeforeSystemVars+2*numAPSystem;
-		numStates=numberOfStates();
-		numStatesSystem=(int) Math.pow(2, numAPSystem);
+		varsBeforeSystemVars			= numVars[0] + numVars[1] + numVars[2];
+		numAllVars						= varsBeforeSystemVars + 2*numAPSystem;
+		numStates 						= numberOfStates();
+		numStatesSystem					= (int) Math.pow(2, numAPSystem);
 		
 		initializeCounter();
 		
-		oldToNewPairing=oldVarToNewVarPairing();
-		newToOldPairing=newVarToOldVarPairing();
-		statesToLabelPairing=statesToLabelPairing();
-		newVarToOldVarSystemPairing=newVarToOldVarSystemPairing();
-		oldVarToNewVarSystemPairing=oldVarToNewVarSystemPairing();
+		oldToNewPairing					= oldVarToNewVarPairing();
+		newToOldPairing					= newVarToOldVarPairing();
+		statesToLabelPairing 			= statesToLabelPairing();
+		newVarToOldVarSystemPairing		= newVarToOldVarSystemPairing();
+		oldVarToNewVarSystemPairing		= oldVarToNewVarSystemPairing();
 	
 	}
 
@@ -85,10 +87,12 @@ public class ProductAutomaton{
 	/**
 	 * <p>Creating the counter array and initializing all values to 0</p>
 	 */
-	private void initializeCounter(){
-		counter=new int[(int) numStatesSystem];
-		for(int i=0;i<counter.length;i++) {
-			counter[i]=0;
+	private void initializeCounter()
+	{
+		counter		= new int[(int) numStatesSystem];
+		for(int i=0; i<counter.length; i++) 
+		{
+			counter[i]	= 0;
 		}
 	}
 	
@@ -96,11 +100,12 @@ public class ProductAutomaton{
 	 * <p>Creates BDDPairing for changing pre vars to post vars</p>
 	 * @return BDDPairing for changing pre vars to post vars
 	 */
-	public static BDDPairing oldVarToNewVarPairing() {
-		BDDPairing newPairing = factory.makePair();
+	public static BDDPairing oldVarToNewVarPairing() 
+	{
+		BDDPairing newPairing 	= factory.makePair();
 		newPairing.set(factory.getDomain(0), factory.getDomain(1));
-		for(int i=0;i<numAPSystem;i++) {
-			newPairing.set(varsBeforeSystemVars+i,varsBeforeSystemVars+numAPSystem+i);
+		for(int i=0; i<numAPSystem; i++) {
+			newPairing.set(varsBeforeSystemVars + i, 		varsBeforeSystemVars + numAPSystem + i);
 		}
 		return newPairing;
 	}
@@ -109,11 +114,13 @@ public class ProductAutomaton{
 	 * <p>Creates BDDPairing for changing post vars to pre vars</p>
 	 * @return BDDPairing for changing post vars to pre vars
 	 */
-	public static BDDPairing newVarToOldVarPairing() {
-		BDDPairing newPairing = factory.makePair();
+	public static BDDPairing newVarToOldVarPairing() 
+	{
+		BDDPairing newPairing 	= factory.makePair();
 		newPairing.set(factory.getDomain(1), factory.getDomain(0));
-		for(int i=0;i<numAPSystem;i++) {
-			newPairing.set(varsBeforeSystemVars+numAPSystem+i,varsBeforeSystemVars+i);
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			newPairing.set(varsBeforeSystemVars + numAPSystem + i,		varsBeforeSystemVars + i);
 		}
 		return newPairing;
 	}
@@ -123,11 +130,14 @@ public class ProductAutomaton{
 	 * @return BDDPairing for changing pre system vars to label vars
 	 * @throws Exception 
 	 */
-	public static BDDPairing statesToLabelPairing() throws Exception {
-		BDDPairing newPairing = factory.makePair();
-		for(int i=0;i<numAPSystem;i++) {
-			if(findIthSystemVarInLabel(i)!=-1) {
-				newPairing.set(varsBeforeSystemVars+i, numVars[0]+numVars[1]+findIthSystemVarInLabel(i));
+	public static BDDPairing statesToLabelPairing() throws Exception 
+	{
+		BDDPairing newPairing 	= factory.makePair();
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			if(findIthSystemVarInLabel(i) != -1) 
+			{
+				newPairing.set(varsBeforeSystemVars + i, 	numVars[0] + numVars[1] + findIthSystemVarInLabel(i));
 			}
 		}
 		return newPairing;
@@ -138,10 +148,12 @@ public class ProductAutomaton{
 	 * <p>Creates BDDPairing for changing pre system vars to post system vars</p>
 	 * @return BDDPairing for changing pre system vars to post system vars
 	 */
-	public static BDDPairing oldVarToNewVarSystemPairing() {
-		BDDPairing newPairing = factory.makePair();
-		for(int i=0;i<numAPSystem;i++) {
-			newPairing.set(varsBeforeSystemVars+i, varsBeforeSystemVars+numAPSystem+i);
+	public static BDDPairing oldVarToNewVarSystemPairing() 
+	{
+		BDDPairing newPairing 	= factory.makePair();
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			newPairing.set(varsBeforeSystemVars + i,	varsBeforeSystemVars + numAPSystem + i);
 		}
 		return newPairing;
 	}
@@ -150,10 +162,11 @@ public class ProductAutomaton{
 	 * <p>Creates BDDPairing for changing post system vars to pre system vars</p>
 	 * @return BDDPairing for changing post system vars to pre system vars
 	 */
-	public static BDDPairing newVarToOldVarSystemPairing() {
-		BDDPairing newPairing = factory.makePair();
-		for(int i=0;i<numAPSystem;i++) {
-			newPairing.set(varsBeforeSystemVars+numAPSystem+i, varsBeforeSystemVars+i);
+	public static BDDPairing newVarToOldVarSystemPairing() 
+	{
+		BDDPairing newPairing 	= factory.makePair();
+		for(int i=0; i<numAPSystem; i++) {
+			newPairing.set(varsBeforeSystemVars + numAPSystem + i, 		varsBeforeSystemVars + i);
 		}
 		return newPairing;
 	}
@@ -171,15 +184,17 @@ public class ProductAutomaton{
 	 * set the initial state
 	 * @param initStates
 	 */
-	public void setInitState(BDD initStates) {
-		this.initStates=initStates;
+	public void setInitState(BDD initStates) 
+	{
+		this.initStates		= initStates;
 	}
 	
 	/**
 	 * 
 	 * @return BDD representing the product automaton
 	 */
-	public BDD getBDD() {
+	public BDD getBDD() 
+	{
 		return productAutomatonBDD;
 	}
 	
@@ -187,7 +202,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return BDD representing the property automaton
 	 */
-	public static BDD getPropertyBDD() {
+	public static BDD getPropertyBDD() 
+	{
 		return propertyBDD;
 	}
 	
@@ -195,7 +211,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return set of initial states
 	 */
-	public BDD getInitStates() {
+	public BDD getInitStates() 
+	{
 		return initStates;
 	}
 	
@@ -203,7 +220,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return total number of states in the product automaton
 	 */
-	public static int getNumStates() {
+	public static int getNumStates() 
+	{
 		return numStates;
 	}
 	
@@ -211,15 +229,17 @@ public class ProductAutomaton{
 	 * 
 	 * @return number of states in the product automaton
 	 */
-	private static int numberOfStates(){
-		return (int) Math.pow(2, numAPSystem+propertyDomainPre().varNum());
+	private static int numberOfStates()
+	{
+		return (int) Math.pow( 2 , 	numAPSystem + propertyDomainPre().varNum());
 	}
 	
 	/**
 	 * 
 	 * @return all the sampled transitions in the product automaton
 	 */
-	public BDD getSampledProductTransitions() {
+	public BDD getSampledProductTransitions() 
+	{
 		return sampledProductTransitions;
 	}
 	
@@ -227,7 +247,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return BDDDoamin for pre vars of property
 	 */
-	public static BDDDomain propertyDomainPre(){
+	public static BDDDomain propertyDomainPre()
+	{
 		return factory.getDomain(0);
 	}
 
@@ -235,7 +256,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return BDDDoamin for post vars of property
 	 */
-	public static BDDDomain propertyDomainPost(){
+	public static BDDDomain propertyDomainPost()
+	{
 		return factory.getDomain(1);
 	}
 	
@@ -243,7 +265,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return BDDDomain for accepting sets
 	 */
-	public static BDDDomain acceptingSetDomain(){
+	public static BDDDomain acceptingSetDomain()
+	{
 		return factory.getDomain(2);
 	}
 	
@@ -251,7 +274,8 @@ public class ProductAutomaton{
 	 * 
 	 * @return BDDDomain for transition level
 	 */
-	public static BDDDomain transitionLevelDomain(){
+	public static BDDDomain transitionLevelDomain()
+	{
 		return factory.getDomain(3);
 	}
 	
@@ -263,11 +287,13 @@ public class ProductAutomaton{
 	 * @return ith system var in pre vars
 	 * @throws Exception 
 	 */
-	public static BDD ithVarSystemPre(int i) throws Exception {
-		if(i>numAPSystem) {
+	public static BDD ithVarSystemPre(int i) throws Exception 
+	{
+		if(i > numAPSystem) 
+		{
 			throw new Exception("Index out of bounds");
 		}
-		return factory.ithVar(varsBeforeSystemVars+i);
+		return factory.ithVar(varsBeforeSystemVars + i);
 	}
 	
 	/**
@@ -276,11 +302,13 @@ public class ProductAutomaton{
 	 * @return ith system var in post vars
 	 * @throws Exception 
 	 */
-	public static BDD ithVarSystemPost(int i) throws Exception {
-		if(i>numAPSystem) {
+	public static BDD ithVarSystemPost(int i) throws Exception 
+	{
+		if(i > numAPSystem)
+		{
 			throw new Exception("Index out of bounds");
 		}
-		return factory.ithVar(varsBeforeSystemVars+numAPSystem+i);
+		return factory.ithVar(varsBeforeSystemVars + numAPSystem + i);
 	}
 	
 	/**
@@ -289,11 +317,13 @@ public class ProductAutomaton{
 	 * @return ith var used for labels
 	 * @throws Exception 
 	 */
-	public static BDD ithVarLabel(int i) throws Exception {
-		if(i>=numVars[2]) {
+	public static BDD ithVarLabel(int i) throws Exception 
+	{
+		if(i >= numVars[2]) 
+		{
 			throw new Exception("Index out of bounds");
 		}
-		return factory.ithVar(i+numVars[0]+numVars[1]);
+		return factory.ithVar(i + numVars[0] + numVars[1]);
 	}
 	
 	
@@ -303,9 +333,11 @@ public class ProductAutomaton{
 	 * @return set of all pre system vars
 	 * @throws Exception 
 	 */
-	public static BDD allPreSystemVars() throws Exception {
-		BDD allPreVars=factory.one();
-		for(int i=0;i<numAPSystem;i++) {
+	public static BDD allPreSystemVars() throws Exception 
+	{
+		BDD allPreVars		= factory.one();
+		for(int i=0; i<numAPSystem; i++) 
+		{
 			allPreVars.andWith(ithVarSystemPre(i));
 		}
 		return allPreVars;
@@ -316,12 +348,20 @@ public class ProductAutomaton{
 	 * @return set of all post system vars
 	 * @throws Exception 
 	 */
-	public static BDD allPostSystemVars() throws Exception {
-		BDD allPostVars=factory.one();
-		for(int i=0;i<numAPSystem;i++) {
+	public static BDD allPostSystemVars() throws Exception 
+	{
+		BDD allPostVars		= factory.one();
+		for(int i=0; i<numAPSystem; i++) 
+		{
 			allPostVars.andWith(ithVarSystemPost(i));
 		}
 		return allPostVars;
+	}
+	
+	public static BDD allSystemVars() throws Exception
+	{
+		return allPostSystemVars().and(allPreSystemVars());
+		
 	}
 	
 	/**
@@ -329,7 +369,8 @@ public class ProductAutomaton{
 	 * @return set of all pre vars
 	 * @throws Exception 
 	 */
-	public static BDD allPreVars() throws Exception {
+	public static BDD allPreVars() throws Exception 
+	{
 		return allPreSystemVars().andWith(propertyDomainPre().set());
 	}
 	
@@ -338,7 +379,8 @@ public class ProductAutomaton{
 	 * @return set of all post vars
 	 * @throws Exception 
 	 */
-	public static BDD allPostVars() throws Exception {
+	public static BDD allPostVars() throws Exception 
+	{
 		return allPostSystemVars().andWith(propertyDomainPost().set());
 	}
 
@@ -348,9 +390,11 @@ public class ProductAutomaton{
 	 * @return conjuction of all the vars
 	 */
 
-	public static BDD allVars(){
-		BDD allVars=factory.one();
-		for(int i=0;i<numVars[0]+numVars[1]+numVars[2]+numVars[3];i++) {
+	public static BDD allVars()
+	{
+		BDD allVars		= factory.one();
+		for(int i=0; i<numVars[0]+numVars[1]+numVars[2]+numVars[3]; i++) 
+		{
 			allVars.andWith(factory.ithVar(i));
 		}
 		return allVars;
@@ -362,8 +406,9 @@ public class ProductAutomaton{
 	 * @return true if bdd has only pre system vars
 	 * @throws Exception 
 	 */
-	public boolean hasOnlyPreSystemVars(BDD bdd) throws Exception {
-		return !(bdd.support().imp(allPreSystemVars()).isZero());
+	public boolean hasOnlyPreSystemVars(BDD bdd) throws Exception 
+	{
+		return ! (bdd.support().imp(allPreSystemVars()).isZero());
 	}
 	
 	/**
@@ -372,8 +417,9 @@ public class ProductAutomaton{
 	 * @return true if bdd has only post system vars
 	 * @throws Exception 
 	 */
-	public boolean hasOnlyPostSystemVars(BDD bdd) throws Exception {
-		return !(bdd.support().imp(allPostSystemVars()).isZero());
+	public boolean hasOnlyPostSystemVars(BDD bdd) throws Exception 
+	{
+		return ! (bdd.support().imp(allPostSystemVars()).isZero());
 	}
 	
 	/**
@@ -382,8 +428,9 @@ public class ProductAutomaton{
 	 * @return true if bdd has only post system vars
 	 * @throws Exception 
 	 */
-	public boolean hasOnlyPreVars(BDD bdd) throws Exception {
-		return !(bdd.support().imp(allPreVars()).isZero());
+	public boolean hasOnlyPreVars(BDD bdd) throws Exception 
+	{
+		return ! (bdd.support().imp(allPreVars()).isZero());
 	}
 	
 	/**
@@ -392,8 +439,9 @@ public class ProductAutomaton{
 	 * @return true if bdd has only post system vars
 	 * @throws Exception 
 	 */
-	public boolean hasOnlyPostVars(BDD bdd) throws Exception {
-		return !(bdd.support().imp(allPostVars()).isZero());
+	public boolean hasOnlyPostVars(BDD bdd) throws Exception 
+	{
+		return ! (bdd.support().imp(allPostVars()).isZero());
 	}
 
 	
@@ -402,9 +450,11 @@ public class ProductAutomaton{
 	 * @return BDD representing the set of final states
 	 * @throws Exception 
 	 */
-	public BDD finalStates() throws Exception{
-		BDD temp=removeAllExceptPostVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
-		if(temp.exist(propertyDomainPost().set()).isZero()) {
+	public BDD finalStates() throws Exception
+	{
+		BDD temp	= removeAllExceptPostVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
+		if(temp.exist(propertyDomainPost().set()).isZero()) 
+		{
 			return factory.zero();
 		}
 		return changePostVarsToPreVars(temp);
@@ -415,7 +465,8 @@ public class ProductAutomaton{
 	 * @return
 	 * @throws Exception 
 	 */
-	public BDD preImageOfFinalStates() throws Exception {
+	public BDD preImageOfFinalStates() throws Exception 
+	{
 		return removeAllExceptPreVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
 	}
 	
@@ -435,11 +486,13 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public BDD changePreVarsToPostVars(BDD bdd) throws StateException, Exception {
-		if(! hasOnlyPreVars(bdd)) {
+	public BDD changePreVarsToPostVars(BDD bdd) throws StateException, Exception 
+	{
+		if(! hasOnlyPreVars(bdd)) 
+		{
 			throw new StateException("BDD has extra vars");
 		}
-		BDD temp=bdd.replace(oldToNewPairing);
+		BDD temp	= bdd.replace(oldToNewPairing);
 		return temp;
 	}
 	
@@ -449,11 +502,13 @@ public class ProductAutomaton{
 	 * @return
 	 * @throws Exception 
 	 */
-	public BDD changePostVarsToPreVars(BDD bdd) throws Exception {
-		if(! hasOnlyPostVars(bdd)) {
+	public BDD changePostVarsToPreVars(BDD bdd) throws Exception 
+	{
+		if(! hasOnlyPostVars(bdd)) 
+		{
 			throw new StateException("BDD has extra vars");
 		}
-		BDD temp=bdd.replace(newToOldPairing);
+		BDD temp	= bdd.replace(newToOldPairing);
 		return temp;
 	}
 	
@@ -463,11 +518,13 @@ public class ProductAutomaton{
 	 * @return
 	 * @throws Exception 
 	 */
-	public BDD changePostSystemVarsToPreSystemVars(BDD bdd) throws Exception {
-		if(! hasOnlyPostSystemVars(bdd)) {
+	public BDD changePostSystemVarsToPreSystemVars(BDD bdd) throws Exception 
+	{
+		if(! hasOnlyPostSystemVars(bdd)) 
+		{
 			throw new StateException("BDD has extra vars");
 		}
-		BDD temp=bdd.replace(newVarToOldVarSystemPairing);
+		BDD temp	= bdd.replace(newVarToOldVarSystemPairing);
 		return temp;
 	}
 	
@@ -477,11 +534,13 @@ public class ProductAutomaton{
 	 * @return
 	 * @throws Exception 
 	 */
-	public BDD changePreSystemVarsToPostSystemVars(BDD bdd) throws Exception {
-		if(! hasOnlyPreSystemVars(bdd)) {
+	public BDD changePreSystemVarsToPostSystemVars(BDD bdd) throws Exception 
+	{
+		if(! hasOnlyPreSystemVars(bdd)) 
+		{
 			throw new StateException("BDD has extra vars");
 		}
-		BDD temp=bdd.replace(oldVarToNewVarSystemPairing);
+		BDD temp	= bdd.replace(oldVarToNewVarSystemPairing);
 		return temp;
 	}
 	
@@ -494,31 +553,44 @@ public class ProductAutomaton{
 	 * @return BDD with only pre vars
 	 * @throws Exception 
 	 */
-	public BDD removeAllExceptPreVars(BDD bdd) throws Exception {
-		BDD temp=bdd;
+	public BDD removeAllExceptPreVars(BDD bdd) throws Exception 
+	{
+		BDD temp	= bdd;
 		try{
-			temp=temp.exist(propertyDomainPost().set());
+			temp	= temp.exist(propertyDomainPost().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
 		try{
-			temp=temp.exist(acceptingSetDomain().set());
+			temp	= temp.exist(acceptingSetDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
 		try{
-			temp=temp.exist(transitionLevelDomain().set());
+			temp	= temp.exist(transitionLevelDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		for(int i=0;i<numAPSystem;i++) {
+		for(int i=0; i<numAPSystem; i++) 
+		{
 			try{
-				temp=temp.exist(ithVarSystemPost(i));
+				temp	= temp.exist(ithVarSystemPost(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
-		for(int i=0;i<numVars[2];i++) {
+		for(int i=0; i<numVars[2]; i++) 
+		{
 			try{
-				temp=temp.exist(ithVarLabel(i));
+				temp	= temp.exist(ithVarLabel(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
 		return temp;
 	}
@@ -529,31 +601,44 @@ public class ProductAutomaton{
 	 * @return BDD with only post vars
 	 * @throws Exception 
 	 */
-	public BDD removeAllExceptPostVars(BDD bdd) throws Exception {
-		BDD temp=bdd;
+	public BDD removeAllExceptPostVars(BDD bdd) throws Exception 
+	{
+		BDD temp	= bdd;
 		try{
-			temp=temp.exist(propertyDomainPre().set());
+			temp 	= temp.exist(propertyDomainPre().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
 		try {
-			temp=temp.exist(acceptingSetDomain().set());
+			temp	= temp.exist(acceptingSetDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
 		try {
-			temp=temp.exist(transitionLevelDomain().set());
+			temp	= temp.exist(transitionLevelDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		for(int i=0;i<numVars[2];i++) {
+		for(int i=0; i<numVars[2]; i++) 
+		{
 			try {
-				temp=temp.exist(ithVarLabel(i));
+				temp	= temp.exist(ithVarLabel(i));
+			} catch(BDDException E) 
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E) {}
 		}
-		for(int i=0;i<numAPSystem;i++) {
+		for(int i=0; i<numAPSystem; i++) 
+		{
 			try {
-				temp=temp.exist(ithVarSystemPre(i));
+				temp	= temp.exist(ithVarSystemPre(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
 		return temp;
 	}
@@ -564,35 +649,56 @@ public class ProductAutomaton{
 	 * @return BDD with only pre system vars
 	 * @throws Exception 
 	 */
-	public BDD removeAllExceptPreSystemVars(BDD bdd) throws Exception {
-		BDD temp=bdd;
-		try{
-			temp=temp.exist(propertyDomainPre().set());
+	public BDD removeAllExceptPreSystemVars(BDD bdd) throws Exception 
+	{
+		BDD temp	= bdd;
+		try
+		{
+			temp	= temp.exist(propertyDomainPre().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(propertyDomainPost().set());
+		try
+		{
+			temp	= temp.exist(propertyDomainPost().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(acceptingSetDomain().set());
+		try
+		{
+			temp	= temp.exist(acceptingSetDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(transitionLevelDomain().set());
+		try
+		{
+			temp	= temp.exist(transitionLevelDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		for(int i=0;i<numAPSystem;i++) {
-			try{
-				temp=temp.exist(ithVarSystemPost(i));
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			try
+			{
+				temp	= temp.exist(ithVarSystemPost(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
-		for(int i=0;i<numVars[2];i++) {
-			try{
-				temp=temp.exist(ithVarLabel(i));
+		for(int i=0; i<numVars[2]; i++) 
+		{
+			try
+			{
+				temp	= temp.exist(ithVarLabel(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
 		return temp;
 	}
@@ -603,35 +709,56 @@ public class ProductAutomaton{
 	 * @return BDD with only post system vars
 	 * @throws Exception 
 	 */
-	public BDD removeAllExceptPostSystemVars(BDD bdd) throws Exception {
-		BDD temp=bdd;
-		try{
+	public BDD removeAllExceptPostSystemVars(BDD bdd) throws Exception 
+	{
+		BDD temp	= bdd;
+		try
+		{
 			temp=temp.exist(propertyDomainPre().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(propertyDomainPost().set());
+		try
+		{
+			temp	= temp.exist(propertyDomainPost().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(acceptingSetDomain().set());
+		try
+		{
+			temp	= temp.exist(acceptingSetDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(transitionLevelDomain().set());
+		try
+		{
+			temp	= temp.exist(transitionLevelDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		for(int i=0;i<numAPSystem;i++) {
-			try{
-				temp=temp.exist(ithVarSystemPre(i));
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			try
+			{
+				temp	= temp.exist(ithVarSystemPre(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
-		for(int i=0;i<numVars[2];i++) {
-			try{
-				temp=temp.exist(ithVarLabel(i));
+		for(int i=0; i<numVars[2]; i++) 
+		{
+			try
+			{
+				temp	= temp.exist(ithVarLabel(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
 		return temp;
 	}
@@ -643,12 +770,14 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public BDD preImage(BDD states) throws StateException, Exception {
-		if(! hasOnlyPreVars(states)) {
+	public BDD preImage(BDD states) throws StateException, Exception 
+	{
+		if(! hasOnlyPreVars(states)) 
+		{
 			throw new StateException("BDD has extra vars");
 		}
-		BDD temp=factory.zero();
-		temp=temp.or(changePreVarsToPostVars(states));
+		BDD temp	= factory.zero();
+		temp		= temp.or(changePreVarsToPostVars(states));
 		return removeAllExceptPreVars(productAutomatonBDD.and(temp));
 	}
 	
@@ -659,8 +788,10 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public BDD postImage(BDD states) throws StateException, Exception {
-		if(! hasOnlyPreVars(states)) {
+	public BDD postImage(BDD states) throws StateException, Exception 
+	{
+		if(! hasOnlyPreVars(states)) 
+		{
 			throw new StateException("BDD has extra vars");
 		}
 		return changePostVarsToPreVars(removeAllExceptPostVars(productAutomatonBDD.and(states)));
@@ -672,7 +803,8 @@ public class ProductAutomaton{
 	 * @return first states of all accepting transitions of ith accepting set
 	 * @throws Exception
 	 */
-	public BDD getAcceptingStates(int i) throws Exception {
+	public BDD getAcceptingStates(int i) throws Exception 
+	{
 		return removeAllExceptPreVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(i)));
 	}
 	
@@ -692,13 +824,17 @@ public class ProductAutomaton{
 	 * @return index of var in apListProperty
 	 * @throws Exception 
 	 */
-	private static int findIthSystemVarInLabel(int i) throws Exception {
-		if(i>numAPSystem) {
+	private static int findIthSystemVarInLabel(int i) throws Exception 
+	{
+		if(i > numAPSystem) 
+		{
 			throw new Exception();
 		}
-		String toSearch = apListSystem.get(i);
-		for(int j=0;j<numVars[2];j++) {
-			if(apListProperty.get(j).equals(toSearch)) {
+		String toSearch		= apListSystem.get(i);
+		for(int j=0; j<numVars[2]; j++) 
+		{
+			if(apListProperty.get(j).equals(toSearch)) 
+			{
 				return j;
 			}
 		}
@@ -713,12 +849,15 @@ public class ProductAutomaton{
 	 */
 	private static int findIthLabelVarInSystem(int i) throws Exception
 	{
-		if(i>numVars[2]) {
+		if(i>numVars[2]) 
+		{
 			throw new Exception("Index out of bounds");
 		}
 		String toSearch=apListProperty.get(i);
-		for(int j=0;j<numAPSystem;j++) {
-			if(toSearch.equals(apListSystem.get(j))) {
+		for(int j=0; j<numAPSystem; j++) 
+		{
+			if(toSearch.equals(apListSystem.get(j))) 
+			{
 				return j;
 			}
 		}
@@ -732,20 +871,25 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	private BDD restrictToLabelVarsInPreSystem(BDD states) throws StateException, Exception{
-		if(! hasOnlyPreSystemVars(states)) {
+	private BDD restrictToLabelVarsInPreSystem(BDD states) throws StateException, Exception
+	{
+		if(! hasOnlyPreSystemVars(states)) 
+		{
 			throw new StateException("Set of States has other variables than System vars");
 		}
-		BDD temp=states.exist(propertyDomainPre().set());
-		temp=temp.exist(acceptingSetDomain().set());
-		temp=temp.exist(transitionLevelDomain().set());
-		for(int i=0;i<numAPSystem;i++) {
+		BDD temp	= states.exist(propertyDomainPre().set());
+		temp		= temp.exist(acceptingSetDomain().set());
+		temp		= temp.exist(transitionLevelDomain().set());
+		for(int i=0; i<numAPSystem; i++) 
+		{
 			temp.exist(ithVarSystemPost(i));
-			if(findIthSystemVarInLabel(i)==-1) {
+			if(findIthSystemVarInLabel(i)==-1) 
+			{
 				temp.exist(ithVarSystemPre(i));
 			}
 		}
-		for(int i=0;i<numVars[2];i++) {
+		for(int i=0; i<numVars[2]; i++) 
+		{
 			temp.exist(ithVarLabel(i));
 		}
 		return temp;
@@ -757,30 +901,47 @@ public class ProductAutomaton{
 	 * @return BDD with only label vars
 	 * @throws Exception 
 	 */
-	public BDD removeAllExceptLabelVars(BDD bdd) throws Exception {
-		BDD temp=bdd;
-		try {
-			temp=temp.exist(propertyDomainPre().set());
+	public BDD removeAllExceptLabelVars(BDD bdd) throws Exception 
+	{
+		BDD temp	= bdd;
+		try 
+		{
+			temp 	= temp.exist(propertyDomainPre().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(propertyDomainPost().set());
+		try
+		{
+			temp	= temp.exist(propertyDomainPost().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		try{
-			temp=temp.exist(acceptingSetDomain().set());
+		try
+		{
+			temp	= temp.exist(acceptingSetDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
 		}
-		catch(BDDException E){}
-		temp=temp.exist(transitionLevelDomain().set());
-		for(int i=0;i<numAPSystem;i++) {
-			try{
-				temp=temp.exist(ithVarSystemPost(i));
+		temp		= temp.exist(transitionLevelDomain().set());
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			try
+			{
+				temp	= temp.exist(ithVarSystemPost(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
-			try{
-				temp=temp.exist(ithVarSystemPre(i));
+			try
+			{
+				temp	= temp.exist(ithVarSystemPre(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
 			}
-			catch(BDDException E){}
 		}
 		return temp;
 	}
@@ -792,13 +953,16 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public BDD findLabelBDDFromSystemBDD(BDD states) throws StateException, Exception{
-		if(! hasOnlyPreSystemVars(states)) {
+	public BDD findLabelBDDFromSystemBDD(BDD states) throws StateException, Exception
+	{
+		if(! hasOnlyPreSystemVars(states)) 
+		{
 			throw new StateException("Set of States has other variables than System vars");
 		}
-		BDD temp=restrictToLabelVarsInPreSystem(states);
-		temp=removeAllExceptLabelVars(temp.replace(statesToLabelPairing));
-		if(temp.isOne()) {
+		BDD temp	= restrictToLabelVarsInPreSystem(states);
+		temp		= removeAllExceptLabelVars(temp.replace(statesToLabelPairing));
+		if(temp.isOne()) 
+		{
 			return factory.zero();
 		}
 		return temp;
@@ -812,7 +976,8 @@ public class ProductAutomaton{
 	public static BDD getLabelEquivalence() throws Exception
 	{
 		BDD equivalence=factory.one();
-		for(int i=0;i<numVars[2];i++) {
+		for(int i=0; i<numVars[2]; i++) 
+		{
 			equivalence.andWith(ithVarLabel(i).biimp(ithVarSystemPost(findIthLabelVarInSystem(i))));
 		}
 		return equivalence;
@@ -833,7 +998,8 @@ public class ProductAutomaton{
 	 * <p>Remove a set of transitions from the productAutomaton</p>
 	 * @param transition
 	 */
-	public void removeTransitions(BDD transitions) {
+	public void removeTransitions(BDD transitions) 
+	{
 		productAutomatonBDD=productAutomatonBDD.and(productAutomatonBDD.and(transitions).not());
 	}
 	
@@ -843,11 +1009,14 @@ public class ProductAutomaton{
 	 * @return level of the transition
 	 * @throws TransitionException
 	 */
-	public int getLevel(BDD transition) throws TransitionException {
-		if(transition.pathCount()>1) {
+	public int getLevel(BDD transition) throws TransitionException 
+	{
+		if(transition.pathCount() > 1) 
+		{
 			throw new TransitionException("More than one transition");
 		}
-		else if(transition.pathCount()<1) {
+		else if(transition.pathCount() < 1) 
+		{
 			throw new TransitionException("No transition exists");
 		}
 		return transition.scanVar(transitionLevelDomain()).intValue();
@@ -863,9 +1032,10 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public int getLevel(BDD fromState, BDD toState) throws StateException, Exception {
-		BDD toStatePrime=changePreVarsToPostVars(toState);
-		BDD transition=productAutomatonBDD.and(fromState).and(toStatePrime);
+	public int getLevel(BDD fromState, BDD toState) throws StateException, Exception 
+	{
+		BDD toStatePrime	= changePreVarsToPostVars(toState);
+		BDD transition		= productAutomatonBDD.and(fromState).and(toStatePrime);
 		return getLevel(transition);
 	}
 	
@@ -875,12 +1045,14 @@ public class ProductAutomaton{
 	 * @param level
 	 * @throws TransitionException 
 	 */
-	public void setLevel(BDD transition, int level) throws TransitionException {
-		if(transition.and(productAutomatonBDD).isZero()) {
+	public void setLevel(BDD transition, int level) throws TransitionException 
+	{
+		if(transition.and(productAutomatonBDD).isZero()) 
+		{
 			throw new TransitionException("Transition doesn't exist");
 		}
 		removeTransitions(transition.and(transitionLevelDomain().ithVar(2)));
-		transition=transition.exist(transitionLevelDomain().set()).and(transitionLevelDomain().ithVar(level));
+		transition	= transition.exist(transitionLevelDomain().set()).and(transitionLevelDomain().ithVar(level));
 		productAutomatonBDD.orWith(transition);
 	}
 	
@@ -892,12 +1064,14 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public void setLevel(BDD fromState, BDD toState, int level) throws StateException, Exception {
-		if(! hasOnlyPreVars(fromState) || ! hasOnlyPreVars(toState)) {
+	public void setLevel(BDD fromState, BDD toState, int level) throws StateException, Exception 
+	{
+		if(! hasOnlyPreVars(fromState) 	||	 ! hasOnlyPreVars(toState)) 
+		{
 			throw new StateException("Extra vars appearing in a state BDD");
 		}
-		BDD toStatePrime=changePreVarsToPostVars(toState);
-		BDD transition=productAutomatonBDD.and(fromState).and(toStatePrime);
+		BDD toStatePrime	= changePreVarsToPostVars(toState);
+		BDD transition		= productAutomatonBDD.and(fromState).and(toStatePrime);
 		setLevel(transition, level);
 	}
 	
@@ -906,9 +1080,10 @@ public class ProductAutomaton{
 	 * @param transition
 	 * @return
 	 */
-	public ArrayList<Integer> findAcceptingSets(BDD transition) {
-		int accSet=transition.scanVar(acceptingSetDomain()).intValue();
-		ArrayList<Integer>temp= new ArrayList<Integer>();
+	public ArrayList<Integer> findAcceptingSets(BDD transition) 
+	{
+		int accSet				= transition.scanVar(acceptingSetDomain()).intValue();
+		ArrayList<Integer>temp	= new ArrayList<Integer>();
 		temp.add(accSet);
 		return temp;
 	}
@@ -921,13 +1096,15 @@ public class ProductAutomaton{
 	 * @return 
 	 * @throws Exception 
 	 */
-	public BDD addTransition(BDD fromState, BDD toState, int level) throws Exception {
-		if(! hasOnlyPreVars(fromState) || ! hasOnlyPreVars(toState)) {
+	public BDD addTransition(BDD fromState, BDD toState, int level) throws Exception 
+	{
+		if(! hasOnlyPreVars(fromState) 	||	! hasOnlyPreVars(toState)) 
+		{
 			throw new StateException("Extra vars appearing in a state BDD");
 		}
-		BDD toStatePrime=changePreSystemVarsToPostSystemVars(toState);
-		BDD transition=propertyBDD.and(getLabelEquivalence()).and(fromState).and(toStatePrime).and(transitionLevelDomain().ithVar(level));
-		productAutomatonBDD=productAutomatonBDD.or(transition);
+		BDD toStatePrime		= changePreSystemVarsToPostSystemVars(toState);
+		BDD transition			= propertyBDD.and(getLabelEquivalence()).and(fromState).and(toStatePrime).and(transitionLevelDomain().ithVar(level));
+		productAutomatonBDD		= productAutomatonBDD.or(transition);
 		return transition;
 	}
 	
@@ -937,12 +1114,14 @@ public class ProductAutomaton{
 	 * @param toState
 	 * @throws Exception
 	 */
-	public void removeTransition(BDD fromState, BDD toState) throws Exception {
-		if(! hasOnlyPreVars(fromState) || ! hasOnlyPreVars(toState)) {
+	public void removeTransition(BDD fromState, BDD toState) throws Exception 
+	{
+		if(! hasOnlyPreVars(fromState) 	|| 	! hasOnlyPreVars(toState)) 
+		{
 			throw new StateException("Extra vars appearing in a state BDD");
 		}
-		BDD toStatePrime=changePreSystemVarsToPostSystemVars(toState);
-		productAutomatonBDD=productAutomatonBDD.and((propertyBDD.and(getLabelEquivalence()).and(fromState).and(toStatePrime)).not());
+		BDD toStatePrime		= changePreSystemVarsToPostSystemVars(toState);
+		productAutomatonBDD		= productAutomatonBDD.and((propertyBDD.and(getLabelEquivalence()).and(fromState).and(toStatePrime)).not());
 	}
 	
 	/**
@@ -953,13 +1132,15 @@ public class ProductAutomaton{
 	 * @throws Exception 
 	 * @throws StateException 
 	 */
-	public BDD getTransitions(BDD fromStates, BDD toStates) throws StateException, Exception {
-		if(! hasOnlyPreVars(fromStates) || ! hasOnlyPreVars(toStates)) {
+	public BDD getTransitions(BDD fromStates, BDD toStates) throws StateException, Exception 
+	{
+		if(! hasOnlyPreVars(fromStates) 	||	 ! hasOnlyPreVars(toStates)) 
+		{
 			throw new StateException("Extra vars appearing in a state BDD");
 		}
-		BDD transitions=changePreVarsToPostVars(toStates);
-		transitions=transitions.and(fromStates);
-		transitions=productAutomatonBDD.and(transitions);
+		BDD transitions			= changePreVarsToPostVars(toStates);
+		transitions				= transitions.and(fromStates);
+		transitions				= productAutomatonBDD.and(transitions);
 		return transitions;
 	}
 
@@ -971,7 +1152,8 @@ public class ProductAutomaton{
 	 * @param filters 
 	 * @throws Exception 
 	 */
-	public void addTransitions(BDD transitions) throws Exception{
+	public void addTransitions(BDD transitions) throws Exception
+	{
 		productAutomatonBDD=productAutomatonBDD.or(transitions);		
 	}
 	
@@ -981,7 +1163,8 @@ public class ProductAutomaton{
 	 * @return first state in the transition i.e if (p->q) is the transition then return p
 	 * @throws Exception
 	 */
-	public BDD getFirstState(BDD transition) throws Exception {
+	public BDD getFirstState(BDD transition) throws Exception 
+	{
 		return removeAllExceptPreVars(transition);
 	}
 	
@@ -991,7 +1174,8 @@ public class ProductAutomaton{
 	 * @return second state in the transition i.e if (p->q) is the transition then return q
 	 * @throws Exception
 	 */
-	public BDD getSecondState(BDD transition) throws Exception {
+	public BDD getSecondState(BDD transition) throws Exception 
+	{
 		return changePostVarsToPreVars(removeAllExceptPostVars(transition));
 	}
 	
@@ -1001,7 +1185,8 @@ public class ProductAutomaton{
 	 * @return second state in the transition i.e if (p->q) is the transition then return q
 	 * @throws Exception
 	 */
-	public BDD getFirstStateSystem(BDD transition) throws Exception {
+	public BDD getFirstStateSystem(BDD transition) throws Exception 
+	{
 		return removeAllExceptPreSystemVars(transition);
 	}
 	
@@ -1011,7 +1196,8 @@ public class ProductAutomaton{
 	 * @return second state in the transition i.e if (p->q) is the transition then return q
 	 * @throws Exception
 	 */
-	public BDD getSecondStateSystem(BDD transition) throws Exception {
+	public BDD getSecondStateSystem(BDD transition) throws Exception 
+	{
 		return changePostSystemVarsToPreSystemVars(removeAllExceptPostSystemVars(transition));
 	}
 	
@@ -1022,7 +1208,8 @@ public class ProductAutomaton{
 	 * @return primed first state in the transition i.e if (p->q) is the transition then return p'
 	 * @throws Exception
 	 */
-	public BDD getFirstStatePrime(BDD transition) throws Exception {
+	public BDD getFirstStatePrime(BDD transition) throws Exception 
+	{
 		return changePreVarsToPostVars(removeAllExceptPreVars(transition));
 	}
 	
@@ -1032,7 +1219,8 @@ public class ProductAutomaton{
 	 * @return primed second state in the transition i.e if (p->q) is the transition then return q'
 	 * @throws Exception
 	 */
-	public BDD getSecondStatePrime(BDD transition) throws Exception {
+	public BDD getSecondStatePrime(BDD transition) throws Exception 
+	{
 		return removeAllExceptPostVars(transition);
 	}
 	
@@ -1042,7 +1230,8 @@ public class ProductAutomaton{
 	 * @return primed second state in the transition i.e if (p->q) is the transition then return q'
 	 * @throws Exception
 	 */
-	public BDD getSecondStateSystemPrime(BDD transition) throws Exception {
+	public BDD getSecondStateSystemPrime(BDD transition) throws Exception 
+	{
 		return removeAllExceptPostSystemVars(transition);
 	}
 	
@@ -1052,7 +1241,8 @@ public class ProductAutomaton{
 	 * @return primed second state in the transition i.e if (p->q) is the transition then return q'
 	 * @throws Exception
 	 */
-	public BDD getFirstStateSystemPrime(BDD transition) throws Exception {
+	public BDD getFirstStateSystemPrime(BDD transition) throws Exception 
+	{
 		return changePostSystemVarsToPreSystemVars(removeAllExceptPostSystemVars(transition));
 	}
 	
@@ -1061,7 +1251,8 @@ public class ProductAutomaton{
 	 * @param i
 	 * @return all accepting transitions of ith accepting set
 	 */
-	public BDD getAcceptingTransitions(int i) {
+	public BDD getAcceptingTransitions(int i) 
+	{
 		return productAutomatonBDD.and(acceptingSetDomain().ithVar(i));
 	}
 	
@@ -1080,17 +1271,21 @@ public class ProductAutomaton{
 	 * @return ID of the state
 	 * @throws Exception 
 	 */
-	public int getSystemStateID(BDD fromState) throws Exception{
-		if(fromState.satCount(allPreSystemVars())>1) {
+	public int getSystemStateID(BDD fromState) throws Exception
+	{
+		if(fromState.satCount(allPreSystemVars())>1) 
+		{
 			throw new StateException("More than one state");
-		}
-		else if(fromState.satCount(allPreSystemVars())==0) {
+		} else if(fromState.satCount(allPreSystemVars())==0) 
+		{
 			throw new StateException("State desn't exist");
 		}
-		int stateID=0;
-		for(int i=0;i<numAPSystem;i++) {
-			if(! fromState.and(ithVarSystemPre(i)).equals(factory.zero())) {
-				stateID+=(int)Math.pow(2, i);
+		int stateID		= 0;
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			if(! fromState.and(ithVarSystemPre(i)).equals(factory.zero())) 
+			{
+				stateID	+= (int)Math.pow(2, i);
 			}
 		}
 		return stateID;
@@ -1102,17 +1297,21 @@ public class ProductAutomaton{
 	 * @return ID of the state
 	 * @throws Exception 
 	 */
-	public int getStateID(BDD fromState) throws Exception{
-		if(fromState.satCount(allPreVars())>1) {
+	public int getStateID(BDD fromState) throws Exception
+	{
+		if(fromState.satCount(allPreVars())>1) 
+		{
 			throw new StateException("More than one state");
-		}
-		else if(fromState.satCount(allPreVars())==0) {
+		} else if(fromState.satCount(allPreVars()) == 0) 
+		{
 			throw new StateException("State desn't exist");
 		}
-		int stateID=fromState.scanVar(propertyDomainPre()).intValue();
-		for(int i=0;i<numAPSystem;i++) {
-			if(! fromState.and(ithVarSystemPre(i)).equals(factory.zero())) {
-				stateID+=(int)Math.pow(2, i+propertyDomainPre().varNum());
+		int stateID		= fromState.scanVar(propertyDomainPre()).intValue();
+		for(int i=0; i<numAPSystem; i++) 
+		{
+			if(! fromState.and(ithVarSystemPre(i)).equals(factory.zero())) 
+			{
+				stateID	+= (int)Math.pow(2, i+propertyDomainPre().varNum());
 			}
 		}
 		return stateID;
@@ -1124,22 +1323,24 @@ public class ProductAutomaton{
 	 * @return BDD for the state with stateID id.
 	 * @throws Exception
 	 */
-	public BDD getStateFromID(int id) throws Exception {
-	
-		BDD state=factory.one();
-		int i=numAPSystem-1;
+	public BDD getStateFromID(int id) throws Exception 
+	{
+		BDD state		= factory.one();
+		int i			= numAPSystem-1;
 		
-		while(i>=0) {
-			if(id/(int) Math.pow(2, i+propertyDomainPre().varNum())!=0) {
-				id=(int) (id%Math.pow(2, i+propertyDomainPre().varNum()));
-				state=state.and(ithVarSystemPre(i));
-			}
-			else {
-				state=state.and(ithVarSystemPre(i).not());
+		while(i >= 0) 
+		{
+			if(id/(int) Math.pow(2, i+propertyDomainPre().varNum()) 	!= 	0) 
+			{
+				id		= (int) (id%Math.pow(2, i+propertyDomainPre().varNum()));
+				state	= state.and(ithVarSystemPre(i));
+			} else 
+			{
+				state	= state.and(ithVarSystemPre(i).not());
 			}
 			i--;
 		}
-		state=state.and(propertyDomainPre().ithVar(id));
+		state			= state.and(propertyDomainPre().ithVar(id));
 		return state;
 	}
 	
@@ -1149,8 +1350,9 @@ public class ProductAutomaton{
 	 * @return counter value for that state
 	 * @throws StateException
 	 */
-	public int increaseCounter(BDD fromState) throws Exception{
-		int stateID=getSystemStateID(fromState);
+	public int increaseCounter(BDD fromState) throws Exception
+	{
+		int stateID		= getSystemStateID(fromState);
 		counter[stateID]++;
 		return counter[stateID];
 	}
@@ -1169,8 +1371,9 @@ public class ProductAutomaton{
  */
 
 	
-	public ArrayList<BDD> findAcceptingPath() throws Exception {
-		EmptinessCheck newCheck= new EmptinessCheck(this);
+	public ArrayList<BDD> findAcceptingPath() throws Exception 
+	{
+		EmptinessCheck newCheck	= new EmptinessCheck(this);
 		return newCheck.findAcceptingPath();
 	}
 
@@ -1190,7 +1393,8 @@ public class ProductAutomaton{
 	 * <p>Create a dot file representing the product automaton</p>
 	 * @throws Exception 
 	 */
-	public void createDot(int i) throws Exception{
+	public void createDot(int i) throws Exception
+	{
 		new PrintProductAutomaton(this, i);
 	}
 
@@ -1199,8 +1403,37 @@ public class ProductAutomaton{
 	 * @param path
 	 * @throws Exception
 	 */
-	public void printPath(ArrayList<BDD> path) throws Exception {
+	public void printPath(ArrayList<BDD> path) throws Exception 
+	{
 		new PrintAcceptingPath(path);
+	}
+
+
+
+
+
+	public static BDD interchangePrePostVars(BDD bdd) 
+	{
+		BDDPairing newPairing 	= factory.makePair();
+		newPairing.set(factory.getDomain(0), factory.getDomain(1));
+		for(int i=0; i<numAPSystem; i++) {
+			newPairing.set(varsBeforeSystemVars + i, 	  varsBeforeSystemVars + numAPSystem + i);
+			newPairing.set(varsBeforeSystemVars + numAPSystem + i, 		varsBeforeSystemVars + i);
+		}
+		return bdd.replace(newPairing);
+	}
+
+
+
+
+
+	public boolean isAcceptingTransition(BDD transition) throws Exception 
+	{
+		if(productAutomatonBDD.and(propertyBDD.and(getLabelEquivalence()).and(transition).and(transitionLevelDomain().ithVar(3)).and(acceptingSetDomain().ithVar(0).not())).isZero())
+		{
+			return false;
+		}
+		return true;
 	}
 	
 	
@@ -1210,8 +1443,6 @@ public class ProductAutomaton{
 	
 //-------------------------------------------------------------------------------------------------------------------	
 
-
-	
 	
 }
 

@@ -1,17 +1,12 @@
 package transitionSystem;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-
-import jhoafparser.parser.generated.ParseException;
-import net.sf.javabdd.BDD;
+import modules.PlanningSettings;
+import modules.motionPlanner.Environment;
+import modules.motionPlanner.RRG;
 import net.sf.javabdd.BDDFactory;
-import transitionSystem.TSparser.BuchiAutomataParser;
+import net.sf.javabdd.BuDDyFactory;
+import transitionSystem.reader.EnvironmentReader;
+import transitionSystem.reader.PropertyReader;
 
 /**
  * <p>Creates the BDD of the property and Initializes the product automata</p>
@@ -22,62 +17,37 @@ import transitionSystem.TSparser.BuchiAutomataParser;
 public class Initialize
 {
 	ProductAutomaton productAutomaton;
+	static Environment env;
+	RRG rrg;
+	static BDDFactory factory;
 	
-	public Initialize(BDDFactory factory, 
-			int threshold, 
-			int levelOfTransitions, 
-			ArrayList<String> apListSystem,
-			String directory) throws Exception{
+	@SuppressWarnings("static-access")
+	public Initialize() throws Exception
+	{
 		
-		BufferedReader propertyReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/"+directory+"/property.pr"));
-        String propertyString=propertyReader.readLine();
-        propertyReader.close();
-        System.out.println("\nProperty to satisfty: "+propertyString);
-        
-//		String command="/home/kush/Projects/robotmotionplanning/spot-2.8.5/bin/ltl2tgba";
-        String command="/home/kush/Projects/robotmotionplanning/owl/build/install/owl/bin/ltl2ldba";
+		factory			= BuDDyFactory.init(20, (int) PlanningSettings.get("planning.bddFactoryCacheSize"));
+		ProductAutomaton.factory				= factory;
+        ProductAutomaton.threshold				= (int) PlanningSettings.get("planning.transitionThreshold");
 		
 		
-//      ProcessBuilder builder1 = new ProcessBuilder(command,"--deterministic",propertyString);
-        ProcessBuilder builder1 = new ProcessBuilder(command,propertyString);
-        builder1.redirectErrorStream(true);
-        Process p1 = builder1.start();
-        
-//      ProcessBuilder builder2 = new ProcessBuilder(command,"--deterministic",propertyString);
-        ProcessBuilder builder2 = new ProcessBuilder(command,propertyString);
-        builder2.redirectErrorStream(true);
-        Process p2 = builder2.start();
-        
-//      ProcessBuilder builder3 = new ProcessBuilder(command,"--deterministic",propertyString);
-        ProcessBuilder builder3 = new ProcessBuilder(command,propertyString);
-        builder3.redirectErrorStream(true);
-        Process p3 = builder2.start();
-        
-        BufferedReader r = new BufferedReader(new InputStreamReader(p3.getInputStream()));
-        String line;
-        BufferedWriter writer = new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/propertyAutomata.hoa"));
-        while (true) {
-            line = r.readLine();
-            if (line == null) { break; }
-            writer.write(line+"\n");
-        } 
-        writer.close();
-        
-        BuchiAutomataParser propertyParser=new BuchiAutomataParser(factory, 
-        		p1.getInputStream(), 
-        		p2.getInputStream(), 
-        		apListSystem, 
-        		levelOfTransitions); 
 		
-        ProductAutomaton.factory=factory;
-        ProductAutomaton.threshold=threshold;
-        ProductAutomaton.levelOfTransitions=levelOfTransitions;
-		ProductAutomaton.apListProperty=propertyParser.getAPListProperty();
-		ProductAutomaton.numVars=propertyParser.getNumVars();
-		ProductAutomaton.apListSystem=propertyParser.getAPListSystem();
-		ProductAutomaton.numAPSystem=ProductAutomaton.apListSystem.size();
-		productAutomaton=new ProductAutomaton(propertyParser.getPropertyBDD());
-        productAutomaton.setInitState(propertyParser.getInitStateProperty());
+//		Read environment
+//		BufferedReader envReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/"+directory+"/environment.env"));
+		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/env.env";
+		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/label.lb";
+        env = (new EnvironmentReader(envFile, labelFile)).env;
+		
+        String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/property.pr";
+		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
+
+		rrg 						= new RRG(env);
+		
+        ProductAutomaton.apListProperty			= prop.propertyParser.getAPListProperty();
+		ProductAutomaton.numVars				= prop.propertyParser.getNumVars();
+		ProductAutomaton.apListSystem			= prop.propertyParser.getAPListSystem();
+		ProductAutomaton.numAPSystem			= ProductAutomaton.apListSystem.size();
+		productAutomaton						= new ProductAutomaton(prop.propertyParser.getPropertyBDD());
+        productAutomaton.setInitState(prop.propertyParser.getInitStateProperty());
 	}
 	
 
@@ -85,8 +55,23 @@ public class Initialize
 	 * 
 	 * @return Product Automaton
 	 */
-	public ProductAutomaton getProductAutomaton() {
+	public ProductAutomaton getProductAutomaton() 
+	{
 		return productAutomaton;
 	}
+	
+	public Environment getEnvironment()
+	{
+		return env;
+	}
+	
+	public RRG getRRG()
+	{
+		return rrg;
+	}
 
+	public static BDDFactory getFactory()
+	{
+		return factory;
+	}
 }

@@ -1,14 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.8">
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="Examples"/>
+	<classpathentry exported="true" kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER">
 		<attributes>
 			<attribute name="module" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="Examples"/>
-	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/javabdd/JavaBDD/javabdd-1.0b2.jar" sourcepath="/home/kush/Projects/robotmotionplanning/javabdd source"/>
-	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/owl/build/install/owl/lib/owl-19.XX-development.jar"/>
-	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/jhoafparser-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/owl-19.XX-development.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jsi-1.0.0.jar" sourcepath="/home/kush/Projects/robotmotionplanning/jsi-1.0.0/jsi-1.0.0-sources.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jhoafparser-1.1.1.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/javabdd-1.0b2.jar" sourcepath="/home/kush/Projects/robotmotionplanning/Library used/javabdd/javabdd source"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jgrapht-bundle-1.4.0.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/trove-2.0.4.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/ij.jar" sourcepath="/home/kush/Projects/robotmotionplanning/Library used/ImageJ/plugins"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/slf4j-api-2.0.0-alpha1.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/logback-core-1.3.0-alpha5.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/logback-classic-1.3.0-alpha5.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
