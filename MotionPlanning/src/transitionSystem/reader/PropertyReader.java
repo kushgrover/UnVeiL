@@ -6,6 +6,8 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 import jhoafparser.parser.generated.ParseException;
@@ -23,9 +25,13 @@ public class PropertyReader
         propertyReader.close();
         
         // Output 
-        System.out.println("\nProperty to satisfty: "+propertyString);
+        System.out.println("\nProperty to satisfty: " + propertyString + "\n\n");
         
-        
+     // Don't output random things
+    	PrintStream out = System.out;
+    	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+
+    	
         // Using SPOT
 //		String command="/home/kush/Projects/robotmotionplanning/spot-2.8.5/bin/ltl2tgba";
 //      ProcessBuilder builder1 = new ProcessBuilder(command,"--deterministic",propertyString);
@@ -33,8 +39,8 @@ public class PropertyReader
 //      ProcessBuilder builder3 = new ProcessBuilder(command,"--deterministic",propertyString);
         
         // Using OWL
-//        String command					= "/home/kush/Projects/robotmotionplanning/owl/build/install/owl/bin/ltl2ldba";
-        String command 					= "/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/ltl2ldba";
+        String command					= "/home/kush/Projects/robotmotionplanning/owl/build/install/owl/bin/ltl2ldba";
+//        String command 					= "/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/ltl2ldba";
         ProcessBuilder builder1 		= new ProcessBuilder(command, propertyString);
         ProcessBuilder builder2 		= new ProcessBuilder(command, propertyString);
         ProcessBuilder builder3 		= new ProcessBuilder(command, propertyString);
@@ -71,6 +77,7 @@ public class PropertyReader
         {
 			e.printStackTrace();
 		} 
-        
+    	System.setOut(out);
+
 	}
 }

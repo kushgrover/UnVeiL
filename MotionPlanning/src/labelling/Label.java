@@ -18,7 +18,7 @@ public class Label
 	
 	public Label(ArrayList<String> apListSystem, ArrayList<Path2D> areas) 
 	{
-		this.numOfAP 		= areas.size();
+		this.numOfAP 		= apListSystem.size();
 		this.apListSystem 	= apListSystem;
 		this.areas 			= areas;
 		this.factory 		= ProductAutomaton.factory;
@@ -28,6 +28,12 @@ public class Label
 	{
 		BDD label 	= factory.one();
 		
+//		if(x.getX()>0.9 && x.getY() > 2.9) {
+//			System.out.println("Sampled from bin 2");
+//		}
+//		if(x.getX()<0.1 && x.getY()<0.1) {
+//			System.out.println("Sampled from bin 1");
+//		}
 		for(int i=0; i<numOfAP; i++) 
 		{
 			if(checkIthAP(x, i)) 

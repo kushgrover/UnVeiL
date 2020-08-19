@@ -6,7 +6,6 @@ import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import net.sf.javabdd.BDDFactory;
 import transitionSystem.ProductAutomaton;
-import transitionSystem.extraExceptions.learningException;
 
 /**
  * <p> Original algo for learn and ask procedures</p>
@@ -21,6 +20,7 @@ public class DefaultExperiment implements Experiments
 	ProductAutomaton productAutomaton;
 	BDDFactory factory;
 	BDD productAutomatonBDD;
+	public double time;
 	
 
 //	public DefaultExperiment(BDD propertyBDD, 
@@ -42,6 +42,7 @@ public class DefaultExperiment implements Experiments
 		this.productAutomaton		= productAutomaton;
 		this.factory				= productAutomaton.getBDD().getFactory();
 		this.productAutomatonBDD	= productAutomaton.getBDD();
+		this.time = 0;
 	}
 
 	/**
@@ -50,24 +51,28 @@ public class DefaultExperiment implements Experiments
 	@Override
 	public BDD learn(BDD fromState, BDD toState) throws Exception 
 	{
+		double startTime = System.nanoTime();
 		BDD transition		= fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
-		if(transition.and(productAutomaton.sampledTransitions).isZero()) 
+		if(transition.and(productAutomaton.sampledTransitions).isZero())
 		{
 			productAutomaton.sampledTransitions			= productAutomaton.sampledTransitions.or(transition);
 			productAutomaton.removeTransition(fromState, toState);
 			transition									= productAutomaton.addTransition(fromState, toState, 3);
 			productAutomaton.sampledProductTransitions 	= productAutomaton.sampledProductTransitions.or(transition);
 		}
-		else 
+		else
 		{
+			time += System.nanoTime() - startTime;
+
 			return null;
 //			throw new learningException("Transition already learned");
 		}
+
 		
 		learnSimilarTransitions(fromState, toState);
-		  
 		
 //		int counter			= productAutomaton.increaseCounter(productAutomaton.getFirstState(fromState));
+
 
 		BDDIterator ite = fromState.iterator(ProductAutomaton.allPreSystemVars());
 		int counter;
@@ -80,6 +85,7 @@ public class DefaultExperiment implements Experiments
 				productAutomaton.setLevel(fromState, 1);
 			}
 		}
+		time += System.nanoTime() - startTime;
 		
 		return transition;
 	}
@@ -193,10 +199,10 @@ public class DefaultExperiment implements Experiments
 //		BDD r4	= ProductAutomaton.ithVarSystemPre(4);
 //		BDD r5	= ProductAutomaton.ithVarSystemPre(5);
 //		BDD r6	= ProductAutomaton.ithVarSystemPre(6);
-//		BDD c	= ProductAutomaton.ithVarSystemPre(5);
+////		BDD c	= ProductAutomaton.ithVarSystemPre(5);
 //		BDD t	= ProductAutomaton.ithVarSystemPre(3);
 //		BDD b	= ProductAutomaton.ithVarSystemPre(4);
-//		BDD filter1	= h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b).or(c).or(t)).not());
+//		BDD filter1	= h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b).or(t)).not());
 //		BDD filter2	= r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
 //		BDD filter3	= r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
 //		BDD filter4	= r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());

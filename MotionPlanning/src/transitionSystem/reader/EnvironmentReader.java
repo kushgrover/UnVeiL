@@ -1,9 +1,7 @@
 package transitionSystem.reader;
 
-import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -62,7 +60,7 @@ public class EnvironmentReader
 		
 		if ((boolean) PlanningSettings.get("planning.verbosity"))
 		{
-			System.out.println("Initial Point: " + init.toString());
+			System.out.println("\n\nInitial Point: " + init.toString());
 		}
 		
 		
@@ -74,7 +72,7 @@ public class EnvironmentReader
 		int i 	= 0;
 		if((boolean) PlanningSettings.get("planning.verbosity"))
         {
-        	System.out.println("Obstacles: ");
+        	System.out.println("\n\nObstacles: ");
         }
 		while(line != null)
 		{
@@ -92,13 +90,14 @@ public class EnvironmentReader
 			rect.lineTo(Float.parseFloat(m.group(3)), Float.parseFloat(m.group(4)));
 			rect.lineTo(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
 			rect.lineTo(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
+			rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
 			rect.closePath();
 			obstacles.add(rect);
 			
 			
 			if((boolean) PlanningSettings.get("planning.verbosity"))
             {
-            	System.out.println(rect.toString());
+            	System.out.println(rect.getBounds2D());
             }
 			i++;
 		}
@@ -109,11 +108,12 @@ public class EnvironmentReader
         
         
         // For Label
-        reader 			= new BufferedReader(new FileReader(labelFile));
-        line 			= reader.readLine();
+        reader 				= new BufferedReader(new FileReader(labelFile));
+        line 				= reader.readLine();
         
-        String apRegex 	= "\\s*(\\w*)\\s*\\:\\s*"+rectangle;
-    	p 				= Pattern.compile(apRegex);
+        String apName 		= "\\s*(\\w*)\\s*\\:\\s*";
+    	Pattern apNameRegex			= Pattern.compile(apName);
+    	Pattern rectRegex 	= Pattern.compile(rectangle);
         
     	
     	ArrayList<Path2D> labelRect = new ArrayList<Path2D>();
@@ -121,27 +121,45 @@ public class EnvironmentReader
     	i	= 0;
         if ((boolean) PlanningSettings.get("planning.verbosity"))
         {
-        	System.out.println("Labelling: ");
+        	System.out.println("\n\nLabelling: ");
         }
 
         while (line != null)
         {
-        	m 		= p.matcher(line);
+        	m 		= apNameRegex.matcher(line);
         	m.find();
-        	rect 	= new Path2D.Float();
-			rect.moveTo(Float.parseFloat(m.group(2)), Float.parseFloat(m.group(3)));
-			rect.lineTo(Float.parseFloat(m.group(4)), Float.parseFloat(m.group(5)));
-			rect.lineTo(Float.parseFloat(m.group(6)), Float.parseFloat(m.group(7)));
-			rect.lineTo(Float.parseFloat(m.group(8)), Float.parseFloat(m.group(9)));
-			rect.closePath();
-        	labelRect.add(rect);
         	apList.add(m.group(1));
-        	line = reader.readLine();
-
-            if((boolean) PlanningSettings.get("planning.verbosity"))
+        	if((boolean) PlanningSettings.get("planning.verbosity"))
             {
-            	System.out.println(apList.get(i) + ": " + rect.toString());
+            	System.out.print(apList.get(i) + ": ");
             }
+        	
+        	
+        	m		= rectRegex.matcher(line);
+
+    		rect 	= new Path2D.Float();
+        	while(m.find())
+        	{
+        		rect.moveTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
+        		rect.lineTo(Float.parseFloat(m.group(3)), Float.parseFloat(m.group(4)));
+        		rect.lineTo(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
+        		rect.lineTo(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
+        		rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
+        		if((boolean) PlanningSettings.get("planning.verbosity"))
+        		{
+        			System.out.print(rect.getBounds2D() + "  ");
+        		}
+        	}
+    		rect.closePath();
+    		labelRect.add(rect);
+
+        	if((boolean) PlanningSettings.get("planning.verbosity"))
+    		{
+    			System.out.println("");
+    		}
+        	line = reader.readLine();
+        	
+        	
         	i++;
         }
         Label labelling 	= new Label(apList, labelRect);

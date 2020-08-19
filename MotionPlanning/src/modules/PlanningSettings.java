@@ -1,6 +1,7 @@
 package modules;
 
 import java.io.File;
+import java.util.logging.Logger;
 
 public class PlanningSettings 
 {
@@ -33,6 +34,10 @@ public class PlanningSettings
 	public static final String ETA							=	"planning.eta";
 	
 	
+	public static final Logger RTREELOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
+	
+	
+	@SuppressWarnings("deprecation")
 	public static final Object[][] propertyData =
 		{
 			//Datatype:			Key:									Display name:							Version:		Default:																	Constraints:																				Comment:
@@ -50,7 +55,7 @@ public class PlanningSettings
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
-			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.05),																"",
+			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.01),																"",
 																					"Maximum radius to find the neighbours"}
 		};
 																			
@@ -107,7 +112,6 @@ public class PlanningSettings
 		}
 		return null;
 	}
-		
 	
 
 }

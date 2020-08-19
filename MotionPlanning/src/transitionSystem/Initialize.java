@@ -33,11 +33,11 @@ public class Initialize
 		
 //		Read environment
 //		BufferedReader envReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/"+directory+"/environment.env"));
-		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example1/env.env";
-		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example1/label.lb";
+		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/env.env";
+		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/label.lb";
         env = (new EnvironmentReader(envFile, labelFile)).env;
 		
-        String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example1/property.pr";
+        String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/property.pr";
 		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
 
 		rrg 						= new RRG(env);

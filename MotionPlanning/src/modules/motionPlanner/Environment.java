@@ -9,6 +9,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import labelling.Label;
 
@@ -53,7 +54,16 @@ public class Environment {
 	
 	public Boolean obstacleFree(Point2D.Float x) 
 	{
-		return !allObs.contains(x);
+		Iterator<Path2D> i = obstacles.iterator();
+		while(i.hasNext())
+		{
+			Path2D next = i.next();
+			if(next.contains(x))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 	
 	public Point2D.Float sample()

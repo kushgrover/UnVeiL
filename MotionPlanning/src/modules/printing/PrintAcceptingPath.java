@@ -26,7 +26,7 @@ public class PrintAcceptingPath {
 				System.out.print(apList.get(j));
 			}
 		}
-		System.out.println("]");
+		System.out.print("]  ");
 	}
 
 	private ArrayList<String> findAPList(BDD state) throws Exception {

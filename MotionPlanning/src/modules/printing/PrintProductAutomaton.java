@@ -22,6 +22,7 @@ public class PrintProductAutomaton
 		
 		writer.write("digraph G {\n");
 		BDDIterator iterator	= productAutomatonBDD.iterator(ProductAutomaton.allVars());
+		
 		while(iterator.hasNext()) 
 		{
 			BDD transition		= (BDD) iterator.next();

@@ -1,8 +1,6 @@
 package modules.printing;
 
 import java.awt.Graphics;
-import java.awt.geom.Path2D;
-import java.awt.geom.PathIterator;
 import java.util.Iterator;
 
 import javax.swing.JFrame;
@@ -39,27 +37,27 @@ public class ShowGraph extends JFrame {
 		Plot plot = new Plot("plot", "", "");
 		plot.setLimits(env.getBoundsX()[0], env.getBoundsX()[1], env.getBoundsY()[0], env.getBoundsY()[1]);
 		
-		Iterator<Path2D> i = env.getObstacles().iterator();
+//		Iterator<Path2D> i = env.getObstacles().iterator();
 
-		while(i.hasNext())
-		{
-			Path2D rect = i.next();
-			PathIterator it = rect.getPathIterator(null);
-			float[] coords= new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
-			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords;
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords;
-						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
-						break;
-					default:
-						break;
-				}
-			}
-		}
+//		while(i.hasNext())
+//		{
+//			Path2D rect = i.next();
+//			PathIterator it = rect.getPathIterator(null);
+//			float[] coords= new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+//			while(! it.isDone()) {
+//				switch(it.currentSegment(coords)) {
+//					case(PathIterator.SEG_MOVETO):
+//						from = coords;
+//						break;
+//					case(PathIterator.SEG_LINETO):
+//						to = coords;
+//						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+//						break;
+//					default:
+//						break;
+//				}
+//			}
+//		}
 		
 		Iterator<DefaultEdge> ite = graph.edgeSet().iterator();
 		

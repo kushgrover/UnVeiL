@@ -358,6 +358,12 @@ public class ProductAutomaton
 		return allPostVars;
 	}
 	
+	public static BDD allSystemVars() throws Exception
+	{
+		return allPostSystemVars().and(allPreSystemVars());
+		
+	}
+	
 	/**
 	 * 
 	 * @return set of all pre vars
@@ -1400,6 +1406,34 @@ public class ProductAutomaton
 	public void printPath(ArrayList<BDD> path) throws Exception 
 	{
 		new PrintAcceptingPath(path);
+	}
+
+
+
+
+
+	public static BDD interchangePrePostVars(BDD bdd) 
+	{
+		BDDPairing newPairing 	= factory.makePair();
+		newPairing.set(factory.getDomain(0), factory.getDomain(1));
+		for(int i=0; i<numAPSystem; i++) {
+			newPairing.set(varsBeforeSystemVars + i, 	  varsBeforeSystemVars + numAPSystem + i);
+			newPairing.set(varsBeforeSystemVars + numAPSystem + i, 		varsBeforeSystemVars + i);
+		}
+		return bdd.replace(newPairing);
+	}
+
+
+
+
+
+	public boolean isAcceptingTransition(BDD transition) throws Exception 
+	{
+		if(productAutomatonBDD.and(propertyBDD.and(getLabelEquivalence()).and(transition).and(transitionLevelDomain().ithVar(3)).and(acceptingSetDomain().ithVar(0).not())).isZero())
+		{
+			return false;
+		}
+		return true;
 	}
 	
 	
