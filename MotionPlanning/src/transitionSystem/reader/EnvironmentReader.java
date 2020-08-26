@@ -10,8 +10,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import labelling.Label;
-import modules.PlanningSettings;
 import modules.motionPlanner.Environment;
+import settings.PlanningSettings;
 
 public class EnvironmentReader 
 {

@@ -5,7 +5,7 @@ import java.io.FileWriter;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import transitionSystem.ProductAutomaton;
-import transitionSystem.extraExceptions.StateException;
+import transitionSystem.exceptions.StateException;
 
 public class PrintProductAutomaton
 {

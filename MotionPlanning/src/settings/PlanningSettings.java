@@ -1,4 +1,5 @@
-package modules;
+package settings;
+
 
 import java.io.File;
 import java.util.logging.Logger;
@@ -13,9 +14,6 @@ public class PlanningSettings
 	public static final float DEFAULT_FLOAT = 0.0f;
 	public static final long DEFAULT_LONG = 0l;
 	public static final boolean DEFAULT_BOOLEAN = false;
-//	public static final Color DEFAULT_COLOUR = Color.white;
-//	public static final Font DEFAULT_FONT = new Font("monospaced", Font.PLAIN, 12);
-//	public static final FontColorPair DEFAULT_FONT_COLOUR = new FontColorPair(new Font("monospaced", Font.PLAIN, 12), Color.black);
 	public static final File DEFAULT_FILE = null;
 	
 	public static final String STRING_TYPE = "s";

@@ -7,13 +7,17 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 import gnu.trove.TIntProcedure;
-import modules.PlanningSettings;
 import modules.printing.ShowGraph;
 import net.sf.javabdd.BDD;
 import transitionSystem.ProductAutomaton;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -36,7 +40,7 @@ public class RRG
 	Graph<Vertex, DefaultEdge> graph;
 	ArrayList<Point> treePoints;
 	int numPoints;
-//	public int tempCount;
+	Vertex initVertex;
 	
 	public RRG(Environment env) 
 	{
@@ -49,12 +53,8 @@ public class RRG
 		treePoints 				= new ArrayList<Point>();
 		numPoints				= 0;
 		
-		
-		PrintStream out = System.out;
-		System.setOut(new PrintStream(OutputStream.nullOutputStream()));
 		this.tree 				= new RTree();
 		tree.init(null);
-		System.setOut(out);
 
 	}
 	
@@ -177,18 +177,10 @@ public class RRG
 	}
 
 
-	void addPoint(Point2D p) 
-	{
-		graph.addVertex(new Vertex(p));
-		Rectangle rect 	= new Rectangle((float) p.getX(), (float) p.getY(), (float) p.getX(), (float) p.getY());
-		Point xPoint 	= new Point((float) p.getX(), (float) p.getY());
-		treePoints.add(xPoint);
-		PrintStream out = System.out;
-		System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-		tree.add(rect, numPoints);
-		System.setOut(out);
-		numPoints++;
-	}
+//	void addPoint(Point2D p) 
+//	{
+		
+//	}
 	
 	Point2D.Float arrayToPoint(double[][] x) 
 	{
@@ -273,17 +265,25 @@ public class RRG
 	}
 
 
-	public void setStartingPoint(Point2D init) {
-		addPoint(init);
+	public void setStartingPoint(Point2D p) {
+		this.initVertex = new Vertex(p);
+		graph.addVertex(initVertex);
+		Rectangle rect 	= new Rectangle((float) p.getX(), (float) p.getY(), (float) p.getX(), (float) p.getY());
+		Point xPoint 	= new Point((float) p.getX(), (float) p.getY());
+		treePoints.add(xPoint);
+		PrintStream out = System.out;
+		System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+		tree.add(rect, numPoints);
+		System.setOut(out);
+		numPoints++;
 	}
 	
 	
 
 
 
-	public void plotGraph() {
-		
-		
+	public void plotGraph() 
+	{
 		new ShowGraph(graph, env).setVisible(true);;
 	}
 	  
@@ -292,28 +292,27 @@ public class RRG
 	{
 		return graph;
 	}
-	    
-	    
-//	    Iterator<DefaultEdge> ite = a.graph.edgeSet().iterator();
-//	    DefaultEdge next;
-//	    while(ite.hasNext()) {
-//	    	next=ite.next();
-//	    	
-//	    }
-//	    toc = timeit.default_timer()
-//	    print(toc-tic, 'sec ellapsed')
-//	    # Plan path
-//	    cost, path = nx.single_source_dijkstra(a.G,x_init,x_goal)
-//	    edges = list(zip(path,path[1:]))
-//	    # Plot
-//	    fig, axs = plt.subplots()
-//	    axs.set_aspect('equal', 'datalim')
-//	    nx.draw(a.G, nx.get_node_attributes(a.G, 'pos'), node_size=30)
-//	    nx.draw_networkx_edges(a.G, nx.get_node_attributes(a.G, 'pos'), edgelist=edges, edge_color='r')
-//	    plt.plot(*workspace.bounds.exterior.xy)
-//	    for pol in workspace.obstacles:
-//	        xs, ys = pol.exterior.xy
-//	        axs.fill(xs, ys)
-//	    plt.show()
+
+
+	public void liftPath(ArrayList<BDD> path) {
+//		Vertex source = initVertex;
+//		Vertex dest;
+//		Iterator<BDD> it = path.iterator();
+//		BDD nextState;
+//		while(it.hasNext())
+//		{
+//			nextState = it.next();
+//			dest = findAVertex(nextState);
+//			GraphPath<Vertex, DefaultEdge> rrgPath = DijkstraShortestPath.findPathBetween(graph, source, dest); 
+//
+//		}
+		
+	}
+
+
+//	private Vertex findAVertex(BDD nextState) {
+//		graph.vertexSet()
 //	}
+	    
+	    
 }

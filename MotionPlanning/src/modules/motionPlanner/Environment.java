@@ -33,10 +33,6 @@ public class Environment {
 		this.setBoundsY(boundsY);
 		this.numOfObs			= obstacles.size();
 		this.obstacles 			= obstacles;
-//		allObs=new Area();
-//		for(int i=0;i<numOfObs;i++) {
-//			allObs.add(obstacles.get(i));
-//		}
 
 		Environment.init		= init;
 		Environment.labelling	= labelling;
@@ -148,19 +144,7 @@ public class Environment {
 	public ArrayList<Path2D> getObstacles() {
 		return obstacles;
 	}
-	
-//	public static void main(String[] args) 
-//	{
-//		Point2D p1=new Point2D.Float(0.5f,0.0f);
-//		Point2D p2=new Point2D.Float(0.5f,1.0f);
-//		
-//		float[] kush=new float[] {0.0f,0.0f,1.0f,0.0f,1.0f,1.0f,0.0f,1.0f};
-//		Shape[] listObs=new Shape[1];
-//		listObs[0]=polygon(kush);
-//		float[] boundsX=new float[] {0.0f,2.0f}, boundsY= {0.0f,2.0f};
-//		Environment E=new Environment(listObs, boundsX, boundsY);
-//		System.out.print(E.collisionFree(p1,p2));
-//	}
+
 }
 
 

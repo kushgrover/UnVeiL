@@ -1,10 +1,13 @@
-package transitionSystem;
+package settings;
 
-import modules.PlanningSettings;
+import java.io.OutputStream;
+import java.io.PrintStream;
+
 import modules.motionPlanner.Environment;
 import modules.motionPlanner.RRG;
 import net.sf.javabdd.BDDFactory;
 import net.sf.javabdd.BuDDyFactory;
+import transitionSystem.ProductAutomaton;
 import transitionSystem.reader.EnvironmentReader;
 import transitionSystem.reader.PropertyReader;
 
@@ -33,14 +36,19 @@ public class Initialize
 		
 //		Read environment
 //		BufferedReader envReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/"+directory+"/environment.env"));
-		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/env.env";
-		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/label.lb";
+		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/env.env";
+		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/label.lb";
         env = (new EnvironmentReader(envFile, labelFile)).env;
 		
-        String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/Example3/property.pr";
+        String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/property.pr";
 		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
 
+		
+		PrintStream out = System.out;
+		System.setOut(new PrintStream(OutputStream.nullOutputStream()));
 		rrg 						= new RRG(env);
+		System.setOut(out);
+
 		
         ProductAutomaton.apListProperty			= prop.propertyParser.getAPListProperty();
 		ProductAutomaton.numVars				= prop.propertyParser.getNumVars();

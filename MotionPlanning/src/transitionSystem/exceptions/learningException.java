@@ -1,4 +1,4 @@
-package transitionSystem.extraExceptions;
+package transitionSystem.exceptions;
 
 public class learningException extends Exception
 {

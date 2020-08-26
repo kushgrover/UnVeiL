@@ -1,10 +1,10 @@
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
+import settings.Initialize;
+import settings.PlanningSettings;
 import modules.DefaultExperiment;
-import modules.PlanningSettings;
 import modules.motionPlanner.Environment;
 import modules.motionPlanner.RRG;
-import transitionSystem.Initialize;
 import transitionSystem.ProductAutomaton;
 
 import java.io.OutputStream;
@@ -17,20 +17,18 @@ import labelling.Label;
  *
  */
 public class Planning
-{
-	
+{	
 	public static void main(String[] args) throws Exception
 	{
 		// Don't output random things
     	PrintStream out = System.out;
     	
-		//initialize everything
+		// Initialize everything-------------------------------------------
 		double startTime 					= System.nanoTime();
 		
 		new PlanningSettings();
         Initialize initialize				= new Initialize();
         
-//    	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
 
         Environment env 					= initialize.getEnvironment();
         RRG rrg 							= initialize.getRRG();
@@ -45,22 +43,26 @@ public class Planning
         BDD currentStates					= initStateSystem.id();
         
         double initializationTime 			= System.nanoTime() - startTime;
-        //-------------------------------------------------------------------        
+        //-------------------------------------------------------------------
+        
+        
+        
+        
         
         // loop of the main algo starts here
         double samplingTime = 0, preTimeSampling = 0, pathStartTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0;
         int iterationNumber					= 0;
         boolean computePath 				= false;
         
-//    	System.setOut(out);
-
-
         while(true)  //until the property is satisfied
         {
         	// Don't output random things
         	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
         	
         	
+        	
+        	
+        	// Sample transitions
         	ArrayList<BDD> reachableStates	= exper.ask(currentStates);
         	int currentPathLength			= 1;
         	
@@ -76,30 +78,36 @@ public class Planning
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         		if(transition == null) { currentPathLength++; }
         	}	
+        	
         	if(transition == null) 
         	{
         		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sample(currentStates, productAutomaton);
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
+        	
         	if(transition == null) 
         	{
         		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sample(productAutomaton);
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
+        	
         	if(transition == null) 
         	{
-        		System.out.println("I am SCREWED!");
+        		System.out.println("O.o");
         		break;
         	}
-        	
+        	//-----------------------------------------------------------------------------
         	if(productAutomaton.isAcceptingTransition(transition)) {
         		computePath = true;
         	}
         	
-        	BDDIterator ite 				= transition.iterator(ProductAutomaton.allSystemVars());
 
+        	
+        	
+        	// Learning ------------------------------------------------------
+        	BDDIterator ite 				= transition.iterator(ProductAutomaton.allSystemVars());
         	while(ite.hasNext())
         	{
             	learnStartTime 				= System.nanoTime();
@@ -113,25 +121,35 @@ public class Planning
         		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));
             	learnTime 					+= System.nanoTime() - learnStartTime;
         	}
+        	//-------------------------------------------------------------------------
         	
-        	pathStartTime					= System.nanoTime();
         	
         	// Don't output random things
         	System.setOut(out);
+        	
 
+        	
+        	// If an accepting transition was sampled, check for path
+        	pathStartTime				= System.nanoTime();
         	if(computePath) 
         	{
-        		ArrayList<BDD> path				= productAutomaton.findAcceptingPath();
+        		ArrayList<BDD> path		= productAutomaton.findAcceptingPath();
         		if(path	!= null) 
             	{
         			System.out.println("\nPath found in the abstraction: ");
             		productAutomaton.printPath(path);
+            		
+                	rrg.liftPath(path);
             		break;
             	}
         	}
-        	pathTime						+= System.nanoTime() - pathStartTime;
+        	pathTime					+= System.nanoTime() - pathStartTime;
+        	//------------------------------------------------------------------
         	
-        	computePath 					= false;
+        	
+        	
+        	
+        	computePath = false;
         	iterationNumber++;
         }
 //    	productAutomaton.createDot(iterationNumber);

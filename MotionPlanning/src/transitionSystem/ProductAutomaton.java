@@ -8,8 +8,8 @@ import net.sf.javabdd.BDDPairing;
 import modules.printing.PrintAcceptingPath;
 import modules.printing.PrintProductAutomaton;
 import transitionSystem.emptinessCheck.EmptinessCheck;
-import transitionSystem.extraExceptions.StateException;
-import transitionSystem.extraExceptions.TransitionException;
+import transitionSystem.exceptions.StateException;
+import transitionSystem.exceptions.TransitionException;
 
 import java.util.ArrayList;
 

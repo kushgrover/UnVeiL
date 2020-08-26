@@ -12,10 +12,10 @@ import jhoafparser.consumer.HOAConsumerException;
 import jhoafparser.consumer.HOAConsumerStore;
 import jhoafparser.parser.HOAFParser;
 import jhoafparser.parser.generated.ParseException;
-import modules.PlanningSettings;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDDDomain;
-import transitionSystem.Initialize;
+import settings.Initialize;
+import settings.PlanningSettings;
 import transitionSystem.ProductAutomaton;
 
 

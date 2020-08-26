@@ -9,7 +9,7 @@ import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import net.sf.javabdd.BDDFactory;
 import transitionSystem.ProductAutomaton;
-import transitionSystem.extraExceptions.StateException;
+import transitionSystem.exceptions.StateException;
 
 /**
  * @author kush

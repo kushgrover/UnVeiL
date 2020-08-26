@@ -1,6 +1,6 @@
-package transitionSystem.extraExceptions;
+package transitionSystem.exceptions;
 
-public class TransitionException extends Exception
+public class StateException extends Exception
 {
 
 	/**
@@ -8,30 +8,30 @@ public class TransitionException extends Exception
 	 */
 	private static final long serialVersionUID = 1L;
 
-	public TransitionException()
+	public StateException()
 	{
 		// TODO Auto-generated constructor stub
 	}
 
-	public TransitionException(String message)
+	public StateException(String message)
 	{
 		super(message);
 		// TODO Auto-generated constructor stub
 	}
 
-	public TransitionException(Throwable cause)
+	public StateException(Throwable cause)
 	{
 		super(cause);
 		// TODO Auto-generated constructor stub
 	}
 
-	public TransitionException(String message, Throwable cause)
+	public StateException(String message, Throwable cause)
 	{
 		super(message, cause);
 		// TODO Auto-generated constructor stub
 	}
 
-	public TransitionException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
+	public StateException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
 	{
 		super(message, cause, enableSuppression, writableStackTrace);
 		// TODO Auto-generated constructor stub

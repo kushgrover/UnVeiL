@@ -2,7 +2,7 @@ package transitionSystem.emptinessCheck;
 
 import net.sf.javabdd.BDD;
 import transitionSystem.ProductAutomaton;
-import transitionSystem.extraExceptions.StateException;
+import transitionSystem.exceptions.StateException;
 
 public class todoNode {
 	BDD state, transitions;
