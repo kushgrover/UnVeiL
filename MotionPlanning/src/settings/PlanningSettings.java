@@ -26,7 +26,7 @@ public class PlanningSettings
 	public static final String VERBOSITY					=	"planning.verbosity";
 	public static final String BDD_FACTORY_CACHE_SIZE		=	"planning.bddFactoryCacheSize";
 	public static final String USE_SPOT						= 	"planning.useSpot";
-	public static final String MAX_LEVEL_TRANSITION		=	"planning.maxLevelTransition";
+	public static final String MAX_LEVEL_TRANSITION			=	"planning.maxLevelTransition";
 	public static final String SAMPLING_THRESHOLD			=	"planning.samplingThreshold";
 	public static final String TRANSITION_THRESHOLD			= 	"planning.transitionThreshold";
 	public static final String ETA							=	"planning.eta";
@@ -53,7 +53,7 @@ public class PlanningSettings
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
-			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.01),																"",
+			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.05),																"",
 																					"Maximum radius to find the neighbours"}
 		};
 																			

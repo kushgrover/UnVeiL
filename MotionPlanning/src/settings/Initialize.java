@@ -3,13 +3,13 @@ package settings;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
-import modules.motionPlanner.Environment;
-import modules.motionPlanner.RRG;
+import abstraction.ProductAutomaton;
+import environment.Environment;
+import modules.RRG;
 import net.sf.javabdd.BDDFactory;
 import net.sf.javabdd.BuDDyFactory;
-import transitionSystem.ProductAutomaton;
-import transitionSystem.reader.EnvironmentReader;
-import transitionSystem.reader.PropertyReader;
+import planningIO.EnvironmentReader;
+import planningIO.PropertyReader;
 
 /**
  * <p>Creates the BDD of the property and Initializes the product automata</p>
@@ -24,6 +24,7 @@ public class Initialize
 	RRG rrg;
 	static BDDFactory factory;
 	
+	
 	@SuppressWarnings("static-access")
 	public Initialize() throws Exception
 	{
@@ -35,7 +36,6 @@ public class Initialize
 		
 		
 //		Read environment
-//		BufferedReader envReader = new BufferedReader(new FileReader("/home/kush/Projects/robotmotionplanning/MotionPlanning/"+directory+"/environment.env"));
 		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/env.env";
 		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/label.lb";
         env = (new EnvironmentReader(envFile, labelFile)).env;
@@ -68,16 +68,28 @@ public class Initialize
 		return productAutomaton;
 	}
 	
+	/**
+	 * 
+	 * @return environment
+	 */
 	public Environment getEnvironment()
 	{
 		return env;
 	}
 	
+	/**
+	 * 
+	 * @return RRG object
+	 */
 	public RRG getRRG()
 	{
 		return rrg;
 	}
 
+	/**
+	 * 
+	 * @return BDD factory
+	 */
 	public static BDDFactory getFactory()
 	{
 		return factory;

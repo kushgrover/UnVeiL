@@ -2,15 +2,16 @@ import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import settings.Initialize;
 import settings.PlanningSettings;
-import modules.DefaultExperiment;
-import modules.motionPlanner.Environment;
-import modules.motionPlanner.RRG;
-import transitionSystem.ProductAutomaton;
+import modules.RRG;
+import modules.learnAskExperiments.DefaultExperiment;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import labelling.Label;
+
+import abstraction.ProductAutomaton;
+import environment.Environment;
+import environment.Label;
 
 /**
  * @author kush
@@ -19,28 +20,32 @@ import labelling.Label;
 public class Planning
 {	
 	public static void main(String[] args) throws Exception
-	{
-		// Don't output random things
-    	PrintStream out = System.out;
+	{    	
     	
 		// Initialize everything-------------------------------------------
 		double startTime 					= System.nanoTime();
 		
+		// use default values for everything
 		new PlanningSettings();
+		
+		// read the files and initialize everything
         Initialize initialize				= new Initialize();
-        
 
         Environment env 					= initialize.getEnvironment();
         RRG rrg 							= initialize.getRRG();
         Label label							= Environment.getLabelling();
         ProductAutomaton productAutomaton	= initialize.getProductAutomaton();
         
+        // new learn/ask experiment
         DefaultExperiment exper				= new DefaultExperiment(productAutomaton);
         
+        //add initial point
         BDD initStateSystem					= label.getLabel(env.getInit());
         rrg.setStartingPoint(env.getInit());
         productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for init state in the product automaton
-        BDD currentStates					= initStateSystem.id();
+        
+        
+        BDD currentStates					= initStateSystem.id(); //it stores the set of states in the abstraction we have seen till now
         
         double initializationTime 			= System.nanoTime() - startTime;
         //-------------------------------------------------------------------
@@ -53,13 +58,12 @@ public class Planning
         double samplingTime = 0, preTimeSampling = 0, pathStartTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0;
         int iterationNumber					= 0;
         boolean computePath 				= false;
+        PrintStream out = System.out;		// Don't output random things from libraries
         
         while(true)  //until the property is satisfied
         {
         	// Don't output random things
         	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-        	
-        	
         	
         	
         	// Sample transitions
@@ -68,7 +72,7 @@ public class Planning
         	
         	BDD transition = null, fromStates = null, toStates = null;
         	
-        	while(currentPathLength < reachableStates.size()) 
+        	while(currentPathLength < reachableStates.size()) //First try to sample from the advice
         	{
         		fromStates					= currentStates.and(reachableStates.get(currentPathLength));
         		toStates 					= reachableStates.get(currentPathLength-1);
@@ -79,26 +83,29 @@ public class Planning
         		if(transition == null) { currentPathLength++; }
         	}	
         	
-        	if(transition == null) 
+        	if(transition == null) // sample from the set of current states
         	{
         		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sample(currentStates, productAutomaton);
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
         	
-        	if(transition == null) 
+        	if(transition == null) // sample anywhere
         	{
         		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sample(productAutomaton);
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
         	
-        	if(transition == null) 
+        	if(transition == null) // if transition is still null
         	{
-        		System.out.println("O.o");
+        		System.out.println("Something wrong happened O.o");
         		break;
         	}
         	//-----------------------------------------------------------------------------
+        	
+        	
+        	// if the sampled transition is accepting, path checking will happen
         	if(productAutomaton.isAcceptingTransition(transition)) {
         		computePath = true;
         	}
@@ -112,13 +119,17 @@ public class Planning
         	{
             	learnStartTime 				= System.nanoTime();
         		transition 					= (BDD) ite.next();
-        		if(! transition.and(productAutomaton.sampledTransitions).isZero()) 
+        		
+        		//if transition has been sampled before, skip learning
+        		if(! transition.and(productAutomaton.sampledTransitions).isZero())
             	{
             		learnTime 					+= System.nanoTime() - learnStartTime;
             		continue;
             	}
+        		
+        		//learning happens here
         		exper.learn(productAutomaton.getFirstStateSystem(transition), productAutomaton.getSecondStateSystem(transition));
-        		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));
+        		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));	//update the set of current states
             	learnTime 					+= System.nanoTime() - learnStartTime;
         	}
         	//-------------------------------------------------------------------------
@@ -133,12 +144,14 @@ public class Planning
         	pathStartTime				= System.nanoTime();
         	if(computePath) 
         	{
+        		// computing the path
         		ArrayList<BDD> path		= productAutomaton.findAcceptingPath();
         		if(path	!= null) 
             	{
         			System.out.println("\nPath found in the abstraction: ");
             		productAutomaton.printPath(path);
             		
+            		// Lifing the path to RRG graph
                 	rrg.liftPath(path);
             		break;
             	}
