@@ -226,6 +226,37 @@ Jana's notes from the call:
 	\end{algorithmic}
 \end{algorithm}
 
+\subsection{LEARN and ASK procedures}
+
+\textit{LEARN:} Learn procedure takes a transition $t=(s_1, s_2)$ (or a set of transitions) and add similar `maybe' transitions to the product automaton. For defining these similar transitions we first need a set of atomic propositions called domain of changes, which is defined as $\{a \oplus  b \mid a\in s_1, b\in _2\}$.  A transition similar to $t$ would be $(s_1', s_2')$ where $s_1'\ (s_2')$ is a state which agrees with $s_1\ (s_2)$ on domain of changes. For e.g, if $t = (\{r_1\}, \{r_1, b\})$ then, the set $DOC=\{b_1\}$ and one of the learned transition would be $(\{r_2\},\{r_2, b\})$. If we have a different atomic proposition for all the bins and $t = (\{r_1\}, \{r_1, b_1\})$ then the learned transition will be $(\{r_2\}, \{r_2,b_1\})$ [not $(\{r_2\}, \{r_2,b_2\})$].
+
+\textit{ASK:} Ask procedure takes the product automaton and returns a list of set of states called $reachableStates$ whose $i$th element is a set of states which can see an accepting transition in the product automaton in $\leq i$ steps. Look at the example in figure \ref{fig:ask}, transition with label $(*)$ is an accepting transition. $reachableStates[0]=\{s_6\}$, [1]=$\{s_5, s_6\}$, [2]=$\{s_3,s_5,s_6\}$ and [3]=$\{s_0,s_1,s_2,s_3,s_5,s_6\}$
+
+\begin{figure}
+	\begin{tikzpicture}[
+	roundnode/.style={circle, draw=black, fill=black!5, very thick, minimum size=3mm}]
+	
+	\node[roundnode] (A) {$s_0$};
+	\node[roundnode] (B) [below=of A] {$s_1$};
+	\node[roundnode] (C) [below=of B] {$s_2$};
+	\node[roundnode] (D) [right=of A] {$s_3$};
+	\node[roundnode] (E) [below=of D] {$s_4$};
+	\node[roundnode] (F) [right=of D] {$s_5$};
+	\node[roundnode] (G) [right=of F] {$s_6$};
+	
+	\draw[->] (A) -- (D);
+	\draw[->] (B) -- (D);
+	\draw[->] (C) -- (E);
+	\draw[->] (C) -- (D);
+	\draw[->] (D) -- (F);
+	\draw[->] (F) -- (G) node[anchor = south, pos = 0.5] {$(*)$};
+	\end{tikzpicture}
+	\caption{A part of the product automaton}
+	\label{fig:ask}
+\end{figure}
+
+
+
 \subsection{A mini case study}
 
 Let us consider an office space with several rooms as illustrated in Fig. \ref{fig:office}. There are different objects in the office rooms. For simplicity, let us assume that each of the objects is either a desk (illustrated as a rectangle), or a chair (illustrated as a square), or a waste bin (illustrated as a circle). Consider a fully actuated robot with the initial position $x_0 \in \mathbb{R}^2$. We assume that the robot can recognize if it is close to a certain type of object or landmark in the environment; by close, we mean that the robot's state intersect with the object's/landmark's $\epsilon$-inflation (illustrated as dashed and dotted lines).
@@ -294,6 +325,16 @@ For the example given in Figure \ref{fig:office}, without considering $wall$ ato
 		\item \textbf{Jan's idea:} We can keep track of the sampled transitions till now and get their ranking (finding ranking for each sampled transition will require some time because it might have to pass through the whole list of `reachableStates'). Sample 50 (some threshold) transitions and add the one with the best rank. \kush{What will happen to the other transitions? Would we keep all of them in the memory (maintain a min-heap maybe)?}
 	\end{itemize}
 
+\section{Fernando's Ideas}
+Suppose the system knows the environment, it's free space and obstacles. I.e. $X_{\text{obs}}, X_{\text{free}}$ are known. Let's also say that the set of $k$ atomic propositions $Ap$, denoted as $\Sigma = \{Ap_1, Ap_2, \dots, Ap_k\}$, is known. However, let's suppose the labeling function $L: X \to 2^\Sigma$ is partially known, and constructed as the robot navigates the environment. For example, it can attribute atomic propositions to regions of the workspace when within $\epsilon$-distance to it.
+
+I think approaching it this way would make our contribution richer. If we assume to know $L$, we actually don't need to know anything else about the workspace besides the positions of $Ap$s in question, for example the bins. No spatial relation is necessary. Now, if $L$ is not fully known, the problem becomes more interesting. Our system will then try to learn and predict characteristics of the workspace as it moves through it.
+
+Also, what comes to my mind is regarding the mission formula and how much information we feed to it. In $G F (r_1 \wedge b) \wedge G F (r_2\wedge b)$ we are already giving out that there exists a bin in each room. If one of the rooms does not have a bin, the formula is not satisfiable anymore. If the goal is to collect all bins, the formula should somehow contain only bins. The relation of bins being inside rooms should be learned by the model.
+
+Now, how to make sure the robot does not visit the same bin infinitely often? Should we know beforehand the number of bins and write a formula like $\bigwedge_{i \in [1,n]} GF b_i$?
+
+This raises another question: is there any grouping of $Ap$s? How does the algorithm knows that $r_1$ and $r_2$ are both rooms, and not a room and a lake? Or the inference that a transition from $r_1$ to $b_1$ can mean that there might exist a transition from $r_2$ to $b_2$, but not from $h$ to $b_3$?
 
 
 
