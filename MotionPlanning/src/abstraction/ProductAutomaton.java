@@ -78,7 +78,15 @@ public class ProductAutomaton
 
 //-----------------------------------------------------------------------------------------------------------------
 	
-	
+	/**
+	 * <p>propertyBDD stores the property automaton
+	 * numVars[0] = number of vars used in property automaton
+	 * numVars[1] = number of vars used in transition level
+	 * numVars[2] = number of vars used in label of transitions in property automaton = number of atomic props used in property automaton
+	 * numVars[3] = number of vars used in system automaton = 2 * numAPSystem
+	 * threshold and counter are to add level 1 transitions
+	 * apListProperty and apListSystem are lists of atomic props used in property and automaton resp.</p>
+	 */
 //-----------------------------------------------------------------------------------------------------------------	
 /**
  * For initialization

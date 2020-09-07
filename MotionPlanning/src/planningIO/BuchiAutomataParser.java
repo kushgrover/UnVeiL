@@ -143,11 +143,11 @@ public class BuchiAutomataParser
 										acceptingSets+1, 
 										(int) PlanningSettings.get("planning.maxLevelTransition")});
 		
-		ProductAutomaton.factory.extVarNum(2*apListSystem.size() + apListProperty.size());
-		numVars[0]					= 2*bddDomain[0].varNum() + bddDomain[2].varNum();
+		ProductAutomaton.factory.extVarNum(2 * apListSystem.size() + apListProperty.size());
+		numVars[0]					= 2 * bddDomain[0].varNum() + bddDomain[2].varNum();
 		numVars[1]					= bddDomain[3].varNum();
 		numVars[2]					= apListProperty.size();
-		numVars[3]					= 2*apListSystem.size();
+		numVars[3]					= 2 * apListSystem.size();
 	}
 	
 	public BDD getPropertyBDD() 

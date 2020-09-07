@@ -23,16 +23,6 @@ public class DefaultExperiment implements Experiments
 	BDD productAutomatonBDD;
 	public double time;
 	
-
-//	public DefaultExperiment(BDD propertyBDD, 
-//			int[] numVars, 
-//			ArrayList<String> apListProperty,
-//			ArrayList<String> apListSystem) throws Exception
-//	{
-//		this.productAutomaton=new ProductAutomaton(propertyBDD);
-//		this.factory=productAutomaton.getBDD().getFactory();
-//		this.productAutomatonBDD=productAutomaton.getBDD();
-//	}
 	
 	/**
 	 * constructor
@@ -66,7 +56,6 @@ public class DefaultExperiment implements Experiments
 			time += System.nanoTime() - startTime;
 
 			return null;
-//			throw new learningException("Transition already learned");
 		}
 
 		
@@ -161,11 +150,13 @@ public class DefaultExperiment implements Experiments
 	 * ASK procedure
 	 */
 	@Override
-	public ArrayList<BDD> ask(BDD currentStates) throws Exception 
+	public ArrayList<BDD> ask(BDD currentStates) throws Exception
 	{
-//		ArrayList<BDD> reachableStates	= new ArrayList<BDD>();
+		ArrayList<BDD> reachableStates	= new ArrayList<BDD>();
+//		
 //		reachableStates.add(productAutomaton.finalStates());
 //		reachableStates.add(productAutomaton.preImageOfFinalStates());
+//		
 //		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
 //			return reachableStates;
 //		}
@@ -177,10 +168,10 @@ public class DefaultExperiment implements Experiments
 //			i++;
 //			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
 //		}
-//		return reachableStates;
-		ArrayList<BDD> kush = new ArrayList<BDD>(); 
-		kush.add(ProductAutomaton.factory.one());
-		return kush;
+//		
+		reachableStates.add(ProductAutomaton.factory.one());
+		return reachableStates;
+		
 	}
 	
 	
@@ -193,27 +184,27 @@ public class DefaultExperiment implements Experiments
 	 */
 	public BDD addFilters() throws Exception 
 	{
-//		BDD h	= ProductAutomaton.ithVarSystemPre(0);
-//		BDD r1	= ProductAutomaton.ithVarSystemPre(1);
-//		BDD r2	= ProductAutomaton.ithVarSystemPre(2);
-//		BDD r3	= ProductAutomaton.ithVarSystemPre(3);
-//		BDD r4	= ProductAutomaton.ithVarSystemPre(4);
-//		BDD r5	= ProductAutomaton.ithVarSystemPre(5);
-//		BDD r6	= ProductAutomaton.ithVarSystemPre(6);
-////		BDD c	= ProductAutomaton.ithVarSystemPre(5);
+		BDD h	= ProductAutomaton.ithVarSystemPre(0);
+		BDD r1	= ProductAutomaton.ithVarSystemPre(1);
+		BDD r2	= ProductAutomaton.ithVarSystemPre(2);
+		BDD r3	= ProductAutomaton.ithVarSystemPre(3);
+		BDD r4	= ProductAutomaton.ithVarSystemPre(4);
+		BDD r5	= ProductAutomaton.ithVarSystemPre(5);
+		BDD r6	= ProductAutomaton.ithVarSystemPre(6);
+//		BDD c	= ProductAutomaton.ithVarSystemPre(5);
 //		BDD t	= ProductAutomaton.ithVarSystemPre(3);
-//		BDD b	= ProductAutomaton.ithVarSystemPre(4);
-//		BDD filter1	= h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b).or(t)).not());
-//		BDD filter2	= r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
-//		BDD filter3	= r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
-//		BDD filter4	= r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
-//		BDD filter5 = r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
-//		BDD filter6	= r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
-//		BDD filter7	= r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
-//		BDD filter	= filter1.and(filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
-//		BDD filterPrime	= productAutomaton.changePreVarsToPostVars(filter);
-//		return filter.and(filterPrime);
-		return factory.one();
+		BDD b	= ProductAutomaton.ithVarSystemPre(7);
+		BDD filter1	= h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b)).not());
+		BDD filter2	= r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
+		BDD filter3	= r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
+		BDD filter4	= r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
+		BDD filter5 = r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
+		BDD filter6	= r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
+		BDD filter7	= r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
+		BDD filter	= filter1.and(filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
+		BDD filterPrime	= productAutomaton.changePreVarsToPostVars(filter);
+		return filter.and(filterPrime);
+//		return factory.one();
 	}
 	
 	public ProductAutomaton getProductAutomaton() 

@@ -15,7 +15,6 @@ import settings.PlanningSettings;
 
 public class EnvironmentReader 
 {
-	
 	public static Environment env;
 	
 	public EnvironmentReader(String envFile, String labelFile) throws IOException

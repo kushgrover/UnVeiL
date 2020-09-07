@@ -1,7 +1,10 @@
 package planningIO.printing;
 
 import java.awt.Graphics;
+import java.awt.geom.Path2D;
+import java.awt.geom.PathIterator;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.swing.JFrame;
 
@@ -21,13 +24,15 @@ public class ShowGraph extends JFrame {
 	
 	Graph<Vertex, DefaultEdge> graph;
 	Environment env;
+	List<DefaultEdge> path;
 	
 	
 	
-	public ShowGraph(Graph<Vertex, DefaultEdge> graph, Environment env)
+	public ShowGraph(Graph<Vertex, DefaultEdge> graph, Environment env, List<DefaultEdge> path)
 	{
 		this.graph = graph;
 		this.env = env;
+		this.path = path;
 	}
 	
 	
@@ -37,37 +42,54 @@ public class ShowGraph extends JFrame {
 		Plot plot = new Plot("plot", "", "");
 		plot.setLimits(env.getBoundsX()[0], env.getBoundsX()[1], env.getBoundsY()[0], env.getBoundsY()[1]);
 		
-//		Iterator<Path2D> i = env.getObstacles().iterator();
-
-//		while(i.hasNext())
-//		{
-//			Path2D rect = i.next();
-//			PathIterator it = rect.getPathIterator(null);
-//			float[] coords= new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
-//			while(! it.isDone()) {
-//				switch(it.currentSegment(coords)) {
-//					case(PathIterator.SEG_MOVETO):
-//						from = coords;
-//						break;
-//					case(PathIterator.SEG_LINETO):
-//						to = coords;
-//						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
-//						break;
-//					default:
-//						break;
-//				}
-//			}
-//		}
 		
+		plot.setColor("blue");
+		Iterator<Path2D> i = env.getObstacles().iterator();
+		while(i.hasNext())
+		{
+			Path2D rect = i.next();
+			PathIterator it = rect.getPathIterator(null);
+			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			while(! it.isDone()) {
+				switch(it.currentSegment(coords)) {
+					case(PathIterator.SEG_MOVETO):
+						from = coords.clone();
+						break;
+					case(PathIterator.SEG_LINETO):
+						to = coords.clone();
+						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+						from = to.clone();
+						break;
+					default:
+						break;
+				}
+				it.next();
+			}
+		}
+		
+		DefaultEdge nextEdge;
+		Vertex source, target;
+		
+		plot.setColor("black");
 		Iterator<DefaultEdge> ite = graph.edgeSet().iterator();
-		
 		while(ite.hasNext())
 		{
-			DefaultEdge nextEdge = ite.next();
-			Vertex source = graph.getEdgeSource(nextEdge);
-			Vertex target = graph.getEdgeTarget(nextEdge);
+			nextEdge = ite.next();
+			source = graph.getEdgeSource(nextEdge);
+			target = graph.getEdgeTarget(nextEdge);
 			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
 		}
+
+		plot.setColor("green");
+		ite = path.iterator();
+		while(ite.hasNext())
+		{
+			nextEdge = ite.next();
+			source = graph.getEdgeSource(nextEdge);
+			target = graph.getEdgeTarget(nextEdge);
+			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+		}
+		
 //		plot.makeHighResolution("", 5.0f, true, true);
 		plot.show();
 	}

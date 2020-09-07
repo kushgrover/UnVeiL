@@ -11,7 +11,14 @@ import planningIO.printing.ShowGraph;
 import settings.PlanningSettings;
 
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
 import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -39,11 +46,13 @@ public class RRG
 	ArrayList<Point> treePoints; // list of all the points in the Rtree/graph
 	int numPoints; // num of points in the Rtree/graph
 	Vertex initVertex;  //initial vertex in the graph
+	public int totalSampledPoints;
 	
+	ArrayList<Pair<BDD, Vertex>> map;
 	
 	
 	/**
-	 * Initialize the RRG object with the constructor
+	 * Initialise the RRG object with the constructor
 	 * @param env
 	 */
 	public RRG(Environment env) 
@@ -55,7 +64,11 @@ public class RRG
 		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
 		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(DefaultEdge.class);
 		treePoints 				= new ArrayList<Point>();
+		map						= new ArrayList<Pair<BDD, Vertex>>();
+		
 		numPoints				= 0;
+		
+		totalSampledPoints 		= 0;
 		
 		this.tree 				= new RTree();
 		tree.init(null);
@@ -81,6 +94,13 @@ public class RRG
 	 */
 	public BDD buildGraph(BDD fromStates, BDD toStates, Point2D xRand2D, ProductAutomaton productAutomaton) 
 	{
+//		if(numPoints == 0) {
+//			setStartingPoint(xRand2D);
+//			numPoints++;
+//		}
+		
+		
+		
 		BDD transitions 			= ProductAutomaton.factory.zero();
 		
 		// need 'point2D' for graph and 'point' for Rtree
@@ -132,6 +152,10 @@ public class RRG
 //						e1.printStackTrace();
 //					}
 					
+					
+					
+					
+					
 					final float radius;	// radius for which the neighbours will be considered to add further edges
 					if(numPoints > 1) 
 					{
@@ -144,6 +168,10 @@ public class RRG
 					//add the new point to the graph (it will be added later to the Rtree)
 					final Vertex source	= new Vertex(xNew2D);
 					graph.addVertex(source);
+					
+					// add the vertex in the map from abstraction to concrete
+					addToMap(source);
+					
 					BDD transition;
 					try {
 						transition = productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
@@ -161,12 +189,12 @@ public class RRG
 								{
 									Point neighbour			= treePoints.get(i);
 									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
-
+									
 									if(neighbour2D.equals(xNew2D)) return true;
 									
 									if( distance(xNew, neighbour) <= radius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
 									{
-										Vertex target		= new Vertex(neighbour2D);
+										Vertex target		= findTheVertex(neighbour2D);
 										graph.addVertex(target);
 										graph.addEdge(source, target);
 										
@@ -205,6 +233,18 @@ public class RRG
 		return transitions;
 	}
 	
+	protected void addToMap(Vertex v) {
+		try {
+			BDD label = Environment.getLabelling().getLabel(v.getPoint());
+			if(findTheVertex(label) == null) {
+				map.add(new Pair<BDD, Vertex>(label, v));
+			}
+
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	//compute distance between two points
 	private float distance(Point p, Point q) 
 	{
@@ -262,27 +302,32 @@ public class RRG
 	 * @throws Exception
 	 */
 	public BDD sample(BDD fromStates, BDD toStates, ProductAutomaton productAutomaton) throws Exception {
+//		if(fromStates.and(toStates).isZero()) {
+//			throw new PlanningException("Advice given is null");
+//		}
+		
 		Point2D.Float p;
 		BDD transition;
 		int i 		= 0;
 		while(i < ProductAutomaton.threshold)
 		{
-			i++;
 			p 			= env.sample();
+			totalSampledPoints++;
 			transition 	= buildGraph(fromStates, toStates, p, productAutomaton);
 			if(! transition.isZero())
 			{
 				return transition;
 			}
+			i++;
 		}
 		return null;
 	}
 
 	/**
-	 * Sample a transition with souce in 'currentStates'
+	 * Sample a transition with source in 'currentStates'
 	 * @param currentStates Sample a transition from these states
 	 * @param productAutomaton
-	 * @return sampled transiton
+	 * @return sampled transition
 	 */
 	public BDD sample(BDD currentStates, ProductAutomaton productAutomaton) {
 		Point2D.Float p;
@@ -292,6 +337,7 @@ public class RRG
 		{
 			i++;
 			p 			= env.sample();
+			totalSampledPoints++;
 			transition 	= buildGraph(currentStates, ProductAutomaton.factory.one(), p, productAutomaton);
 			if(! transition.isZero())
 			{
@@ -309,15 +355,20 @@ public class RRG
 	public BDD sample(ProductAutomaton productAutomaton) {
 		Point2D.Float p;
 		BDD transition;
-		while(true)
+		int i	= 0;
+		while(i < ProductAutomaton.threshold)
 		{
+			System.out.print("counter = "+ i);
 			p 			= env.sample();
+			totalSampledPoints++;
 			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton);
 			if(! transition.isZero())
 			{
 				return transition;
 			}
+			i++;
 		}
+		return null;
 	}
 
 	/**
@@ -343,27 +394,80 @@ public class RRG
 	/**
 	 * Lift the path from abstraction to the graph
 	 * @param path
+	 * @return 
 	 */
-	public void liftPath(ArrayList<BDD> path) {
-//		Vertex source = initVertex;
-//		Vertex dest;
-//		Iterator<BDD> it = path.iterator();
-//		BDD nextState;
-//		while(it.hasNext())
-//		{
-//			nextState = it.next();
-//			dest = findAVertex(nextState);
-//			GraphPath<Vertex, DefaultEdge> rrgPath = DijkstraShortestPath.findPathBetween(graph, source, dest); 
-//
-//		}
+	public List<DefaultEdge> liftPath(ArrayList<BDD> path) {
+		Vertex source = initVertex;
 		
+		Vertex dest;
+		Iterator<BDD> it = path.iterator();
+		BDD nextState;
+		List<DefaultEdge> finalPath;
+		
+		
+		//initialize finalPath
+		nextState = it.next();
+
+		nextState = it.next();
+		dest = findTheVertex(nextState);
+//		DijkstraShortestPath<Vertex, DefaultEdge> dijk = new DijkstraShortestPath<Vertex, DefaultEdge>(graph);
+		GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, dest);
+		finalPath = nextPath.getEdgeList();
+		
+		// iterate over the abstract path
+		while(it.hasNext())
+		{
+			source = dest;
+			nextState = it.next();
+			dest = findTheVertex(nextState);
+			nextPath = DijkstraShortestPath.findPathBetween(graph, source, dest);
+			finalPath.addAll(nextPath.getEdgeList());
+		}
+		return finalPath;
 	}   
 	
 	/**
+	 * Find a vertex in the graph where labelling is
+	 * @param nextState
+	 * @return
+	 */
+	private Vertex findTheVertex(BDD label) {
+		Iterator<Pair<BDD, Vertex>> it = map.iterator();
+		while(it.hasNext())
+		{
+			Pair<BDD, Vertex> n = (Pair<BDD, Vertex>) it.next();
+//			n.getFirst().printDot();
+			if(! n.getFirst().and(label).isZero())
+			{
+				return n.getSecond();
+			}
+		}
+		return null;
+	}
+	
+	/**
+	 * Find a vertex in the graph whose point is p
+	 * @param p
+	 * @return
+	 */
+	private Vertex findTheVertex(Point2D p) {
+		Set<Vertex> vertexSet = graph.vertexSet();
+		Iterator<Vertex> it = vertexSet.iterator();
+		Vertex temp;
+		while(it.hasNext()) {
+			temp = it.next();
+			if(Math.abs(temp.getPoint().getX()-p.getX())<0.0001  &&  Math.abs(temp.getPoint().getY()-p.getY())<0.0001) {
+				return temp;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Plot the graph
 	 */
-	public void plotGraph() {
-		new ShowGraph(graph, env).setVisible(true);;
+	public void plotGraph(List<DefaultEdge> path) {
+		new ShowGraph(graph, env, path).setVisible(true);;
 	}
 	    
 }

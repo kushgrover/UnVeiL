@@ -53,7 +53,7 @@ public class PlanningSettings
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
-			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.05),																"",
+			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(1.0),																"",
 																					"Maximum radius to find the neighbours"}
 		};
 																			

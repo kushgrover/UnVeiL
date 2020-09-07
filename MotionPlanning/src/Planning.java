@@ -8,6 +8,9 @@ import modules.learnAskExperiments.DefaultExperiment;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.List;
+
+import org.jgrapht.graph.DefaultEdge;
 
 import abstraction.ProductAutomaton;
 import environment.Environment;
@@ -22,13 +25,13 @@ public class Planning
 	public static void main(String[] args) throws Exception
 	{    	
     	
-		// Initialize everything-------------------------------------------
+		// Initialise everything-------------------------------------------
 		double startTime 					= System.nanoTime();
 		
 		// use default values for everything
 		new PlanningSettings();
 		
-		// read the files and initialize everything
+		// read the files and initialise everything
         Initialize initialize				= new Initialize();
 
         Environment env 					= initialize.getEnvironment();
@@ -42,10 +45,10 @@ public class Planning
         //add initial point
         BDD initStateSystem					= label.getLabel(env.getInit());
         rrg.setStartingPoint(env.getInit());
-        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for init state in the product automaton
+        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for initial state in the product automaton
         
         
-        BDD currentStates					= initStateSystem.id(); //it stores the set of states in the abstraction we have seen till now
+        BDD currentStates					= initStateSystem.id(); //stores the set of states in the abstraction we have seen till now
         
         double initializationTime 			= System.nanoTime() - startTime;
         //-------------------------------------------------------------------
@@ -58,10 +61,12 @@ public class Planning
         double samplingTime = 0, preTimeSampling = 0, pathStartTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0;
         int iterationNumber					= 0;
         boolean computePath 				= false;
+        List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
         PrintStream out = System.out;		// Don't output random things from libraries
         
         while(true)  //until the property is satisfied
         {
+
         	// Don't output random things
         	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
         	
@@ -74,13 +79,17 @@ public class Planning
         	
         	while(currentPathLength < reachableStates.size()) //First try to sample from the advice
         	{
+        		
         		fromStates					= currentStates.and(reachableStates.get(currentPathLength));
         		toStates 					= reachableStates.get(currentPathLength-1);
 
         		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), productAutomaton);
         		samplingTime				+= System.nanoTime() - preTimeSampling;
-        		if(transition == null) { currentPathLength++; }
+        		if(transition == null) {
+        			currentPathLength++;
+        			break;
+        		}
         	}	
         	
         	if(transition == null) // sample from the set of current states
@@ -152,7 +161,7 @@ public class Planning
             		productAutomaton.printPath(path);
             		
             		// Lifing the path to RRG graph
-                	rrg.liftPath(path);
+                	finalPath = rrg.liftPath(path);
             		break;
             	}
         	}
@@ -170,11 +179,12 @@ public class Planning
         Initialize.getFactory().done();
         double totalTime = System.nanoTime() - startTime;
 
-        rrg.plotGraph();
+        rrg.plotGraph(finalPath);
 
         // Output time
-		System.out.println("\n\nTotal sampled transitions = " + iterationNumber);
-		System.out.print("\n\nTotal time taken (in ms):");
+		System.out.println("\nTotal useful sampled points = " + iterationNumber);
+		System.out.println("Total sampled points = " + rrg.totalSampledPoints);	
+		System.out.print("\nTotal time taken (in ms):");
         System.out.println(totalTime / 1000000);
         System.out.print("\nInitialization time (in ms):");
         System.out.println((initializationTime) / 1000000);
@@ -185,10 +195,6 @@ public class Planning
         System.out.print("Learning time (in ms):");
         System.out.println(learnTime/ 1000000);
         System.out.print("Time taken other than these things (in ms):");
-        System.out.println((totalTime - initializationTime - samplingTime - pathTime - learnTime) / 1000000);
-        
+        System.out.println((totalTime - initializationTime - samplingTime - pathTime - learnTime) / 1000000);    
 	}
-
-	
-	
 }
