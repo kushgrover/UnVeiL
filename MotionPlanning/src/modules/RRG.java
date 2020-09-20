@@ -92,14 +92,8 @@ public class RRG
 	 * @param productAutomaton
 	 * @return
 	 */
-	public BDD buildGraph(BDD fromStates, BDD toStates, Point2D xRand2D, ProductAutomaton productAutomaton) 
+	public BDD buildGraph(BDD fromStates, BDD toStates, Point2D xRand2D, ProductAutomaton productAutomaton, int type) 
 	{
-//		if(numPoints == 0) {
-//			setStartingPoint(xRand2D);
-//			numPoints++;
-//		}
-		
-		
 		
 		BDD transitions 			= ProductAutomaton.factory.zero();
 		
@@ -174,8 +168,12 @@ public class RRG
 					
 					BDD transition;
 					try {
-						transition = productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
+						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
 						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
+						if(type == 1 && transition.and(productAutomaton.getBDD()).and(fromStates).and(productAutomaton.changePreVarsToPostVars(toStates)).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
+							System.out.println("ajhdkjajaskfaj");
+							return false;
+						}
 						transitions.orWith(transition);
 					} catch (Exception e1) {
 						e1.printStackTrace();
@@ -286,7 +284,7 @@ public class RRG
 		} else 
 		{
 			Point2D temp = new Point2D.Float((float) (source.getX() + ((eta-0.00001)*(dest.getX()-source.getX())/d)), (float) (source.getY()+((eta-0.00001)*(dest.getY()-source.getY())/d)));
-			if((float) source.distance(temp)>0.051f) {
+			if((float) source.distance(temp)>1.0f) {
 				System.out.println("I am fucked");
 			}
 			return temp;
@@ -313,7 +311,7 @@ public class RRG
 		{
 			p 			= env.sample();
 			totalSampledPoints++;
-			transition 	= buildGraph(fromStates, toStates, p, productAutomaton);
+			transition 	= buildGraph(fromStates, toStates, p, productAutomaton, 1);
 			if(! transition.isZero())
 			{
 				return transition;
@@ -329,39 +327,38 @@ public class RRG
 	 * @param productAutomaton
 	 * @return sampled transition
 	 */
-	public BDD sample(BDD currentStates, ProductAutomaton productAutomaton) {
-		Point2D.Float p;
-		BDD transition;
-		int i 		= 0;
-		while(i < ProductAutomaton.threshold)
-		{
-			i++;
-			p 			= env.sample();
-			totalSampledPoints++;
-			transition 	= buildGraph(currentStates, ProductAutomaton.factory.one(), p, productAutomaton);
-			if(! transition.isZero())
-			{
-				return transition;
-			}
-		}
-		return null;
-	}
+//	public BDD sample(BDD currentStates, ProductAutomaton productAutomaton) {
+//		Point2D.Float p;
+//		BDD transition;
+//		int i 		= 0;
+//		while(i < ProductAutomaton.threshold)
+//		{
+//			i++;
+//			p 			= env.sample();
+//			totalSampledPoints++;
+//			transition 	= buildGraph(currentStates, ProductAutomaton.factory.one(), p, productAutomaton);
+//			if(! transition.isZero())
+//			{
+//				return transition;
+//			}
+//		}
+//		return null;
+//	}
 
 	/**
 	 * Sample a point from anywhere and add it to the Rtree/graph
 	 * @param productAutomaton
 	 * @return sampled transition
 	 */
-	public BDD sample(ProductAutomaton productAutomaton) {
+	public BDD sampleRandomly(ProductAutomaton productAutomaton) {
 		Point2D.Float p;
 		BDD transition;
 		int i	= 0;
 		while(i < ProductAutomaton.threshold)
 		{
-			System.out.print("counter = "+ i);
 			p 			= env.sample();
 			totalSampledPoints++;
-			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton);
+			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton, 2);
 			if(! transition.isZero())
 			{
 				return transition;

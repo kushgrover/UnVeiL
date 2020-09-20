@@ -150,26 +150,26 @@ public class DefaultExperiment implements Experiments
 	 * ASK procedure
 	 */
 	@Override
-	public ArrayList<BDD> ask(BDD currentStates) throws Exception
+	public ArrayList<BDD> advice(BDD currentStates) throws Exception
 	{
 		ArrayList<BDD> reachableStates	= new ArrayList<BDD>();
 //		
-//		reachableStates.add(productAutomaton.finalStates());
-//		reachableStates.add(productAutomaton.preImageOfFinalStates());
+		reachableStates.add(productAutomaton.finalStates());
+		reachableStates.add(productAutomaton.preImageOfFinalStates());
+		
+		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
+			return reachableStates;
+		}
+		
+		int i	= 1;
+		BDD backwardReachableStates		= productAutomaton.preImageOfFinalStates();
+		while(!productAutomaton.preImage(backwardReachableStates).and(backwardReachableStates.not()).isZero()) {
+			reachableStates.add(productAutomaton.preImage(reachableStates.get(i)));
+			i++;
+			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
+		}
 //		
-//		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
-//			return reachableStates;
-//		}
-//		
-//		int i	= 1;
-//		BDD backwardReachableStates		= productAutomaton.preImageOfFinalStates();
-//		while(!productAutomaton.preImage(backwardReachableStates).and(backwardReachableStates.not()).isZero()) {
-//			reachableStates.add(productAutomaton.preImage(reachableStates.get(i)));
-//			i++;
-//			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
-//		}
-//		
-		reachableStates.add(ProductAutomaton.factory.one());
+//		reachableStates.add(ProductAutomaton.factory.one());
 		return reachableStates;
 		
 	}

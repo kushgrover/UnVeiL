@@ -8,6 +8,7 @@ import modules.learnAskExperiments.DefaultExperiment;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.jgrapht.graph.DefaultEdge;
@@ -59,20 +60,24 @@ public class Planning
         
         // loop of the main algo starts here
         double samplingTime = 0, preTimeSampling = 0, pathStartTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0;
+        int[] advice = new int[50];
+        for(int k=0;k<50;k++) {
+        	advice[k]=0;
+        }
         int iterationNumber					= 0;
         boolean computePath 				= false;
         List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
-        PrintStream out = System.out;		// Don't output random things from libraries
+//        PrintStream out = System.out;		// Don't output random things from libraries
         
         while(true)  //until the property is satisfied
         {
 
         	// Don't output random things
-        	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+//        	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
         	
         	
         	// Sample transitions
-        	ArrayList<BDD> reachableStates	= exper.ask(currentStates);
+        	ArrayList<BDD> reachableStates	= exper.advice(currentStates);
         	int currentPathLength			= 1;
         	
         	BDD transition = null, fromStates = null, toStates = null;
@@ -88,21 +93,18 @@ public class Planning
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         		if(transition == null) {
         			currentPathLength++;
+        			continue;
+        		}
+        		else {
+        			advice[currentPathLength-1]++;
         			break;
         		}
-        	}	
-        	
-        	if(transition == null) // sample from the set of current states
-        	{
-        		preTimeSampling 			= System.nanoTime();
-        		transition					= rrg.sample(currentStates, productAutomaton);
-        		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
         	
         	if(transition == null) // sample anywhere
         	{
         		preTimeSampling 			= System.nanoTime();
-        		transition					= rrg.sample(productAutomaton);
+        		transition					= rrg.sampleRandomly(productAutomaton);
         		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
         	
@@ -120,8 +122,6 @@ public class Planning
         	}
         	
 
-        	
-        	
         	// Learning ------------------------------------------------------
         	BDDIterator ite 				= transition.iterator(ProductAutomaton.allSystemVars());
         	while(ite.hasNext())
@@ -130,7 +130,7 @@ public class Planning
         		transition 					= (BDD) ite.next();
         		
         		//if transition has been sampled before, skip learning
-        		if(! transition.and(productAutomaton.sampledTransitions).isZero())
+        		if(! transition.and(productAutomaton.sampledTransitions).isZero() || productAutomaton.removeAllExceptPreSystemVars(transition).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transition))))
             	{
             		learnTime 					+= System.nanoTime() - learnStartTime;
             		continue;
@@ -145,7 +145,7 @@ public class Planning
         	
         	
         	// Don't output random things
-        	System.setOut(out);
+//        	System.setOut(out);
         	
 
         	
@@ -168,9 +168,6 @@ public class Planning
         	pathTime					+= System.nanoTime() - pathStartTime;
         	//------------------------------------------------------------------
         	
-        	
-        	
-        	
         	computePath = false;
         	iterationNumber++;
         }
@@ -182,8 +179,16 @@ public class Planning
         rrg.plotGraph(finalPath);
 
         // Output time
-		System.out.println("\nTotal useful sampled points = " + iterationNumber);
 		System.out.println("Total sampled points = " + rrg.totalSampledPoints);	
+		System.out.println("\nTotal useful sampled points = " + iterationNumber);
+		
+		int adviceSamples = 0;
+		for(int k =0;k<50;k++) {
+			adviceSamples += advice[k];
+		}
+		System.out.println("Sampled from advice = " + adviceSamples);
+		System.out.println("\nAdvice samples: " + Arrays.toString(advice));
+		
 		System.out.print("\nTotal time taken (in ms):");
         System.out.println(totalTime / 1000000);
         System.out.print("\nInitialization time (in ms):");
