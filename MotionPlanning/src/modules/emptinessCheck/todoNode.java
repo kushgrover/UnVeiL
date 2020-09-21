@@ -1,22 +1,22 @@
 package modules.emptinessCheck;
 
 import abstraction.ProductAutomaton;
-import abstraction.exceptions.StateException;
 import net.sf.javabdd.BDD;
+import settings.PlanningException;
 
 public class todoNode {
 	BDD state, transitions;
 	todoNode previous=null;
 	
-	todoNode(BDD state, BDD transitions) throws Exception{
+	todoNode(BDD state, BDD transitions) throws PlanningException{
 		checkValidity(transitions);
 		this.state=state;
 		this.transitions=transitions;
 	}
 
-	private void checkValidity(BDD transitions) throws Exception {
+	private void checkValidity(BDD transitions) throws PlanningException {
 		if(transitions.satCount(ProductAutomaton.allPreVars())>1) {
-			throw new StateException("More than one state");
+			throw new PlanningException("More than one state");
 		}
 	}
 	

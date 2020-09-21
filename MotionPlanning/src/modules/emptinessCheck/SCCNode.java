@@ -14,7 +14,7 @@ public class SCCNode {
 	BDD rem;
 	SCCNode previous=null;
 	
-	public SCCNode(int root, ArrayList<Integer> last, ArrayList<Integer> acc, BDD rem) throws Exception{
+	public SCCNode(int root, ArrayList<Integer> last, ArrayList<Integer> acc, BDD rem) {
 		checkRem(rem);
 		this.root=root;
 		this.last=last;

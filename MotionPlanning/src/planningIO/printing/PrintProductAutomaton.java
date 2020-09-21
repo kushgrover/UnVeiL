@@ -4,9 +4,9 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 
 import abstraction.ProductAutomaton;
-import abstraction.exceptions.StateException;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
+import settings.PlanningException;
 
 public class PrintProductAutomaton
 {
@@ -109,7 +109,7 @@ public class PrintProductAutomaton
 		String stateLabel	= Integer.toString(state.scanVar(ProductAutomaton.propertyDomainPre()).intValue());
 		if(state.pathCount() != 1)
 		{
-			throw new StateException("More than one state");
+			throw new PlanningException("More than one state");
 		}
 		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
 		{

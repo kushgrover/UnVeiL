@@ -50,4 +50,9 @@ public class Label
 	{
 		return apListSystem;
 	}
+	
+	public ArrayList<Path2D> getAreas()
+	{
+		return areas;
+	}
 }

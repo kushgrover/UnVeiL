@@ -26,8 +26,8 @@ public class Planning
 	public static void main(String[] args) throws Exception
 	{    	
     	
-		// Initialise everything-------------------------------------------
-		double startTime 					= System.nanoTime();
+		// Initialise everything <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+		double startTime					= System.nanoTime();
 		
 		// use default values for everything
 		new PlanningSettings();
@@ -52,60 +52,62 @@ public class Planning
         BDD currentStates					= initStateSystem.id(); //stores the set of states in the abstraction we have seen till now
         
         double initializationTime 			= System.nanoTime() - startTime;
-        //-------------------------------------------------------------------
+//      >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
         
-        
-        
-        
-        // loop of the main algo starts here
-        double samplingTime = 0, preTimeSampling = 0, pathStartTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0;
-        int[] advice = new int[50];
-        for(int k=0;k<50;k++) {
-        	advice[k]=0;
+        // for output of advice
+        int[] advice 						= new int[50];
+        for(int k=0 ;k<50; k++) 
+        {
+        	advice[k]						= 0;
         }
-        int iterationNumber					= 0;
-        boolean computePath 				= false;
-        List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
-//        PrintStream out = System.out;		// Don't output random things from libraries
         
+        // for calculating time of different parts
+        double samplingTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0, processStartTime = 0, adviceTime = 0;
+        
+        int iterationNumber					= 0;
+    	BDD transition = null, fromStates = null, toStates = null;
+        boolean computePath 				= false;
+        List<DefaultEdge> finalPath 		= new ArrayList<DefaultEdge>();
+        boolean needNewAdvice = true;
+        ArrayList<BDD> reachableStates = null;
         while(true)  //until the property is satisfied
         {
 
         	// Don't output random things
 //        	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
         	
+        	// Sample transitions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        	processStartTime = System.nanoTime();
+        	if(needNewAdvice) 
+        	{
+        		reachableStates	= exper.advice(currentStates);
+        		needNewAdvice = false;
+        	}
+        	adviceTime += System.nanoTime() - processStartTime;
         	
-        	// Sample transitions
-        	ArrayList<BDD> reachableStates	= exper.advice(currentStates);
+        	processStartTime = System.nanoTime();
         	int currentPathLength			= 1;
-        	
-        	BDD transition = null, fromStates = null, toStates = null;
-        	
         	while(currentPathLength < reachableStates.size()) //First try to sample from the advice
         	{
         		
         		fromStates					= currentStates.and(reachableStates.get(currentPathLength));
         		toStates 					= reachableStates.get(currentPathLength-1);
 
-        		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), productAutomaton);
-        		samplingTime				+= System.nanoTime() - preTimeSampling;
         		if(transition == null) {
         			currentPathLength++;
         			continue;
         		}
         		else {
-        			advice[currentPathLength-1]++;
+        			advice[currentPathLength - 1]++;
         			break;
         		}
         	}
         	
         	if(transition == null) // sample anywhere
         	{
-        		preTimeSampling 			= System.nanoTime();
         		transition					= rrg.sampleRandomly(productAutomaton);
-        		samplingTime				+= System.nanoTime() - preTimeSampling;
         	}
         	
         	if(transition == null) // if transition is still null
@@ -113,7 +115,8 @@ public class Planning
         		System.out.println("Something wrong happened O.o");
         		break;
         	}
-        	//-----------------------------------------------------------------------------
+        	samplingTime += System.nanoTime() - processStartTime;
+//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         	
         	
         	// if the sampled transition is accepting, path checking will happen
@@ -122,35 +125,33 @@ public class Planning
         	}
         	
 
-        	// Learning ------------------------------------------------------
+        	// Learning <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        	processStartTime 				= System.nanoTime();
         	BDDIterator ite 				= transition.iterator(ProductAutomaton.allSystemVars());
         	while(ite.hasNext())
         	{
-            	learnStartTime 				= System.nanoTime();
         		transition 					= (BDD) ite.next();
         		
-        		//if transition has been sampled before, skip learning
+        		//if transition has been sampled before or transition is a self loop in the abstraction, skip learning
         		if(! transition.and(productAutomaton.sampledTransitions).isZero() || productAutomaton.removeAllExceptPreSystemVars(transition).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transition))))
             	{
-            		learnTime 					+= System.nanoTime() - learnStartTime;
             		continue;
             	}
         		
         		//learning happens here
         		exper.learn(productAutomaton.getFirstStateSystem(transition), productAutomaton.getSecondStateSystem(transition));
         		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));	//update the set of current states
-            	learnTime 					+= System.nanoTime() - learnStartTime;
+        		
+        		needNewAdvice = true; 
         	}
-        	//-------------------------------------------------------------------------
-        	
+        	learnTime 					+= System.nanoTime() - processStartTime;
+        	//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         	
         	// Don't output random things
-//        	System.setOut(out);
+//        	System.setOut(System.out);
         	
-
-        	
-        	// If an accepting transition was sampled, check for path
-        	pathStartTime				= System.nanoTime();
+        	// If an accepting transition was sampled, check for path <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+        	processStartTime				= System.nanoTime();
         	if(computePath) 
         	{
         		// computing the path
@@ -165,41 +166,44 @@ public class Planning
             		break;
             	}
         	}
-        	pathTime					+= System.nanoTime() - pathStartTime;
-        	//------------------------------------------------------------------
+        	pathTime					+= System.nanoTime() - processStartTime;
+//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         	
         	computePath = false;
         	iterationNumber++;
         }
+        
 //    	productAutomaton.createDot(iterationNumber);
-
         Initialize.getFactory().done();
         double totalTime = System.nanoTime() - startTime;
 
         rrg.plotGraph(finalPath);
 
-        // Output time
+        // Output
 		System.out.println("Total sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + iterationNumber);
 		
 		int adviceSamples = 0;
-		for(int k =0;k<50;k++) {
+		for(int k=0; k<50; k++) 
+		{
 			adviceSamples += advice[k];
 		}
+		
 		System.out.println("Sampled from advice = " + adviceSamples);
 		System.out.println("\nAdvice samples: " + Arrays.toString(advice));
-		
 		System.out.print("\nTotal time taken (in ms):");
         System.out.println(totalTime / 1000000);
         System.out.print("\nInitialization time (in ms):");
         System.out.println((initializationTime) / 1000000);
         System.out.print("Sampling time (in ms):");
         System.out.println(samplingTime / 1000000);
+        System.out.print("Advice time (in ms):");
+        System.out.println(adviceTime / 1000000);
         System.out.print("Path checking time (in ms):");
         System.out.println(pathTime / 1000000);
         System.out.print("Learning time (in ms):");
-        System.out.println(learnTime/ 1000000);
+        System.out.println(learnTime / 1000000);
         System.out.print("Time taken other than these things (in ms):");
-        System.out.println((totalTime - initializationTime - samplingTime - pathTime - learnTime) / 1000000);    
+        System.out.println((totalTime - initializationTime - samplingTime - adviceTime - pathTime - learnTime) / 1000000);    
 	}
 }

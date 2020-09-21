@@ -4,10 +4,11 @@ import java.util.ArrayList;
 
 import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
+import settings.PlanningException;
 
 public class PrintAcceptingPath 
 {
-	public PrintAcceptingPath(ArrayList<BDD> path) throws Exception 
+	public PrintAcceptingPath(ArrayList<BDD> path) throws PlanningException 
 	{
 		BDD next;
 		for(int i=0; i<path.size(); i++) 
@@ -19,7 +20,7 @@ public class PrintAcceptingPath
 		System.out.print("\n\n");
 	}
 
-	private void printAPList(BDD state) throws Exception 
+	private void printAPList(BDD state) throws PlanningException 
 	{
 		ArrayList<String> apList	= findAPList(state);
 		System.out.print("[");
@@ -37,7 +38,7 @@ public class PrintAcceptingPath
 		System.out.print("]  ");
 	}
 
-	private ArrayList<String> findAPList(BDD state) throws Exception 
+	private ArrayList<String> findAPList(BDD state) throws PlanningException 
 	{
 		ArrayList<String> list		= new ArrayList<String>();
 		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 

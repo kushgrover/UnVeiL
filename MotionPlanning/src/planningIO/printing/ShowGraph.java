@@ -43,6 +43,33 @@ public class ShowGraph extends JFrame {
 		plot.setLimits(env.getBoundsX()[0], env.getBoundsX()[1], env.getBoundsY()[0], env.getBoundsY()[1]);
 		
 		
+		DefaultEdge nextEdge;
+		Vertex source, target;
+		
+		// Whole Graph
+		plot.setColor("black");
+		Iterator<DefaultEdge> ite = graph.edgeSet().iterator();
+		while(ite.hasNext())
+		{
+			nextEdge = ite.next();
+			source = graph.getEdgeSource(nextEdge);
+			target = graph.getEdgeTarget(nextEdge);
+			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+		}
+
+		// Found Path
+		plot.setColor("green");
+		ite = path.iterator();
+		while(ite.hasNext())
+		{
+			nextEdge = ite.next();
+			source = graph.getEdgeSource(nextEdge);
+			target = graph.getEdgeTarget(nextEdge);
+			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+		}
+		
+		
+		//Obstacles
 		plot.setColor("blue");
 		Iterator<Path2D> i = env.getObstacles().iterator();
 		while(i.hasNext())
@@ -67,28 +94,31 @@ public class ShowGraph extends JFrame {
 			}
 		}
 		
-		DefaultEdge nextEdge;
-		Vertex source, target;
+		// Label
+		plot.setColor("red");
+		i = Environment.getLabelling().getAreas().iterator();
+		while(i.hasNext())
+		{
+			Path2D rect = i.next();
+			PathIterator it = rect.getPathIterator(null);
+			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			while(! it.isDone()) {
+				switch(it.currentSegment(coords)) {
+					case(PathIterator.SEG_MOVETO):
+						from = coords.clone();
+						break;
+					case(PathIterator.SEG_LINETO):
+						to = coords.clone();
+						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+						from = to.clone();
+						break;
+					default:
+						break;
+				}
+				it.next();
+			}
+		}
 		
-		plot.setColor("black");
-		Iterator<DefaultEdge> ite = graph.edgeSet().iterator();
-		while(ite.hasNext())
-		{
-			nextEdge = ite.next();
-			source = graph.getEdgeSource(nextEdge);
-			target = graph.getEdgeTarget(nextEdge);
-			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
-		}
-
-		plot.setColor("green");
-		ite = path.iterator();
-		while(ite.hasNext())
-		{
-			nextEdge = ite.next();
-			source = graph.getEdgeSource(nextEdge);
-			target = graph.getEdgeTarget(nextEdge);
-			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
-		}
 		
 //		plot.makeHighResolution("", 5.0f, true, true);
 		plot.show();

@@ -6,10 +6,10 @@ package modules.emptinessCheck;
 import java.util.ArrayList;
 
 import abstraction.ProductAutomaton;
-import abstraction.exceptions.StateException;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import net.sf.javabdd.BDDFactory;
+import settings.PlanningException;
 
 /**
  * @author kush
@@ -42,7 +42,7 @@ public class EmptinessCheck {
 	}
 	
 //	public boolean findAcceptingPath() throws Exception{
-	public ArrayList<BDD> findAcceptingPath() throws Exception
+	public ArrayList<BDD> findAcceptingPath() throws PlanningException
 	{
 		push(null, productAutomaton.getInitStates());
 		while(! todo.isEmpty()) 
@@ -57,7 +57,7 @@ public class EmptinessCheck {
 				BDD toState		= productAutomaton.getSecondState(transition);
 				if(toState.isZero()) 
 				{
-					throw new StateException("State does not exist");
+					throw new PlanningException("State does not exist");
 				}
 				ArrayList<Integer> accSet	= productAutomaton.findAcceptingSets(transition);
 				if(getRank(toState) == -1) 
@@ -76,7 +76,7 @@ public class EmptinessCheck {
 		return null;		
 	}
 	
-	private ArrayList<BDD> findPath() throws Exception 
+	private ArrayList<BDD> findPath() throws PlanningException 
 	{
 		BDD statesSCC				= initializeStatesSCC();
 		ArrayList<BDD> path			= new ArrayList<BDD>();
@@ -93,7 +93,7 @@ public class EmptinessCheck {
 		return path;
 	}
 
-	private BDD initializeStatesSCC() throws Exception 
+	private BDD initializeStatesSCC() throws PlanningException 
 	{
 		statesSCC			= factory.zero();
 		int topRank			= SCC.getTop().getRoot();
@@ -107,7 +107,7 @@ public class EmptinessCheck {
 		return statesSCC;
 	}
 
-	private BDD bfs(BDD fromState, int[] visitedAcceptingSets, ArrayList<BDD> path) throws StateException, Exception 
+	private BDD bfs(BDD fromState, int[] visitedAcceptingSets, ArrayList<BDD> path) throws PlanningException
 	{
 		ArrayList<BDD> setStates	= new ArrayList<BDD>();
 		setStates.add(fromState);
@@ -154,7 +154,7 @@ public class EmptinessCheck {
 		return toState;
 	}
 
-	private void bfs(BDD fromState, BDD toState, ArrayList<BDD> path) throws StateException, Exception 
+	private void bfs(BDD fromState, BDD toState, ArrayList<BDD> path) throws PlanningException
 	{		
 		ArrayList<BDD> setStates		= new ArrayList<BDD>();
 		setStates.add(fromState);
@@ -206,19 +206,19 @@ public class EmptinessCheck {
 		return nextSuccAcc;
 	}
 
-	private int getRank(BDD state) throws Exception 
+	private int getRank(BDD state) throws PlanningException 
 	{
 		int id		= productAutomaton.getStateID(state);
 		return rank[id];
 	}
 	
-	private void setRank(BDD state, int num) throws Exception 
+	private void setRank(BDD state, int num) throws PlanningException 
 	{
 		int id		= productAutomaton.getStateID(state);
 		rank[id]	= num;
 	}
 
-	private void push(ArrayList<Integer> acc, BDD state) throws Exception 
+	private void push(ArrayList<Integer> acc, BDD state) throws PlanningException 
 	{
 		max++;
 		setRank(state,max);
@@ -226,7 +226,7 @@ public class EmptinessCheck {
 		todo.push(state, state.and(productAutomaton.getSampledProductTransitions()));
 	}
 
-	private void pop() throws Exception 
+	private void pop() throws PlanningException 
 	{
 		BDD state	= productAutomaton.getFirstState(todo.pop().getState());
 		SCC.getTop().setRem(SCC.getTop().getRem().or(state));

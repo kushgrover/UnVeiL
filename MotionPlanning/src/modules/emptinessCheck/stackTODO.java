@@ -1,11 +1,12 @@
 package modules.emptinessCheck;
 
 import net.sf.javabdd.BDD;
+import settings.PlanningException;
 
 public class stackTODO {
 	todoNode top;
 	
-	public void push(BDD state, BDD transitions) throws Exception{
+	public void push(BDD state, BDD transitions) throws PlanningException {
 		todoNode newNode=new todoNode(state, transitions); 
 		newNode.setPrevious(top);
 		top=newNode;
