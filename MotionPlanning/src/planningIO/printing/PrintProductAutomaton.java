@@ -15,8 +15,8 @@ public class PrintProductAutomaton
 	boolean visited[];
 	public PrintProductAutomaton(ProductAutomaton productAutomaton, int num) throws Exception
 	{
-		visited 		= new boolean[ProductAutomaton.getNumStates()];
-		writer 		= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/productAutomaton"+num+".dot"));
+		visited 				= new boolean[ProductAutomaton.getNumStates()];
+		writer 					= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/productAutomaton"+num+".dot"));
 		
 		this.productAutomaton	= productAutomaton;
 		BDD productAutomatonBDD = productAutomaton.getBDD();

@@ -32,7 +32,7 @@ public class DefaultExperiment implements Experiments
 	{
 		this.productAutomaton		= productAutomaton;
 		this.factory				= productAutomaton.getBDD().getFactory();
-		this.productAutomatonBDD	= productAutomaton.getBDD();
+//		this.productAutomatonBDD	= productAutomaton.getBDD();
 		this.time = 0;
 	}
 
@@ -40,16 +40,17 @@ public class DefaultExperiment implements Experiments
 	 * LEARN procedure
 	 */
 	@Override
-	public BDD learn(BDD fromState, BDD toState) throws Exception 
+	public BDD learn(BDD transitions) throws Exception 
 	{
 		double startTime = System.nanoTime();
-		BDD transition		= fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
-		if(transition.and(productAutomaton.sampledTransitions).isZero())
+//		BDD transition		= fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
+		BDD productTransitions = ProductAutomaton.factory.zero();
+		if(transitions.and(productAutomaton.sampledTransitions).isZero())
 		{
-			productAutomaton.sampledTransitions			= productAutomaton.sampledTransitions.or(transition);
-			productAutomaton.removeTransition(fromState, toState);
-			transition									= productAutomaton.addTransition(fromState, toState, 3);
-			productAutomaton.sampledProductTransitions 	= productAutomaton.sampledProductTransitions.or(transition);
+			productAutomaton.sampledTransitions			= productAutomaton.sampledTransitions.or(transitions);
+			productAutomaton.removeTransition(transitions);
+			productTransitions 							= productAutomaton.addTransition(transitions, 3);
+			productAutomaton.sampledProductTransitions 	= productAutomaton.sampledProductTransitions.or(productTransitions);
 		}
 		else
 		{
@@ -58,26 +59,36 @@ public class DefaultExperiment implements Experiments
 			return null;
 		}
 
+		BDD nextTransition, fromState, toState;
+		BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
+		while(it.hasNext()) {
+			nextTransition = (BDD) it.next();
+			fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
+			toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
+//			fromState.printDot();
+//			toState.printDot();
+			learnSimilarTransitions(fromState, toState);
+		}
 		
-		learnSimilarTransitions(fromState, toState);
 		
 //		int counter			= productAutomaton.increaseCounter(productAutomaton.getFirstState(fromState));
 
-
-		BDDIterator ite = fromState.iterator(ProductAutomaton.allPreSystemVars());
-		int counter;
-		while(ite.hasNext())
-		{
-			counter			= productAutomaton.increaseCounter((BDD) ite.next());
-			// never tested this
-			if(counter > ProductAutomaton.threshold) 
-			{
-				productAutomaton.setLevel(fromState, 1);
-			}
-		}
+//		BDDIterator ite = fromState.iterator(ProductAutomaton.allPreSystemVars());
+//		int counter;
+//		while(ite.hasNext())
+//		{
+//			counter			= productAutomaton.increaseCounter((BDD) ite.next());
+//			// never tested this
+//			if(counter > ProductAutomaton.threshold) 
+//			{
+//				productAutomaton.setLevel(fromState, 1);
+//			}
+//		}
+		
+		
 		time += System.nanoTime() - startTime;
 		
-		return transition;
+		return productTransitions;
 	}
 
 	/**
@@ -92,9 +103,9 @@ public class DefaultExperiment implements Experiments
 		BDD complementDomainOfChanges	= allExceptDomainOfChanges(fromState,toState);
 		BDD fromStateSimilar			= fromState.exist(complementDomainOfChanges);
 		BDD toStateSimilarPrime			= factory.one();
-		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
+		for(int i=0; i<ProductAutomaton.numAPSystem; i++)
 		{
-			if(fromStateSimilar.and(ProductAutomaton.ithVarSystemPre(i)).isZero()) 
+			if(fromStateSimilar.and(ProductAutomaton.ithVarSystemPre(i)).isZero())
 			{
 				toStateSimilarPrime.andWith((ProductAutomaton.ithVarSystemPost(i)));
 			}
@@ -169,6 +180,7 @@ public class DefaultExperiment implements Experiments
 			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
 		}
 //		
+//		reachableStates.add(ProductAutomaton.factory.one());
 //		reachableStates.add(ProductAutomaton.factory.one());
 		return reachableStates;
 		

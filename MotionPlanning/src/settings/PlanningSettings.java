@@ -30,7 +30,8 @@ public class PlanningSettings
 	public static final String SAMPLING_THRESHOLD			=	"planning.samplingThreshold";
 	public static final String TRANSITION_THRESHOLD			= 	"planning.transitionThreshold";
 	public static final String ETA							=	"planning.eta";
-	
+	public static final String SENSING_RADIUS				=	"planning.sensingRadius";
+	public static final String MOVING_THRESHOLD				=  	"planning.movingThreshold";
 	
 	public static final Logger RTREELOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 	
@@ -45,7 +46,7 @@ public class PlanningSettings
 																					"For Verbose output." },
 			{ INTEGER_TYPE, 	BDD_FACTORY_CACHE_SIZE,					"Cache size for BDD factory",			"1.0",			new Integer(10000),															"",
 																					"Cache size for BDD operations."},
-			{ BOOLEAN_TYPE, 	USE_SPOT,								"Use SPOT or OWL",						"1.0",			new Boolean(false),																	"",
+			{ BOOLEAN_TYPE, 	USE_SPOT,								"Use SPOT or OWL",						"1.0",			new Boolean(false),															"",
 																					"Use SPOT or OWL for generating the automaton."},
 			{ INTEGER_TYPE,		MAX_LEVEL_TRANSITION,					"Levels of transitions",				"1.0",			new Integer(4),																"",
 																					"Possible levels of transitions possible"},
@@ -53,8 +54,13 @@ public class PlanningSettings
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
-			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(1.5),																"",
-																					"Maximum radius to find the neighbours"}
+			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.5),																"",
+																					"Maximum radius to find the neighbours to which current point can have an edge"},
+			{ FLOAT_TYPE,		SENSING_RADIUS,							"Sensing radius around the robot",		"1.0",			new Float(1),																"",
+																					"The radius of the sensing area arond the robot"},
+			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(50),															"",
+																					"After how many iterations without moving, the robot should move"}
+
 		};
 																			
 	
@@ -81,6 +87,12 @@ public class PlanningSettings
 		} else if (VARIABLE.equals(ETA))
 		{
 			propertyData[6][4]	= value;
+		} else if (VARIABLE.equals(SENSING_RADIUS))
+		{
+			propertyData[7][4]	= value;
+		} else if (VARIABLE.equals(MOVING_THRESHOLD))
+		{
+			propertyData[8][4]	= value;
 		}
 	}
 	
@@ -107,6 +119,12 @@ public class PlanningSettings
 		} else if (VARIABLE.equals(ETA))
 		{
 			return propertyData[6][4];
+		} else if (VARIABLE.equals(SENSING_RADIUS))
+		{
+			return propertyData[7][4];
+		} else if (VARIABLE.equals(MOVING_THRESHOLD))
+		{
+			return propertyData[8][4];
 		}
 		return null;
 	}

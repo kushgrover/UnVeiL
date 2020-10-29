@@ -20,7 +20,7 @@ public class PrintAcceptingPath
 		System.out.print("\n\n");
 	}
 
-	private void printAPList(BDD state) throws PlanningException 
+	public void printAPList(BDD state) throws PlanningException 
 	{
 		ArrayList<String> apList	= findAPList(state);
 		System.out.print("[");

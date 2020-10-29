@@ -63,7 +63,7 @@ public class Planning
         }
         
         // for calculating time of different parts
-        double samplingTime = 0, pathTime = 0, learnStartTime = 0, learnTime = 0, processStartTime = 0, adviceTime = 0;
+        double samplingTime = 0, pathTime = 0, learnTime = 0, processStartTime = 0, adviceTime = 0;
         
         int iterationNumber					= 0;
     	BDD transition = null, fromStates = null, toStates = null;
@@ -71,9 +71,15 @@ public class Planning
         List<DefaultEdge> finalPath 		= new ArrayList<DefaultEdge>();
         boolean needNewAdvice = true;
         ArrayList<BDD> reachableStates = null;
+        
         while(true)  //until the property is satisfied
         {
-
+        	if(iterationNumber==10000) {
+        		rrg.frontier.printFrontier();
+        		break;
+        	}
+        	System.out.println("Iter num: " + iterationNumber);
+        	
         	// Don't output random things
 //        	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
         	
@@ -108,6 +114,8 @@ public class Planning
         	if(transition == null) // sample anywhere
         	{
         		transition					= rrg.sampleRandomly(productAutomaton);
+        		rrg.countSinceLastMove++;
+        		
         	}
         	
         	if(transition == null) // if transition is still null
@@ -139,7 +147,7 @@ public class Planning
             	}
         		
         		//learning happens here
-        		exper.learn(productAutomaton.getFirstStateSystem(transition), productAutomaton.getSecondStateSystem(transition));
+        		exper.learn(transition);
         		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));	//update the set of current states
         		
         		needNewAdvice = true; 
@@ -173,14 +181,14 @@ public class Planning
         	iterationNumber++;
         }
         
-//    	productAutomaton.createDot(iterationNumber);
+    	productAutomaton.createDot(iterationNumber);
         Initialize.getFactory().done();
         double totalTime = System.nanoTime() - startTime;
 
         rrg.plotGraph(finalPath);
-
+        System.out.println(rrg.path.size());
         // Output
-		System.out.println("Total sampled points = " + rrg.totalSampledPoints);	
+		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + iterationNumber);
 		
 		int adviceSamples = 0;
@@ -203,6 +211,8 @@ public class Planning
         System.out.println(pathTime / 1000000);
         System.out.print("Learning time (in ms):");
         System.out.println(learnTime / 1000000);
+        System.out.print("Moving time (in ms):");
+        System.out.println(rrg.moveTime / 1000000);
         System.out.print("Time taken other than these things (in ms):");
         System.out.println((totalTime - initializationTime - samplingTime - adviceTime - pathTime - learnTime) / 1000000);    
 	}

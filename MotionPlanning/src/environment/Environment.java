@@ -11,6 +11,8 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import modules.Frontier;
+
 public class Environment {
 	Shape bounds;
 	
@@ -23,6 +25,7 @@ public class Environment {
 	int numOfObs;
 	static Point2D.Float init;
 	static Label labelling;
+	Frontier frontier;
 	
 	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> obstacles, Point2D.Float init, Label labelling) 
 	{
@@ -34,6 +37,11 @@ public class Environment {
 
 		Environment.init		= init;
 		Environment.labelling	= labelling;
+	}
+	
+	public void setFrontier(Frontier frontier) 
+	{
+		this.frontier = frontier;
 	}
 	
 	public static Label getLabelling() 

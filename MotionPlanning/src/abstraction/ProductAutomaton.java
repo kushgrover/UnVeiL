@@ -1103,16 +1103,16 @@ public class ProductAutomaton
 	 * @return 
 	 * @throws PlanningException 
 	 */
-	public BDD addTransition(BDD fromState, BDD toState, int level) throws PlanningException 
+	public BDD addTransition(BDD transitions, int level) throws PlanningException 
 	{
-		if(! hasOnlyPreVars(fromState) 	||	! hasOnlyPreVars(toState)) 
-		{
-			throw new PlanningException("Extra vars appearing in a state BDD");
-		}
-		BDD toStatePrime		= changePreSystemVarsToPostSystemVars(toState);
-		BDD transition			= propertyBDD.and(getLabelEquivalence()).and(fromState).and(toStatePrime).and(transitionLevelDomain().ithVar(level));
-		productAutomatonBDD		= productAutomatonBDD.or(transition);
-		return transition;
+//		if(! hasOnlyPreVars(fromState) 	||	! hasOnlyPreVars(toState)) 
+//		{
+//			throw new PlanningException("Extra vars appearing in a state BDD");
+//		}
+//		BDD toStatePrime		= changePreSystemVarsToPostSystemVars(toState);
+		transitions				= propertyBDD.and(getLabelEquivalence()).and(transitions).and(transitionLevelDomain().ithVar(level));
+		productAutomatonBDD		= productAutomatonBDD.or(transitions);
+		return transitions;
 	}
 	
 	/**
@@ -1121,14 +1121,14 @@ public class ProductAutomaton
 	 * @param toState
 	 * @throws PlanningException
 	 */
-	public void removeTransition(BDD fromState, BDD toState) throws PlanningException 
+	public void removeTransition(BDD transitions) throws PlanningException 
 	{
-		if(! hasOnlyPreVars(fromState) 	|| 	! hasOnlyPreVars(toState)) 
-		{
-			throw new PlanningException("Extra vars appearing in a state BDD");
-		}
-		BDD toStatePrime		= changePreSystemVarsToPostSystemVars(toState);
-		productAutomatonBDD		= productAutomatonBDD.and((propertyBDD.and(getLabelEquivalence()).and(fromState).and(toStatePrime)).not());
+//		if(! hasOnlyPreVars(fromState) 	|| 	! hasOnlyPreVars(toState)) 
+//		{
+//			throw new PlanningException("Extra vars appearing in a state BDD");
+//		}
+//		BDD toStatePrime		= getSecondState(transitions);
+		productAutomatonBDD		= productAutomatonBDD.and((propertyBDD.and(getLabelEquivalence()).and(transitions.not())));
 	}
 	
 	/**
@@ -1321,6 +1321,9 @@ public class ProductAutomaton
 				stateID	+= (int)Math.pow(2, i+propertyDomainPre().varNum());
 			}
 		}
+		if(stateID==519) {
+			System.out.println("jadjagdakjshdjakdkjahjhdkja");
+		}
 		return stateID;
 	}
 
@@ -1334,12 +1337,12 @@ public class ProductAutomaton
 	{
 		BDD state		= factory.one();
 		int i			= numAPSystem-1;
-		
 		while(i >= 0) 
 		{
-			if(id/(int) Math.pow(2, i+propertyDomainPre().varNum()) 	!= 	0) 
+			
+			if(id/(int) Math.pow(2, i+propertyDomainPre().varNum()) 	>= 	1) 
 			{
-				id		= (int) (id%Math.pow(2, i+propertyDomainPre().varNum()));
+				id		= (int) (id % Math.pow(2, i+propertyDomainPre().varNum()));
 				state	= state.and(ithVarSystemPre(i));
 			} else 
 			{

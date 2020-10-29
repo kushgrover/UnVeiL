@@ -2,11 +2,14 @@ package modules;
 
 
 import java.awt.geom.Point2D;
+import java.awt.geom.Point2D.Float;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
 import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
+import planningIO.StoreGraph;
 import planningIO.printing.ShowGraph;
 import settings.PlanningSettings;
 
@@ -48,8 +51,21 @@ public class RRG
 	Vertex initVertex;  //initial vertex in the graph
 	public int totalSampledPoints;
 	
+	Point2D currentRobotPosition;
+	float sensingRadius;
+	public int countSinceLastMove;
+	int movingThreshold;
+	public ArrayList<Point2D> path = new ArrayList<Point2D>();
+	
 	ArrayList<Pair<BDD, Vertex>> map;
 	
+	boolean flagBin = false;
+	boolean flagFirstMove = false;
+	ArrayList<Point2D> neighbours;
+	public Frontier frontier;
+	
+	public float moveTime = 0;
+
 	
 	/**
 	 * Initialise the RRG object with the constructor
@@ -61,10 +77,14 @@ public class RRG
 		this.env 				= env;
 		this.eta 				= (float) PlanningSettings.get("planning.eta");
 		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
+		this.sensingRadius		= (float) PlanningSettings.get("planning.sensingRadius");
 		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
 		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(DefaultEdge.class);
+		this.movingThreshold	= (int) PlanningSettings.get("planning.movingThreshold");
+		this.frontier 			= new Frontier(env, 0.05f);
 		treePoints 				= new ArrayList<Point>();
 		map						= new ArrayList<Pair<BDD, Vertex>>();
+		this.countSinceLastMove = 0;
 		
 		numPoints				= 0;
 		
@@ -72,7 +92,7 @@ public class RRG
 		
 		this.tree 				= new RTree();
 		tree.init(null);
-
+		
 	}
 	
 	/**
@@ -137,6 +157,33 @@ public class RRG
 				// If the points are according to the advice
 				if(env.collisionFree(xNearest2D, xNew2D))	//check if it is collision free
 				{	
+//					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
+//					try {
+//						if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+//							System.out.println(Environment.getLabelling().getLabel(xNearest2D).toString() + " ---> " + Environment.getLabelling().getLabel(xNew2D).toString());
+//						}
+//					} catch (Exception e1) {
+//						e1.printStackTrace();
+//					}
+
+					BDD transition;
+					try {
+						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
+						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
+						if(type == 1 && transition.and(productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(2))).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
+							return false;
+						}
+						transitions.orWith(transition);
+						
+						//	plotting the first time it sees a bin
+						if(! flagBin && Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)) != ProductAutomaton.factory.zero()) {
+							plotGraph(null);
+							flagBin = true;
+						}
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+					
 					final float radius;	// radius for which the neighbours will be considered to add further edges
 					if(numPoints > 1) 
 					{
@@ -146,24 +193,24 @@ public class RRG
 						radius				= eta;
 					}
 					
+					
+					
 					//add the new point to the graph (it will be added later to the Rtree)
 					final Vertex source	= new Vertex(xNew2D);
 					graph.addVertex(source);
 					
+					
+					
 					// add the vertex in the map from abstraction to concrete
 					addToMap(source);
 					
-					BDD transition;
-					try {
-						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
-						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
-						if(type == 1 && transition.and(productAutomaton.getBDD()).and(fromStates).and(productAutomaton.changePreVarsToPostVars(toStates)).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
-							return false;
-						}
-						transitions.orWith(transition);
-					} catch (Exception e1) {
-						e1.printStackTrace();
-					}
+					
+					
+					frontier.updateFrontier(xNew2D, 2);
+					float tempTime = System.nanoTime();
+					move(type, xNew2D);
+					moveTime += System.nanoTime() - tempTime;
+					
 					
 					
 					tree.nearestN(xNew, 
@@ -281,6 +328,116 @@ public class RRG
 			return temp;
 		}
 	}
+	
+	
+	public void move(int type, Point2D xNew2D) 
+	{
+		if(type == 1) // if sampled from advice 
+		{ 
+			currentRobotPosition = (Point2D.Float) xNew2D.clone();
+			countSinceLastMove   = 0;
+			path.add(currentRobotPosition);
+		} 
+		else 
+		if (countSinceLastMove == movingThreshold) // hasn't moved in last few iterations
+		{ 
+			if(! flagFirstMove) 
+			{
+				plotGraph(null);
+				flagFirstMove = true;
+			}
+			
+//			-----------------------------Moving Randomly---------------------------------
+//			Point random = convertPoint2DToPoint(env.sample());
+//			tree.nearest(random,
+//					new TIntProcedure() {
+//						public boolean execute(int i) {
+//							Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
+//							currentRobotPosition = newPoint;
+//							countSinceLastMove   = 0;
+//							path.add(currentRobotPosition);
+//							return false;
+//						}
+//					}, 
+//					java.lang.Float.POSITIVE_INFINITY);
+//			-----------------------------------------------------------------------------
+			
+			
+//			----------------------Moving to the min degree neighbour---------------------
+//			neighbours = new ArrayList<Point2D>();
+//			tree.nearestN(convertPoint2DToPoint(currentRobotPosition), 
+//					new TIntProcedure() 
+//					{
+//						public boolean execute(int i) {
+//							Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
+//							neighbours.add(newPoint);
+//							return true;
+//						}
+//					},
+//					500,
+//					java.lang.Float.POSITIVE_INFINITY);
+//			Vertex newVertex, vertexWithMinDeg = null;
+//			for(int j=0;j<neighbours.size();j++) {
+//				newVertex = findTheVertex(neighbours.get(j));
+//				if(vertexWithMinDeg == null) {
+//					vertexWithMinDeg = newVertex;
+//				}
+//				else if(graph.degreeOf(newVertex) < graph.degreeOf(vertexWithMinDeg)) {
+//					vertexWithMinDeg = newVertex;
+//				}
+//			}
+//			currentRobotPosition = vertexWithMinDeg.getPoint();
+//			countSinceLastMove   = 0;
+//			path.add(currentRobotPosition);
+//			-----------------------------------------------------------------------------
+			
+			
+//			------------------Moving according to the frontier---------------------------
+			Point2D p = frontier.findFreeCell();
+			if(p != null) {
+				tree.nearest(convertPoint2DToPoint(p),
+						new TIntProcedure() {
+							public boolean execute(int i) 
+							{
+								currentRobotPosition = convertPointToPoint2D(treePoints.get(i));
+								countSinceLastMove   = 0;
+								path.add(currentRobotPosition);
+								return false;
+							}
+						}, 
+						java.lang.Float.POSITIVE_INFINITY);
+			}
+			else {
+				neighbours = new ArrayList<Point2D>();
+				tree.nearestN(convertPoint2DToPoint(currentRobotPosition), 
+						new TIntProcedure() 
+						{
+							public boolean execute(int i) {
+								Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
+								neighbours.add(newPoint);
+								return true;
+							}
+						},
+						100,
+						java.lang.Float.POSITIVE_INFINITY);
+				Vertex newVertex, vertexWithMinDeg = null;
+				for(int j=0;j<neighbours.size();j++) {
+					newVertex = findTheVertex(neighbours.get(j));
+					if(vertexWithMinDeg == null) {
+						vertexWithMinDeg = newVertex;
+					}
+					else if(graph.degreeOf(newVertex) < graph.degreeOf(vertexWithMinDeg)) {
+						vertexWithMinDeg = newVertex;
+					}
+				}
+				currentRobotPosition = vertexWithMinDeg.getPoint();
+				countSinceLastMove   = 0;
+				path.add(currentRobotPosition);
+				
+			}
+//			-----------------------------------------------------------------------------
+		}
+	}
 
 	/**
 	 * Sample a transition with source in 'fromStates' and destination in 'toStates'
@@ -297,7 +454,7 @@ public class RRG
 		int i 		= 0;
 		while(i < ProductAutomaton.threshold)
 		{
-			p 			= env.sample();
+			p 			= sampleInSensingArea();
 			totalSampledPoints++;
 			transition 	= buildGraph(fromStates, toStates, p, productAutomaton, 1);
 			if(! transition.isZero())
@@ -307,6 +464,31 @@ public class RRG
 			i++;
 		}
 		return null;
+	}
+
+	private Point2D.Float sampleInSensingArea() 
+	{
+		Point2D.Float p;
+		while(true) 
+		{
+			p = env.sample();
+			
+			if(distance(p, currentRobotPosition) < sensingRadius) 
+			{
+				if(env.obstacleFree(p)) 
+				{
+					frontier.updateFrontier(p, 1);
+					return p;
+				}
+				else {
+					frontier.updateFrontier(p, 8);
+				}
+			}
+		}
+	}
+
+	private float distance(Point2D p, Point2D q) {
+		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2)+Math.pow(p.getY() - q.getY(), 2));
 	}
 
 	/**
@@ -321,11 +503,12 @@ public class RRG
 		int i	= 0;
 		while(i < ProductAutomaton.threshold)
 		{
-			p 			= env.sample();
+			p 			= sampleInSensingArea();
 			totalSampledPoints++;
 			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton, 2);
 			if(! transition.isZero())
 			{
+				countSinceLastMove++;
 				return transition;
 			}
 			i++;
@@ -344,6 +527,8 @@ public class RRG
 		Rectangle rect 	= new Rectangle((float) p2D.getX(), (float) p2D.getY(), (float) p2D.getX(), (float) p2D.getY());
 		Point p 		= new Point((float) p2D.getX(), (float) p2D.getY());
 		treePoints.add(p);
+		currentRobotPosition = p2D;
+		
 		
 		// don't output random things---------
 //		System.setOut(new PrintStream(OutputStream.nullOutputStream()));
@@ -428,10 +613,23 @@ public class RRG
 
 	/**
 	 * Plot the graph
+	 * @throws IOException 
 	 */
-	public void plotGraph(List<DefaultEdge> path) 
+	public void plotGraph(List<DefaultEdge> finalPath)  
 	{
-		new ShowGraph(graph, env, path).setVisible(true);;
+		try {
+			if(path != null) {
+				new ShowGraph(graph, env, this.path, finalPath).setVisible(true);
+				new StoreGraph(graph, "final.csv");
+			} else if(flagFirstMove) {
+				new StoreGraph(graph, "firstMove.csv");
+			} else if(flagBin) {
+				new StoreGraph(graph, "bin.csv");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
 	}
-	    
+
 }
