@@ -31,35 +31,9 @@ public class Frontier
 	public Point2D findFreeCell() 
 	{
 		int k = 0, i, j;
-//		Random r = new Random();
-//		while(k<100) {
-//			i = r.nextInt(numX-1);
-//			j = r.nextInt(numY-1);
-//			if(frontier[i][j] == 1) 
-//			{
-//				if(j+1<numY) {
-//					if(frontier[i][j+1] == 0) {
-//						return findCenter(i,j);
-//					}
-//				}
-//				else if(i+1<numX) {
-//					if (frontier[i+1][j] == 0) {
-//						return findCenter(i, j);
-//					}
-//				}
-//				else if(i>0) {
-//					if (frontier[i-1][j] == 0) {
-//						return findCenter(i, j);
-//					}
-//				}
-//				else if(j>0) {
-//					if (frontier[i][j-1] == 0) {
-//						return findCenter(i, j);
-//					}
-//				}
-//			}
-//			k++;
-//		}
+		int count = 0;
+
+		// First explore everything
 		for(i=0;i<numX;i++) {
 			for(j=0;j<numY;j++) {
 				if(frontier[i][j] == 1) 
@@ -88,43 +62,67 @@ public class Frontier
 			}
 		}
 		
-//		System.out.println("finding random");
+//		if explored everywhere, move randomly
 		Random r = new Random();
-		while(k<1000) {
+		while(k<500) {
+			count = 0;
 			i = r.nextInt(numX-1);
 			j = r.nextInt(numY-1);
-			if(frontier[i][j] == 1) 
+			if(frontier[i][j] <= 1) 
 			{
-				if (frontier[i][j] == 2) 
-				{
-					if (j+1<numY) {
-						if (frontier[i][j+1] <= 1) {
-							return findCenter(i,j);
-						}
+				if (j+1<numY) {
+					if (frontier[i][j+1] <= 1) {
+						count++;
 					}
-					else if(i+1<numX) {
-						if (frontier[i+1][j] <= 1) {
-							return findCenter(i, j);
-						}
+				}
+				if(i+1<numX) {
+					if (frontier[i+1][j] <= 1) {
+						count++;
 					}
-					else if(i>0) {
-						if (frontier[i-1][j] <= 1) {
-							return findCenter(i, j);
-						}
+				}
+				if(i>0) {
+					if (frontier[i-1][j] <= 1) {
+						count++;
 					}
-					else if(j>0) {
-						if (frontier[i][j-1] <= 1) {
-							return findCenter(i, j);
-						}
+				}
+				if(j>0) {
+					if (frontier[i][j-1] <= 1) {
+						count++;
 					}
+				}
+				if (i+1<numX && j+1<numY) {
+					if (frontier[i+1][j+1] <= 1) {
+						count++;
+					}
+				}
+				if (i>0 && j+1<numY) {
+					if (frontier[i-1][j+1] <= 1) {
+						count++;
+					}
+				}
+				if (i+1<numX && j>0) {
+					if (frontier[i+1][j-1] <= 1) {
+						count++;
+					}
+				}
+				if (i>0 && j>0) {
+					if (frontier[i-1][j-1] <= 1) {
+						count++;
+					}
+				}
+				
+				if(count>3) {
+					return findCenter(i,j);
 				}
 			}
 			k++;
 		}
+		
+		
 //		System.out.println("random Finished");
 		for(i=0;i<numX;i++) {
 			for(j=0;j<numY;j++) {
-				if(frontier[i][j] == 2) 
+				if(frontier[i][j] == 1) 
 				{
 					if(j+1<numY) {
 						if(frontier[i][j+1] <= 1) {

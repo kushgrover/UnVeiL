@@ -55,11 +55,12 @@ public class RRG
 	float sensingRadius;
 	public int countSinceLastMove;
 	int movingThreshold;
-	public ArrayList<Point2D> path = new ArrayList<Point2D>();
+	public ArrayList<Point2D> movement = new ArrayList<Point2D>();
 	
 	ArrayList<Pair<BDD, Vertex>> map;
 	
 	boolean flagBin = false;
+	boolean flagRoom = false;
 	boolean flagFirstMove = false;
 	ArrayList<Point2D> neighbours;
 	public Frontier frontier;
@@ -126,10 +127,15 @@ public class RRG
 			{	
 				Point xNearest		= treePoints.get(i);
 				Point2D xNearest2D	= convertPointToPoint2D(xNearest);
+				
+				// steer in the direction of random point, this new point will be added to the graph/Rtree
+				Point2D xNew2D		= steer(xNearest2D, xRand2D);
+				Point xNew			= convertPoint2DToPoint(xNew2D);
+				
 				try 
 				{
-					// check if 'xNearest' is in the set 'fromStates'
-					if(Environment.getLabelling().getLabel(xNearest2D).and(fromStates).isZero())
+					// check if 'xNearest' is in the set 'fromStates' 					        || check if the new point is in the set 'toStates'
+					if(Environment.getLabelling().getLabel(xNearest2D).and(fromStates).isZero() || Environment.getLabelling().getLabel(xNew2D).and(toStates).isZero())	
 					{
 						return false;
 					}
@@ -138,21 +144,6 @@ public class RRG
 					e.printStackTrace();
 				}
 				
-				// steer in the direction of random point, this new point will be added to the graph/Rtree
-				Point2D xNew2D		= steer(xNearest2D, xRand2D);
-				Point xNew			= convertPoint2DToPoint(xNew2D);
-				
-				try 
-				{
-					//check if the new point is in the set 'toStates'
-					if(Environment.getLabelling().getLabel(xNew2D).and(toStates).isZero())
-					{
-						return false;
-					}
-				} catch (Exception e1) 
-				{
-					e1.printStackTrace();
-				}
 				
 				// If the points are according to the advice
 				if(env.collisionFree(xNearest2D, xNew2D))	//check if it is collision free
@@ -167,22 +158,20 @@ public class RRG
 //					}
 
 					BDD transition;
-					try {
+					try 
+					{
 						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
 						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
 						if(type == 1 && transition.and(productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(2))).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
 							return false;
 						}
 						transitions.orWith(transition);
-						
-						//	plotting the first time it sees a bin
-						if(! flagBin && Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)) != ProductAutomaton.factory.zero()) {
-							plotGraph(null);
-							flagBin = true;
-						}
-					} catch (Exception e1) {
+					}
+					catch (Exception e1) {
 						e1.printStackTrace();
 					}
+					
+					
 					
 					final float radius;	// radius for which the neighbours will be considered to add further edges
 					if(numPoints > 1) 
@@ -198,8 +187,24 @@ public class RRG
 					//add the new point to the graph (it will be added later to the Rtree)
 					final Vertex source	= new Vertex(xNew2D);
 					graph.addVertex(source);
+					Vertex target		= findTheVertex(xNearest2D);
+					graph.addEdge(source, target);
 					
 					
+//					plotting the first time it sees a bin
+					try {
+						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
+							plotGraph(null);
+							flagBin = true;
+						}
+						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
+							plotGraph(null);
+							flagRoom = true;
+						}
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 					
 					// add the vertex in the map from abstraction to concrete
 					addToMap(source);
@@ -226,7 +231,7 @@ public class RRG
 									if( distance(xNew, neighbour) <= radius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
 									{
 										Vertex target		= findTheVertex(neighbour2D);
-										graph.addVertex(target);
+//										graph.addVertex(target);
 										graph.addEdge(source, target);
 										
 										BDD transition, transition2;
@@ -270,7 +275,8 @@ public class RRG
 	protected void addToMap(Vertex v) {
 		try {
 			BDD label = Environment.getLabelling().getLabel(v.getPoint());
-			if(findTheVertex(label) == null) {
+			if(findTheVertex(label) == null) 
+			{
 				map.add(new Pair<BDD, Vertex>(label, v));
 			}
 
@@ -336,13 +342,14 @@ public class RRG
 		{ 
 			currentRobotPosition = (Point2D.Float) xNew2D.clone();
 			countSinceLastMove   = 0;
-			path.add(currentRobotPosition);
+			movement.add(currentRobotPosition);
 		} 
 		else 
 		if (countSinceLastMove == movingThreshold) // hasn't moved in last few iterations
 		{ 
 			if(! flagFirstMove) 
 			{
+				// plotting before the first time it moves
 				plotGraph(null);
 				flagFirstMove = true;
 			}
@@ -355,7 +362,7 @@ public class RRG
 //							Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
 //							currentRobotPosition = newPoint;
 //							countSinceLastMove   = 0;
-//							path.add(currentRobotPosition);
+//							movement.add(currentRobotPosition);
 //							return false;
 //						}
 //					}, 
@@ -388,20 +395,21 @@ public class RRG
 //			}
 //			currentRobotPosition = vertexWithMinDeg.getPoint();
 //			countSinceLastMove   = 0;
-//			path.add(currentRobotPosition);
+//			movement.add(currentRobotPosition);
 //			-----------------------------------------------------------------------------
 			
 			
 //			------------------Moving according to the frontier---------------------------
 			Point2D p = frontier.findFreeCell();
 			if(p != null) {
+//				System.out.println(p.toString());
 				tree.nearest(convertPoint2DToPoint(p),
 						new TIntProcedure() {
 							public boolean execute(int i) 
 							{
 								currentRobotPosition = convertPointToPoint2D(treePoints.get(i));
 								countSinceLastMove   = 0;
-								path.add(currentRobotPosition);
+								movement.add(currentRobotPosition);
 								return false;
 							}
 						}, 
@@ -432,7 +440,7 @@ public class RRG
 				}
 				currentRobotPosition = vertexWithMinDeg.getPoint();
 				countSinceLastMove   = 0;
-				path.add(currentRobotPosition);
+				movement.add(currentRobotPosition);
 				
 			}
 //			-----------------------------------------------------------------------------
@@ -528,6 +536,7 @@ public class RRG
 		Point p 		= new Point((float) p2D.getX(), (float) p2D.getY());
 		treePoints.add(p);
 		currentRobotPosition = p2D;
+		movement.add(p2D);
 		
 		
 		// don't output random things---------
@@ -565,6 +574,43 @@ public class RRG
 			source 			= dest;
 			nextState 		= it.next();
 			dest 			= findTheVertex(nextState);
+			nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
+			finalPath.addAll(nextPath.getEdgeList());
+		}
+		return finalPath;
+	}   
+	
+	public List<DefaultEdge> findPath(ArrayList<Point2D> movement) {
+		Vertex source, dest;
+		
+		Iterator<Point2D> it 	= movement.iterator();
+		Point2D firstPoint, nextPoint;
+		List<DefaultEdge> finalPath;
+		
+		
+		//initialize finalPath
+		if(it.hasNext()) {
+			firstPoint 				= it.next(); // first point is already there
+		} else {
+			return null;
+		}
+		if(it.hasNext()) {
+			nextPoint 				= it.next();
+		} else {
+			return null;
+		}
+		
+		source = findTheVertex(firstPoint);
+		dest = findTheVertex(nextPoint);
+		GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, dest);
+		finalPath 			= nextPath.getEdgeList();
+		
+		// iterate over the abstract path
+		while(it.hasNext())
+		{
+			source 			= dest;
+			nextPoint 		= it.next();
+			dest 			= findTheVertex(nextPoint);
 			nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
 			finalPath.addAll(nextPath.getEdgeList());
 		}
@@ -617,17 +663,15 @@ public class RRG
 	 */
 	public void plotGraph(List<DefaultEdge> finalPath)  
 	{
-		try {
-			if(path != null) {
-				new ShowGraph(graph, env, this.path, finalPath).setVisible(true);
-				new StoreGraph(graph, "final.csv");
-			} else if(flagFirstMove) {
-				new StoreGraph(graph, "firstMove.csv");
-			} else if(flagBin) {
-				new StoreGraph(graph, "bin.csv");
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		if(finalPath != null) {
+			new ShowGraph(graph, env, findPath(movement), finalPath).setVisible(true);
+			new StoreGraph(env, graph, finalPath, findPath(movement), "end");
+		} else if(! flagFirstMove) {
+			new StoreGraph(graph, findPath(movement), "firstMove"); 
+		} else if(! flagBin) {
+			new StoreGraph(graph, findPath(movement), "bin");
+		} else if(! flagRoom) {
+			new StoreGraph(graph, findPath(movement), "room");
 		}
 		
 	}

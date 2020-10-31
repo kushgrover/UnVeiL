@@ -25,15 +25,15 @@ public class ShowGraph extends JFrame {
 	
 	Graph<Vertex, DefaultEdge> graph;
 	Environment env;
-	List<Point2D> path;
+	List<DefaultEdge> movement;
 	List<DefaultEdge> finalPath;
 	
 	
-	public ShowGraph(Graph<Vertex, DefaultEdge> graph, Environment env, List<Point2D> path, List<DefaultEdge> finalPath)
+	public ShowGraph(Graph<Vertex, DefaultEdge> graph, Environment env, List<DefaultEdge> movement, List<DefaultEdge> finalPath)
 	{
 		this.graph = graph;
 		this.env = env;
-		this.path = path;
+		this.movement = movement;
 		this.finalPath = finalPath;
 	}
 	
@@ -61,18 +61,13 @@ public class ShowGraph extends JFrame {
 
 		// Robot Movement
 		plot.setColor("green");
-		Iterator<Point2D> iter = path.iterator();
-		Point2D previousPoint = null, nextPoint = null;
-		while(iter.hasNext())
+		ite = movement.iterator();
+		while(ite.hasNext())
 		{
-			if(nextPoint != null) {
-				previousPoint = (Point2D) nextPoint.clone();
-			}
-			nextPoint = iter.next();
-			if(previousPoint != null) 
-			{
-				plot.add("line", new double[] {nextPoint.getX(), previousPoint.getX()}, new double[] {nextPoint.getY(), previousPoint.getY()});
-			}
+			nextEdge = ite.next();
+			source = graph.getEdgeSource(nextEdge);
+			target = graph.getEdgeTarget(nextEdge);
+			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
 		}
 		
 		// Final Path

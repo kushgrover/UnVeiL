@@ -74,7 +74,7 @@ public class Planning
         
         while(true)  //until the property is satisfied
         {
-        	if(iterationNumber==10000) {
+        	if(iterationNumber==20000) {
         		rrg.frontier.printFrontier();
         		break;
         	}
@@ -93,23 +93,34 @@ public class Planning
         	adviceTime += System.nanoTime() - processStartTime;
         	
         	processStartTime = System.nanoTime();
-        	int currentPathLength			= 1;
-        	while(currentPathLength < reachableStates.size()) //First try to sample from the advice
-        	{
-        		
-        		fromStates					= currentStates.and(reachableStates.get(currentPathLength));
-        		toStates 					= reachableStates.get(currentPathLength-1);
+        	
+//        	---------------------------------------------------------------------------------------
+//        	---------------------------------------------------------------------------------------
+        	
+//        	int currentPathLength			= 1;
+//        	while(currentPathLength < reachableStates.size()) //First try to sample from the advice
+//        	{
+//        		
+//        		fromStates					= currentStates.and(reachableStates.get(currentPathLength));
+//        		toStates 					= reachableStates.get(currentPathLength-1);
+//
+//        		transition					= rrg.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), productAutomaton);
+//        		if(transition == null) {
+//        			currentPathLength++;
+//        			continue;
+//        		}
+//        		else {
+//        			advice[currentPathLength - 1]++;
+//        			break;
+//        		}
+//        	}
+        	
+//        	---------------------------------------------------------------------------------------
+        	
+        	transition = null;
 
-        		transition					= rrg.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), productAutomaton);
-        		if(transition == null) {
-        			currentPathLength++;
-        			continue;
-        		}
-        		else {
-        			advice[currentPathLength - 1]++;
-        			break;
-        		}
-        	}
+//        	---------------------------------------------------------------------------------------
+//        	---------------------------------------------------------------------------------------
         	
         	if(transition == null) // sample anywhere
         	{
@@ -181,12 +192,12 @@ public class Planning
         	iterationNumber++;
         }
         
-    	productAutomaton.createDot(iterationNumber);
+//    	productAutomaton.createDot(iterationNumber);
         Initialize.getFactory().done();
         double totalTime = System.nanoTime() - startTime;
 
         rrg.plotGraph(finalPath);
-        System.out.println(rrg.path.size());
+        System.out.println(rrg.movement.size());
         // Output
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + iterationNumber);
