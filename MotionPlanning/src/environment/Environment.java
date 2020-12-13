@@ -11,7 +11,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import modules.Frontier;
+import modules.Discretization;
 
 public class Environment {
 	Shape bounds;
@@ -25,7 +25,7 @@ public class Environment {
 	int numOfObs;
 	static Point2D.Float init;
 	static Label labelling;
-	Frontier frontier;
+	Discretization discretization;
 	
 	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> obstacles, Point2D.Float init, Label labelling) 
 	{
@@ -39,9 +39,9 @@ public class Environment {
 		Environment.labelling	= labelling;
 	}
 	
-	public void setFrontier(Frontier frontier) 
+	public void setdiscretization(Discretization discretization) 
 	{
-		this.frontier = frontier;
+		this.discretization = discretization;
 	}
 	
 	public static Label getLabelling() 

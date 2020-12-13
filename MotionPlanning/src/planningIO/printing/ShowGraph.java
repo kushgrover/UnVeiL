@@ -61,25 +61,27 @@ public class ShowGraph extends JFrame {
 
 		// Robot Movement
 		plot.setColor("green");
-		ite = movement.iterator();
-		while(ite.hasNext())
-		{
-			nextEdge = ite.next();
-			source = graph.getEdgeSource(nextEdge);
-			target = graph.getEdgeTarget(nextEdge);
-			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+		if(movement!=null) {
+			ite = movement.iterator();
+			while(ite.hasNext())
+			{
+				nextEdge = ite.next();
+				source = graph.getEdgeSource(nextEdge);
+				target = graph.getEdgeTarget(nextEdge);
+				plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+			}
 		}
 		
 		// Final Path
-		plot.setColor("pink");
-		ite = finalPath.iterator();
-		while(ite.hasNext())
-		{
-			nextEdge = ite.next();
-			source = graph.getEdgeSource(nextEdge);
-			target = graph.getEdgeTarget(nextEdge);
-			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
-		}
+//		plot.setColor("pink");
+//		ite = finalPath.iterator();
+//		while(ite.hasNext())
+//		{
+//			nextEdge = ite.next();
+//			source = graph.getEdgeSource(nextEdge);
+//			target = graph.getEdgeTarget(nextEdge);
+//			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+//		}
 
 		
 		

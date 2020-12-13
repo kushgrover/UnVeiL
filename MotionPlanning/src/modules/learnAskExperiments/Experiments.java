@@ -11,7 +11,7 @@ public interface Experiments
 
 	public BDD learn(BDD transition) throws Exception;
 	
-	public ArrayList<BDD> advice(BDD startingStates) throws Exception;
+	public ArrayList<BDD> getAdvice(BDD startingStates) throws Exception;
 	
 	public ProductAutomaton getProductAutomaton();
 

@@ -2,15 +2,12 @@ package modules;
 
 
 import java.awt.geom.Point2D;
-import java.awt.geom.Point2D.Float;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintStream;
-
 import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
 import planningIO.StoreGraph;
 import planningIO.printing.ShowGraph;
+import settings.PlanningException;
 import settings.PlanningSettings;
 
 import java.util.ArrayList;
@@ -50,6 +47,7 @@ public class RRG
 	int numPoints; // num of points in the Rtree/graph
 	Vertex initVertex;  //initial vertex in the graph
 	public int totalSampledPoints;
+//	ProductAutomaton productAutomaton;
 	
 	Point2D currentRobotPosition;
 	float sensingRadius;
@@ -63,10 +61,22 @@ public class RRG
 	boolean flagRoom = false;
 	boolean flagFirstMove = false;
 	ArrayList<Point2D> neighbours;
-	public Frontier frontier;
+	public Discretization discretization;
 	
 	public float moveTime = 0;
-
+	
+	public int numOfFrontierUpdates=0;
+	boolean endIteration;
+	public int[] adviceSampled = new int[] {0,0,0,0,0,0,0,0,0,0};
+	Vertex source = null;
+	
+	ProductAutomaton productAutomaton;
+	BDD symbolicTransitionsInCurrentBatch;
+	float rrgRadius;
+	public int totalPoints = 0;
+	boolean seeBeyondObstacles = true;
+	BDD forwardSampledTransitions;
+	
 	
 	/**
 	 * Initialise the RRG object with the constructor
@@ -74,26 +84,30 @@ public class RRG
 	 */
 	public RRG(Environment env) 
 	{
-		
 		this.env 				= env;
+		
+		
 		this.eta 				= (float) PlanningSettings.get("planning.eta");
 		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
 		this.sensingRadius		= (float) PlanningSettings.get("planning.sensingRadius");
 		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
 		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(DefaultEdge.class);
 		this.movingThreshold	= (int) PlanningSettings.get("planning.movingThreshold");
-		this.frontier 			= new Frontier(env, 0.05f);
+		this.discretization 	= new Discretization(env, (float) PlanningSettings.get("planning.discretizationSize"));
 		treePoints 				= new ArrayList<Point>();
 		map						= new ArrayList<Pair<BDD, Vertex>>();
 		this.countSinceLastMove = 0;
-		
+		forwardSampledTransitions = ProductAutomaton.factory.zero();
 		numPoints				= 0;
 		
 		totalSampledPoints 		= 0;
 		
 		this.tree 				= new RTree();
 		tree.init(null);
-		
+	}
+	
+	public void setProductAutomaton(ProductAutomaton productAutomaton) {
+		this.productAutomaton = productAutomaton;
 	}
 	
 	/**
@@ -148,6 +162,24 @@ public class RRG
 				// If the points are according to the advice
 				if(env.collisionFree(xNearest2D, xNew2D))	//check if it is collision free
 				{	
+//					discretization.updatediscretization(xNew2D, 1);
+//					numOfFrontierUpdates++;
+
+					BDD transition = ProductAutomaton.factory.zero();
+					try 
+					{
+						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
+						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
+						if(type == 1 && transition.and(productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(2))).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
+							return false;
+						}
+						symbolicTransitionsInCurrentBatch = symbolicTransitionsInCurrentBatch.or(transition);
+					}
+					catch (Exception e1) {
+						e1.printStackTrace();
+					}
+					
+					
 //					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
 //					try {
 //						if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
@@ -156,40 +188,13 @@ public class RRG
 //					} catch (Exception e1) {
 //						e1.printStackTrace();
 //					}
-
-					BDD transition;
-					try 
-					{
-						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
-						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
-						if(type == 1 && transition.and(productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(2))).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
-							return false;
-						}
-						transitions.orWith(transition);
-					}
-					catch (Exception e1) {
-						e1.printStackTrace();
-					}
-					
-					
-					
-					final float radius;	// radius for which the neighbours will be considered to add further edges
-					if(numPoints > 1) 
-					{
-						radius				= (float) Math.min(gamma * Math.pow(Math.log(numPoints)/(numPoints), (0.5)), eta);
-					} else 
-					{
-						radius				= eta;
-					}
 					
 					
 					
 					//add the new point to the graph (it will be added later to the Rtree)
-					final Vertex source	= new Vertex(xNew2D);
-					graph.addVertex(source);
-					Vertex target		= findTheVertex(xNearest2D);
-					graph.addEdge(source, target);
-					
+					computeRrgRadius();
+//					addSymbolicTransitions(xNearest2D, xNew2D);
+					addGraphEdge(xNearest2D, xNew2D);
 					
 //					plotting the first time it sees a bin
 					try {
@@ -211,9 +216,17 @@ public class RRG
 					
 					
 					
-					frontier.updateFrontier(xNew2D, 2);
+					discretization.updateDiscretization(xNearest2D, xNew2D, 2);
+					numOfFrontierUpdates++;
+					
 					float tempTime = System.nanoTime();
-					move(type, xNew2D);
+					
+					if(type == 1) {
+						move(1, xNew2D, transition);
+					} else {
+						move(-1, xNew2D, transition);
+					}
+						
 					moveTime += System.nanoTime() - tempTime;
 					
 					
@@ -228,24 +241,10 @@ public class RRG
 									
 									if(neighbour2D.equals(xNew2D)) return true;
 									
-									if( distance(xNew, neighbour) <= radius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
+									if( distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
 									{
-										Vertex target		= findTheVertex(neighbour2D);
-//										graph.addVertex(target);
-										graph.addEdge(source, target);
-										
-										BDD transition, transition2;
-										try {
-											transition 		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
-											transition 		= transition.and(Environment.getLabelling().getLabel(neighbour2D));
-											transition2 	= Environment.getLabelling().getLabel(xNew2D);
-											transition2 	= transition2.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(neighbour2D)));
-											transitions.orWith(transition);
-											transitions.orWith(transition2);
-										} catch (Exception e)
-										{
-											e.printStackTrace();
-										}
+										addSymbolicTransitions(neighbour2D, xNew2D);
+										addGraphEdge(neighbour2D, xNew2D);
 									}
 									return true;
 								}
@@ -266,6 +265,233 @@ public class RRG
 		tree.nearest(xRand, procedure, java.lang.Float.POSITIVE_INFINITY); // apply 'procedure' to the nearest point of xRand
 		
 		return transitions;
+	}
+	
+	
+	private void buildGraph(ArrayList<BDD> advice, Point2D xRand2D, ProductAutomaton productAutomaton) {
+		
+		// need 'point2D' for graph and 'point' for Rtree
+		Point xRand					= convertPoint2DToPoint(xRand2D);
+		
+		TIntProcedure procedure		= new TIntProcedure()	// execute this procedure for the nearest neighbour of 'xRand'
+		{ 
+			public boolean execute(int i) 
+			{	
+				Point xNearest		= treePoints.get(i);
+				Point2D xNearest2D	= convertPointToPoint2D(xNearest);
+				
+				// steer in the direction of random point, this new point will be added to the graph/Rtree
+				Point2D xNew2D		= steer(xNearest2D, xRand2D);
+				Point xNew			= convertPoint2DToPoint(xNew2D);
+				
+				BDD transition = ProductAutomaton.factory.zero();
+				try {
+					transition		= Environment.getLabelling().getLabel(xNearest2D);
+					transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+				
+//				int rank1 = findRank(advice, xNearest2D, xNew2D, productAutomaton);
+//				if(rank1>=0) {
+//					System.out.println(rank1);
+//					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
+//					try {
+////						if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+//						printAPList(Environment.getLabelling().getLabel(xNearest2D)); 
+//						System.out.print(" ---> ");
+//						printAPList(Environment.getLabelling().getLabel(xNew2D));
+//						System.out.print("\n");
+////						}
+//					} catch (Exception e1) {
+//						e1.printStackTrace();
+//					}
+//				}
+				
+				
+				
+				if(checkValidity(advice, xNearest2D, xNew2D, transition, productAutomaton))
+				{
+					computeRrgRadius();
+					addSymbolicTransitions(xNearest2D, xNew2D);
+					addGraphEdge(xNearest2D, xNew2D);
+					totalPoints++;
+//					plotting the first time it sees a bin
+//					try {
+//						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
+//							plotGraph(null);
+//							flagBin = true;
+//						}
+//						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
+//							plotGraph(null);
+//							flagRoom = true;
+//						}
+//					} catch (Exception e1) {
+//						e1.printStackTrace();
+//					}
+					
+					discretization.updateDiscretization(xNearest2D, xNew2D, 2);
+					numOfFrontierUpdates++;
+					
+					
+					float tempTime = System.nanoTime();
+					int rank = findRank(advice, xNearest2D, xNew2D, transition, productAutomaton);
+					move(rank, xNew2D, transition);
+					moveTime += System.nanoTime() - tempTime;
+					
+					
+					tree.nearestN(xNew, 
+							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
+							{
+								public boolean execute(int i) 
+								{
+									Point neighbour			= treePoints.get(i);
+									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
+									
+									if(neighbour2D.equals(xNew2D)) return true;
+									
+									if(! seeBeyondObstacles  &&  ! env.collisionFree(neighbour2D, currentRobotPosition) )
+									{
+										return true;
+									}
+									if(distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFree(xNew2D, neighbour2D))
+									{
+										addSymbolicTransitions(neighbour2D, xNew2D);
+										addGraphEdge(neighbour2D, xNew2D);
+									}
+									return true;
+								}
+							}, 
+							100, java.lang.Float.POSITIVE_INFINITY); // a max of 100 neighbours are considered
+					
+					// add point to the Rtree
+					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
+//					System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+					tree.add(rect, numPoints);
+//					System.setOut(System.out);
+					treePoints.add(xNew);
+					numPoints++;
+				}
+		        return true;
+		    }
+					};
+		tree.nearest(xRand, procedure, java.lang.Float.POSITIVE_INFINITY); // apply 'procedure' to the nearest point of xRand
+	}
+	
+	
+	public BDD sample(ArrayList<BDD> advice, ProductAutomaton productAutomaton) 
+	{
+		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
+		endIteration = false;
+		
+		Point2D.Float p;
+		int threshold = (int) PlanningSettings.get("planning.samplingThreshold");
+		for(int i=0; i<threshold; i++) {
+			if(endIteration) {
+				break;
+			}
+			p = sampleInSensingArea();
+			buildGraph(advice, p, productAutomaton);
+		}
+		return symbolicTransitionsInCurrentBatch;
+	}
+
+	
+	protected void addGraphEdge(Point2D xNearest2D, Point2D xNew2D) {
+		source		= findTheVertex(xNearest2D);
+		Vertex target 				= null;
+		target				= findTheVertex(xNew2D);
+		if(target == null) {
+			target = new Vertex(xNew2D);
+			graph.addVertex(target);
+		}
+		graph.addEdge(source, target);
+		addToMap(target);
+	}
+
+	protected void computeRrgRadius() {
+		if(numPoints > 1)
+		{
+			rrgRadius				= (float) Math.min(gamma * Math.pow(Math.log(numPoints)/(numPoints), (0.5)), eta);
+		} else 
+		{
+			rrgRadius				= eta;
+		}
+	}
+
+	protected void addSymbolicTransitions(Point2D xNearest2D, Point2D xNew2D) {
+		try 
+		{
+			BDD transition	= (Environment.getLabelling().getLabel(xNearest2D));
+			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
+			if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+				forwardSampledTransitions = forwardSampledTransitions.or(transition);
+			}
+			symbolicTransitionsInCurrentBatch.orWith(transition);
+			
+			transition		= Environment.getLabelling().getLabel(xNew2D);
+			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNearest2D)));
+			symbolicTransitionsInCurrentBatch.orWith(transition);
+		}
+		catch (Exception e1) {
+			e1.printStackTrace();
+		}
+	}
+
+	private boolean checkValidity(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition, ProductAutomaton productAutomaton) {
+		if(! env.collisionFree(xNearest2D, xNew2D)) {
+			return false;
+		}
+		if(! seeBeyondObstacles && ! env.collisionFree(xNew2D, currentRobotPosition)) {
+			return false;
+		}
+		if(! forwardSampledTransitions.and(transition).isZero()) {
+			return false;
+		}
+		int rank = findRank(advice, xNearest2D, xNew2D, transition, productAutomaton);
+		float prob = getProb(rank);
+		float rand = (float) Math.random();
+		if(rand < prob) {
+			return true;
+		}
+		return false;
+	}
+	
+	
+	private int findRank(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition, ProductAutomaton productAutomaton) {
+		try {
+			if(Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+				return -1;
+			}
+			for(int i=0;i<advice.size();i++) {
+				if(! transition.and(advice.get(i)).isZero()) {
+					return i;
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return -1;
+	}
+	
+	
+	
+	private float getProb(int rank) 
+	{
+		switch(rank) 
+		{
+			case -1: return 0.1f; // not found in advice
+//			case 0: return 1;
+//			case 1: return 1f;
+//			case 2: return 0.95f;
+//			case 3: return 0.9f;
+//			case 4: return 0.85f;
+//			case 5: return 0.8f;
+//			case 6: return 0.75f;
+//			case 7: return 0.7f;
+//			case 8: return 0.6f;
+			default: return 1f;
+		}
 	}
 	
 	/**
@@ -296,25 +522,7 @@ public class RRG
 		return (float) Math.sqrt(Math.pow(p.x - q.x, 2)+Math.pow(p.y - q.y, 2));
 	}
 	
-	/**
-	 * convert point object to a point2D object
-	 * @param p
-	 * @return
-	 */
-	private Point2D convertPointToPoint2D(Point p) 
-	{
-		return new Point2D.Float(p.x, p.y);
-	}
 	
-	/**
-	 * convert point2D object to a point object
-	 * @param p
-	 * @return
-	 */
-	private Point convertPoint2DToPoint(Point2D p) 
-	{
-		return new Point((float) p.getX(), (float)p.getY());
-	}
 	
 	/**
 	 * give a point in the direction of 'dest' from source at a distance <= eta
@@ -336,39 +544,25 @@ public class RRG
 	}
 	
 	
-	public void move(int type, Point2D xNew2D) 
-	{
-		if(type == 1) // if sampled from advice 
+	public void move(int rank, Point2D xNew2D, BDD transition) 
+	{	
+		if(rank != -1 && productAutomaton.sampledTransitions.and(transition).isZero()) // if sampled from advice 
 		{ 
+			adviceSampled[rank]++;
 			currentRobotPosition = (Point2D.Float) xNew2D.clone();
 			countSinceLastMove   = 0;
 			movement.add(currentRobotPosition);
+			endIteration = true;
 		} 
 		else 
-		if (countSinceLastMove == movingThreshold) // hasn't moved in last few iterations
+		if (countSinceLastMove >= movingThreshold) // hasn't moved in last few iterations
 		{ 
 			if(! flagFirstMove) 
 			{
 				// plotting before the first time it moves
 				plotGraph(null);
 				flagFirstMove = true;
-			}
-			
-//			-----------------------------Moving Randomly---------------------------------
-//			Point random = convertPoint2DToPoint(env.sample());
-//			tree.nearest(random,
-//					new TIntProcedure() {
-//						public boolean execute(int i) {
-//							Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
-//							currentRobotPosition = newPoint;
-//							countSinceLastMove   = 0;
-//							movement.add(currentRobotPosition);
-//							return false;
-//						}
-//					}, 
-//					java.lang.Float.POSITIVE_INFINITY);
-//			-----------------------------------------------------------------------------
-			
+			}			
 			
 //			----------------------Moving to the min degree neighbour---------------------
 //			neighbours = new ArrayList<Point2D>();
@@ -400,7 +594,7 @@ public class RRG
 			
 			
 //			------------------Moving according to the frontier---------------------------
-			Point2D p = frontier.findFreeCell();
+			Point2D p = discretization.findAMove(currentRobotPosition);
 			if(p != null) {
 //				System.out.println(p.toString());
 				tree.nearest(convertPoint2DToPoint(p),
@@ -444,9 +638,33 @@ public class RRG
 				
 			}
 //			-----------------------------------------------------------------------------
+		} else {
+			countSinceLastMove++;
 		}
 	}
 
+	
+	
+	/**
+	 * convert point object to a point2D object
+	 * @param p
+	 * @return
+	 */
+	private Point2D convertPointToPoint2D(Point p) 
+	{
+		return new Point2D.Float(p.x, p.y);
+	}
+	
+	/**
+	 * convert point2D object to a point object
+	 * @param p
+	 * @return
+	 */
+	private Point convertPoint2DToPoint(Point2D p) 
+	{
+		return new Point((float) p.getX(), (float)p.getY());
+	}
+	
 	/**
 	 * Sample a transition with source in 'fromStates' and destination in 'toStates'
 	 * @param fromStates
@@ -459,11 +677,11 @@ public class RRG
 	{
 		Point2D.Float p;
 		BDD transition;
+		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
 		int i 		= 0;
 		while(i < ProductAutomaton.threshold)
 		{
 			p 			= sampleInSensingArea();
-			totalSampledPoints++;
 			transition 	= buildGraph(fromStates, toStates, p, productAutomaton, 1);
 			if(! transition.isZero())
 			{
@@ -473,6 +691,9 @@ public class RRG
 		}
 		return null;
 	}
+	
+	
+	
 
 	private Point2D.Float sampleInSensingArea() 
 	{
@@ -485,11 +706,14 @@ public class RRG
 			{
 				if(env.obstacleFree(p)) 
 				{
-					frontier.updateFrontier(p, 1);
+					discretization.updateDiscretization(p, 1);
+					numOfFrontierUpdates++;
+					totalSampledPoints++;
 					return p;
 				}
 				else {
-					frontier.updateFrontier(p, 8);
+					discretization.updateDiscretization(p, 4);
+					numOfFrontierUpdates++;
 				}
 			}
 		}
@@ -512,7 +736,6 @@ public class RRG
 		while(i < ProductAutomaton.threshold)
 		{
 			p 			= sampleInSensingArea();
-			totalSampledPoints++;
 			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton, 2);
 			if(! transition.isZero())
 			{
@@ -574,7 +797,11 @@ public class RRG
 			source 			= dest;
 			nextState 		= it.next();
 			dest 			= findTheVertex(nextState);
-			nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
+			try {
+				nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
+			} catch(Exception e) {
+				e.printStackTrace();
+			}
 			finalPath.addAll(nextPath.getEdgeList());
 		}
 		return finalPath;
@@ -612,7 +839,9 @@ public class RRG
 			nextPoint 		= it.next();
 			dest 			= findTheVertex(nextPoint);
 			nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
-			finalPath.addAll(nextPath.getEdgeList());
+			if(nextPath != null) {
+				finalPath.addAll(nextPath.getEdgeList());
+			}
 		}
 		return finalPath;
 	}   
@@ -649,7 +878,7 @@ public class RRG
 		while(it.hasNext()) 
 		{
 			temp 				= it.next();
-			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) 
+			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.00001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.00001) 
 			{
 				return temp;
 			}
@@ -673,7 +902,40 @@ public class RRG
 		} else if(! flagRoom) {
 			new StoreGraph(graph, findPath(movement), "room");
 		}
-		
 	}
+	
+	
+	public void printAPList(BDD state) throws PlanningException 
+	{
+		ArrayList<String> apList	= findAPList(state);
+		System.out.print("[");
+		for(int j=0; j<apList.size(); j++) 
+		{
+			if(j < apList.size() - 1) 
+			{
+				System.out.print(apList.get(j)+",");
+			}
+			else 
+			{
+				System.out.print(apList.get(j));
+			}
+		}
+		System.out.print("]  ");
+	}
+
+	private ArrayList<String> findAPList(BDD state) throws PlanningException 
+	{
+		ArrayList<String> list		= new ArrayList<String>();
+		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
+		{
+			if(! state.and(ProductAutomaton.ithVarSystemPre(i)).isZero()) 
+			{
+				list.add(ProductAutomaton.apListSystem.get(i));
+			}
+		}
+		list.add(Integer.toString(state.scanVar(ProductAutomaton.propertyDomainPre()).intValue()));
+		return list;
+	}
+	
 
 }

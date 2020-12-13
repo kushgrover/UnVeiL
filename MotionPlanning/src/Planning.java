@@ -56,10 +56,10 @@ public class Planning
         
         
         // for output of advice
-        int[] advice 						= new int[50];
+        int[] adviceSampled 						= new int[50];
         for(int k=0 ;k<50; k++) 
         {
-        	advice[k]						= 0;
+        	adviceSampled[k]						= 0;
         }
         
         // for calculating time of different parts
@@ -70,12 +70,15 @@ public class Planning
         boolean computePath 				= false;
         List<DefaultEdge> finalPath 		= new ArrayList<DefaultEdge>();
         boolean needNewAdvice = true;
-        ArrayList<BDD> reachableStates = null;
+        ArrayList<BDD> advice = null;
         
+        
+
         while(true)  //until the property is satisfied
         {
-        	if(iterationNumber==20000) {
-        		rrg.frontier.printFrontier();
+        	if(iterationNumber==500) {
+        		rrg.discretization.printDiscretization();
+        		rrg.discretization.printFrontiers();
         		break;
         	}
         	System.out.println("Iter num: " + iterationNumber);
@@ -87,8 +90,24 @@ public class Planning
         	processStartTime = System.nanoTime();
         	if(needNewAdvice) 
         	{
-        		reachableStates	= exper.advice(currentStates);
+        		advice	= exper.getAdvice(currentStates);
         		needNewAdvice = false;
+        		
+        		
+//        		System.out.println("Advice length: " + advice.size());
+//        		if(iterationNumber >= 250) {
+//        			advice	= exper.getAdvice(currentStates);
+//            		
+//	        		BDD temp;
+//	        		for(int i=0; i<advice.size();i++) {
+//	        			System.out.println("\nAdvice: " + i + "*******************");
+//	        			BDDIterator it = advice.get(i).iterator(ProductAutomaton.allPreSystemVars());
+//	        			while(it.hasNext()) {
+//	        				temp = (BDD) it.next();
+//	        				rrg.printAPList(temp);
+//	        			}
+//	        		}
+//        		}
         	}
         	adviceTime += System.nanoTime() - processStartTime;
         	
@@ -97,12 +116,18 @@ public class Planning
 //        	---------------------------------------------------------------------------------------
 //        	---------------------------------------------------------------------------------------
         	
+//        	=============== Better use of advice =================
+        	transition = rrg.sample(advice, productAutomaton);
+        	
+//        	---------------------------------------------------------------------------------------
+        			
+//        	=============== Naive use of advice ================		
 //        	int currentPathLength			= 1;
-//        	while(currentPathLength < reachableStates.size()) //First try to sample from the advice
+//        	while(currentPathLength < advice.size()) //First try to sample from the advice
 //        	{
 //        		
-//        		fromStates					= currentStates.and(reachableStates.get(currentPathLength));
-//        		toStates 					= reachableStates.get(currentPathLength-1);
+//        		fromStates					= currentStates.and(advice.get(currentPathLength));
+//        		toStates 					= advice.get(currentPathLength-1);
 //
 //        		transition					= rrg.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), productAutomaton);
 //        		if(transition == null) {
@@ -110,19 +135,20 @@ public class Planning
 //        			continue;
 //        		}
 //        		else {
-//        			advice[currentPathLength - 1]++;
+//        			adviceSampled[currentPathLength - 1]++;
 //        			break;
 //        		}
 //        	}
         	
 //        	---------------------------------------------------------------------------------------
         	
-        	transition = null;
+//        	=============== No advice ================
+//        	transition = null;
 
 //        	---------------------------------------------------------------------------------------
 //        	---------------------------------------------------------------------------------------
         	
-        	if(transition == null) // sample anywhere
+        	if(transition == null || transition.isZero()) // sample anywhere
         	{
         		transition					= rrg.sampleRandomly(productAutomaton);
         		rrg.countSinceLastMove++;
@@ -132,7 +158,7 @@ public class Planning
         	if(transition == null) // if transition is still null
         	{
         		System.out.println("Something wrong happened O.o");
-        		break;
+        		continue;
         	}
         	samplingTime += System.nanoTime() - processStartTime;
 //        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -150,24 +176,17 @@ public class Planning
         	while(ite.hasNext())
         	{
         		transition 					= (BDD) ite.next();
-        		
         		//if transition has been sampled before or transition is a self loop in the abstraction, skip learning
-        		if(! transition.and(productAutomaton.sampledTransitions).isZero() || productAutomaton.removeAllExceptPreSystemVars(transition).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transition))))
+        		if(transition.and(productAutomaton.sampledTransitions).isZero() && ! productAutomaton.removeAllExceptPreSystemVars(transition).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transition))))
             	{
-            		continue;
+        			exper.learn(transition);
+            		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));	//update the set of current states
+            		
+            		needNewAdvice = true; 
             	}
-        		
-        		//learning happens here
-        		exper.learn(transition);
-        		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));	//update the set of current states
-        		
-        		needNewAdvice = true; 
         	}
         	learnTime 					+= System.nanoTime() - processStartTime;
         	//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        	
-        	// Don't output random things
-//        	System.setOut(System.out);
         	
         	// If an accepting transition was sampled, check for path <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         	processStartTime				= System.nanoTime();
@@ -188,28 +207,28 @@ public class Planning
         	pathTime					+= System.nanoTime() - processStartTime;
 //        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         	
-        	computePath = false;
+//        	computePath = false;
         	iterationNumber++;
         }
         
-//    	productAutomaton.createDot(iterationNumber);
+    	productAutomaton.createDot(iterationNumber);
         Initialize.getFactory().done();
         double totalTime = System.nanoTime() - startTime;
 
         rrg.plotGraph(finalPath);
-        System.out.println(rrg.movement.size());
+        System.out.println("No of frontiers update: " + rrg.numOfFrontierUpdates);
         // Output
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
-		System.out.println("\nTotal useful sampled points = " + iterationNumber);
+		System.out.println("\nTotal useful sampled points = " + rrg.totalPoints);
 		
 		int adviceSamples = 0;
-		for(int k=0; k<50; k++) 
+		for(int k=0; k<10; k++) 
 		{
-			adviceSamples += advice[k];
+			adviceSamples += rrg.adviceSampled[k];
 		}
 		
 		System.out.println("Sampled from advice = " + adviceSamples);
-		System.out.println("\nAdvice samples: " + Arrays.toString(advice));
+		System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled));
 		System.out.print("\nTotal time taken (in ms):");
         System.out.println(totalTime / 1000000);
         System.out.print("\nInitialization time (in ms):");

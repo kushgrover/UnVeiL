@@ -61,7 +61,7 @@ public class PrintProductAutomaton
 		case(3):
 			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=green, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
 		case(2):
-//			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=blue, label=\""  + labelString + " (" + acceptingSet + ")\"];\n");
+			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=blue, label=\""  + labelString + " (" + acceptingSet + ")\"];\n");
 		case(1):
 //			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=red, label=\""   + labelString + " (" + acceptingSet + ")\"];\n");;
 		case(0):

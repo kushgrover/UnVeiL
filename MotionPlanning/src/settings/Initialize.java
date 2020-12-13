@@ -55,6 +55,7 @@ public class Initialize
 		ProductAutomaton.apListSystem			= prop.propertyParser.getAPListSystem();
 		ProductAutomaton.numAPSystem			= ProductAutomaton.apListSystem.size();
 		productAutomaton						= new ProductAutomaton(prop.propertyParser.getPropertyBDD());
+		rrg.setProductAutomaton(productAutomaton);
         productAutomaton.setInitState(prop.propertyParser.getInitStateProperty());
 	}
 	

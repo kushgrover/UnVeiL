@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
+import settings.PlanningException;
 import net.sf.javabdd.BDDFactory;
 
 /**
@@ -161,38 +162,99 @@ public class DefaultExperiment implements Experiments
 	 * ASK procedure
 	 */
 	@Override
-	public ArrayList<BDD> advice(BDD currentStates) throws Exception
+	public ArrayList<BDD> getAdvice(BDD currentStates) throws Exception
 	{
-		ArrayList<BDD> reachableStates	= new ArrayList<BDD>();
+		ArrayList<BDD> advice	= new ArrayList<BDD>();
 
 //    	---------------------------------------------------------------------------------------
 //    	---------------------------------------------------------------------------------------
 	
-//		reachableStates.add(productAutomaton.finalStates());
-//		reachableStates.add(productAutomaton.preImageOfFinalStates());
+		BDD target = productAutomaton.finalStatesSystem();
+		BDD source = productAutomaton.preImageOfFinalStatesSystem();
+		
+		advice.add(source.and(productAutomaton.changePreSystemVarsToPostSystemVars(target)));
+		BDD totalTransitions = advice.get(0);
+		
+		int i = 1;
+		while(! productAutomaton.incomingTransitions(source).and(totalTransitions.not()).isZero()) {
+			advice.add(productAutomaton.incomingTransitions(source));
+			source = productAutomaton.removeAllExceptPreSystemVars(advice.get(i));
+			totalTransitions = totalTransitions.or(advice.get(i));
+			i++;
+			
+//			BDDIterator it = advice.get(i-1).iterator(ProductAutomaton.allSystemVars());
+//			System.out.println("**************" + i);
+//			while(it.hasNext()) {
+//				printAPList((BDD) it.next());
+//			}
+//			System.out.println("\n**  **  **  **");
+		}
+		
+//    	---------------------------------------------------------------------------------------
+			
+//		reachableStates.add(productAutomaton.finalStatesSystem());
+//		reachableStates.add(productAutomaton.preImageOfFinalStatesSystem());
 //		
 //		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
 //			return reachableStates;
 //		}
 //		
 //		int i	= 1;
-//		BDD backwardReachableStates		= productAutomaton.preImageOfFinalStates();
-//		while(!productAutomaton.preImage(backwardReachableStates).and(backwardReachableStates.not()).isZero()) {
-//			reachableStates.add(productAutomaton.preImage(reachableStates.get(i)));
+//		BDD backwardReachableStates		= reachableStates.get(1);
+//		while(!productAutomaton.preImageSystem(reachableStates.get(i)).and(backwardReachableStates.not()).isZero()) {
+//			reachableStates.add(productAutomaton.preImageSystem(reachableStates.get(i)));
 //			i++;
 //			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
+//			BDDIterator it = reachableStates.get(i).iterator(ProductAutomaton.allPreSystemVars());
+//			System.out.println("**************" + i);
+//			while(it.hasNext()) {
+//				printAPList((BDD) it.next());
+//			}
+//			System.out.println("\n**  **  **  **");
 //		}
 		
 //    	---------------------------------------------------------------------------------------
 		
-		reachableStates.add(ProductAutomaton.factory.one());
-		reachableStates.add(ProductAutomaton.factory.one());
+//		reachableStates.add(ProductAutomaton.factory.one());
+//		reachableStates.add(ProductAutomaton.factory.one());
 
 //    	---------------------------------------------------------------------------------------
 //    	---------------------------------------------------------------------------------------
 	
-		return reachableStates;
+		return advice;
 		
+	}
+	
+	public void printAPList(BDD state) throws PlanningException 
+	{
+		ArrayList<String> apList	= findAPList(state);
+		System.out.print("[");
+		for(int j=0; j<apList.size(); j++) 
+		{
+			if(j < apList.size() - 1) 
+			{
+				System.out.print(apList.get(j)+",");
+			}
+			else 
+			{
+				System.out.print(apList.get(j));
+			}
+		}
+		System.out.print("]  ");
+	}
+
+	private ArrayList<String> findAPList(BDD state) throws PlanningException 
+	{
+		ArrayList<String> list		= new ArrayList<String>();
+		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
+		{
+			if(! state.and(ProductAutomaton.ithVarSystemPre(i)).isZero()) 
+			{
+				list.add(ProductAutomaton.apListSystem.get(i));
+			}
+		}
+		list.add(Integer.toString(state.scanVar(ProductAutomaton.propertyDomainPre()).intValue()));
+		return list;
 	}
 	
 	
@@ -205,27 +267,30 @@ public class DefaultExperiment implements Experiments
 	 */
 	public BDD addFilters() throws Exception 
 	{
-//		BDD h	= ProductAutomaton.ithVarSystemPre(0);
-//		BDD r1	= ProductAutomaton.ithVarSystemPre(1);
-//		BDD r2	= ProductAutomaton.ithVarSystemPre(2);
-//		BDD r3	= ProductAutomaton.ithVarSystemPre(3);
-//		BDD r4	= ProductAutomaton.ithVarSystemPre(4);
-//		BDD r5	= ProductAutomaton.ithVarSystemPre(5);
-//		BDD r6	= ProductAutomaton.ithVarSystemPre(6);
-////		BDD c	= ProductAutomaton.ithVarSystemPre(5);
-////		BDD t	= ProductAutomaton.ithVarSystemPre(3);
-////		BDD b	= ProductAutomaton.ithVarSystemPre(7);
-////		BDD filter1	= h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b)).not());
-//		BDD filter2	= r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
-//		BDD filter3	= r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
-//		BDD filter4	= r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
-//		BDD filter5 = r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
-//		BDD filter6	= r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
-//		BDD filter7	= r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
-//		BDD filter	= (filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
-//		BDD filterPrime	= productAutomaton.changePreVarsToPostVars(filter);
-//		return filter.and(filterPrime);
-		return factory.one();
+		BDD h	= ProductAutomaton.ithVarSystemPre(0);
+		BDD r1	= ProductAutomaton.ithVarSystemPre(1);
+		BDD r2	= ProductAutomaton.ithVarSystemPre(2);
+		BDD r3	= ProductAutomaton.ithVarSystemPre(3);
+		BDD r4	= ProductAutomaton.ithVarSystemPre(4);
+		BDD r5	= ProductAutomaton.ithVarSystemPre(5);
+		BDD r6	= ProductAutomaton.ithVarSystemPre(6);
+//		BDD c	= ProductAutomaton.ithVarSystemPre(5);
+//		BDD t	= ProductAutomaton.ithVarSystemPre(3);
+//		BDD b	= ProductAutomaton.ithVarSystemPre(7);
+//		BDD filter1	= h.imp((r1.or(r2).or(r3).or(r4).or(r5).or(r6).or(b)).not());
+		BDD filter2	= r1.imp((h.or(r2).or(r3).or(r4).or(r5).or(r6)).not());
+		BDD filter3	= r2.imp((h.or(r1).or(r3).or(r4).or(r5).or(r6)).not());
+		BDD filter4	= r3.imp((h.or(r1).or(r2).or(r4).or(r5).or(r6)).not());
+		BDD filter5 = r4.imp((h.or(r1).or(r2).or(r3).or(r5).or(r6)).not());
+		BDD filter6	= r5.imp((h.or(r1).or(r2).or(r3).or(r4).or(r6)).not());
+		BDD filter7	= r6.imp((h.or(r1).or(r2).or(r3).or(r4).or(r5)).not());
+		BDD filter	= (filter2).and(filter3).and(filter4).and(filter5).and(filter6).and(filter7);
+		BDD filterPrime	= productAutomaton.changePreVarsToPostVars(filter);
+		return filter.and(filterPrime);
+		
+		
+		
+//		return factory.one();
 	}
 	
 	public ProductAutomaton getProductAutomaton() 

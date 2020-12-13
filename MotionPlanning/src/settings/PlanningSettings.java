@@ -32,6 +32,8 @@ public class PlanningSettings
 	public static final String ETA							=	"planning.eta";
 	public static final String SENSING_RADIUS				=	"planning.sensingRadius";
 	public static final String MOVING_THRESHOLD				=  	"planning.movingThreshold";
+	public static final String DISCRETIZATION_SIZE			=  	"planning.discretizationSize";
+	
 	
 	public static final Logger RTREELOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
 	
@@ -50,17 +52,19 @@ public class PlanningSettings
 																					"Use SPOT or OWL for generating the automaton."},
 			{ INTEGER_TYPE,		MAX_LEVEL_TRANSITION,					"Levels of transitions",				"1.0",			new Integer(4),																"",
 																					"Possible levels of transitions possible"},
-			{ INTEGER_TYPE,		SAMPLING_THRESHOLD,						"Threshold for sampling",				"1.0",			new Integer(50),															"",
+			{ INTEGER_TYPE,		SAMPLING_THRESHOLD,						"Threshold for sampling",				"1.0",			new Integer(200),															"",
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
-			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(1),																"",
+			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.5),																"",
 																					"Maximum radius to find the neighbours to which current point can have an edge"},
 			{ FLOAT_TYPE,		SENSING_RADIUS,							"Sensing radius around the robot",		"1.0",			new Float(1),																"",
 																					"The radius of the sensing area arond the robot"},
 			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(50),															"",
-																					"After how many iterations without moving, the robot should move"}
-
+																					"After how many iterations without moving, the robot should move"},
+			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of discretization for frontiers",	"1.0",			new Float(0.1),															"",
+																					"The size of each cell for computation of frontiers"}
+																		
 		};
 																			
 	
@@ -93,6 +97,9 @@ public class PlanningSettings
 		} else if (VARIABLE.equals(MOVING_THRESHOLD))
 		{
 			propertyData[8][4]	= value;
+		} else if (VARIABLE.equals(MOVING_THRESHOLD))
+		{
+			propertyData[9][4]	= value;
 		}
 	}
 	
@@ -125,6 +132,9 @@ public class PlanningSettings
 		} else if (VARIABLE.equals(MOVING_THRESHOLD))
 		{
 			return propertyData[8][4];
+		} else if (VARIABLE.equals(DISCRETIZATION_SIZE))
+		{
+			return propertyData[9][4];
 		}
 		return null;
 	}

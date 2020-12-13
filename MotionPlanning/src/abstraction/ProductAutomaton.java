@@ -458,13 +458,9 @@ public class ProductAutomaton
 	 * @return BDD representing the set of final states
 	 * @throws PlanningException 
 	 */
-	public BDD finalStates() throws PlanningException
+	public BDD finalStatesSystem() throws PlanningException
 	{
-		BDD temp	= removeAllExceptPostVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
-		if(temp.exist(propertyDomainPost().set()).isZero()) 
-		{
-			return factory.zero();
-		}
+		BDD temp	= removeAllExceptPostSystemVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
 		return changePostVarsToPreVars(temp);
 	}
 	
@@ -473,9 +469,9 @@ public class ProductAutomaton
 	 * @return
 	 * @throws PlanningException 
 	 */
-	public BDD preImageOfFinalStates() throws PlanningException 
+	public BDD preImageOfFinalStatesSystem() throws PlanningException 
 	{
-		return removeAllExceptPreVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
+		return removeAllExceptPreSystemVars(productAutomatonBDD.and(acceptingSetDomain().ithVar(1)));
 	}
 	
 	
@@ -721,7 +717,7 @@ public class ProductAutomaton
 		BDD temp	= bdd;
 		try
 		{
-			temp=temp.exist(propertyDomainPre().set());
+			temp	= temp.exist(propertyDomainPre().set());
 		} catch(BDDException E)
 		{
 			E.printStackTrace();
@@ -770,6 +766,51 @@ public class ProductAutomaton
 		return temp;
 	}
 	
+	public BDD removeAllExceptSystemVars(BDD bdd) throws PlanningException {
+		BDD temp	= bdd;
+		try
+		{
+			temp	= temp.exist(propertyDomainPre().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
+		}
+		try
+		{
+			temp	= temp.exist(propertyDomainPost().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
+		}
+		try
+		{
+			temp	= temp.exist(acceptingSetDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
+		}
+		try
+		{
+			temp	= temp.exist(transitionLevelDomain().set());
+		} catch(BDDException E)
+		{
+			E.printStackTrace();
+		}
+		for(int i=0; i<numVars[2]; i++) 
+		{
+			try
+			{
+				temp	= temp.exist(ithVarLabel(i));
+			} catch(BDDException E)
+			{
+				E.printStackTrace();
+			}
+		}
+		return temp;
+	}
+	
+	
+	
 	/**
 	 * <p>Computes pre image of a set of states</p>
 	 * @param states
@@ -788,6 +829,16 @@ public class ProductAutomaton
 		return removeAllExceptPreVars(productAutomatonBDD.and(temp));
 	}
 	
+	public BDD preImageSystem(BDD states) throws PlanningException, PlanningException 
+	{
+		if(! hasOnlyPreSystemVars(states)) 
+		{
+			throw new PlanningException("BDD has extra vars");
+		}
+		BDD temp		= changePreVarsToPostVars(states);
+		return removeAllExceptPreSystemVars(productAutomatonBDD.and(temp));
+	}
+	
 	/**
 	 * <p>Computes post image of a set of states</p>
 	 * @param states
@@ -802,6 +853,15 @@ public class ProductAutomaton
 			throw new PlanningException("BDD has extra vars");
 		}
 		return changePostVarsToPreVars(removeAllExceptPostVars(productAutomatonBDD.and(states)));
+	}
+	
+	public BDD postImageSystem(BDD states) throws PlanningException, PlanningException 
+	{
+		if(! hasOnlyPreVars(states)) 
+		{
+			throw new PlanningException("BDD has extra vars");
+		}
+		return changePostVarsToPreVars(removeAllExceptPostSystemVars(productAutomatonBDD.and(states)));
 	}
 	
 	/**
@@ -1445,6 +1505,20 @@ public class ProductAutomaton
 		}
 		return true;
 	}
+
+
+
+
+
+	public BDD incomingTransitions(BDD source) throws PlanningException {
+		source = changePreSystemVarsToPostSystemVars(source);
+		return removeAllExceptSystemVars(productAutomatonBDD.and(source));
+	}
+
+
+
+
+
 	
 	
 	
