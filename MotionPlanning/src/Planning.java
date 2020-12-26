@@ -76,7 +76,7 @@ public class Planning
 
         while(true)  //until the property is satisfied
         {
-        	if(iterationNumber==500) {
+        	if(iterationNumber==300) {
         		rrg.discretization.printDiscretization();
         		rrg.discretization.printFrontiers();
         		break;
@@ -148,12 +148,12 @@ public class Planning
 //        	---------------------------------------------------------------------------------------
 //        	---------------------------------------------------------------------------------------
         	
-        	if(transition == null || transition.isZero()) // sample anywhere
-        	{
-        		transition					= rrg.sampleRandomly(productAutomaton);
-        		rrg.countSinceLastMove++;
-        		
-        	}
+//        	if(transition == null || transition.isZero()) // sample anywhere
+//        	{
+//        		transition					= rrg.sampleRandomly(productAutomaton);
+//        		rrg.countSinceLastMove++;
+//        		
+//        	}
         	
         	if(transition == null) // if transition is still null
         	{
@@ -215,7 +215,7 @@ public class Planning
         Initialize.getFactory().done();
         double totalTime = System.nanoTime() - startTime;
 
-        rrg.plotGraph(finalPath);
+        float pathLength = rrg.plotGraph(finalPath);
         System.out.println("No of frontiers update: " + rrg.numOfFrontierUpdates);
         // Output
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
@@ -227,6 +227,7 @@ public class Planning
 			adviceSamples += rrg.adviceSampled[k];
 		}
 		
+		System.out.println("Path length = " + pathLength);
 		System.out.println("Sampled from advice = " + adviceSamples);
 		System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled));
 		System.out.print("\nTotal time taken (in ms):");

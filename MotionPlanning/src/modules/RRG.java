@@ -28,8 +28,10 @@ import com.infomatiq.jsi.SpatialIndex;
 import com.infomatiq.jsi.rtree.RTree;
 
 import abstraction.ProductAutomaton;
+import environment.EdgeSupplier;
 import environment.Environment;
 import environment.Vertex;
+import environment.VertexSupplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +93,7 @@ public class RRG
 		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
 		this.sensingRadius		= (float) PlanningSettings.get("planning.sensingRadius");
 		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
-		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(DefaultEdge.class);
+		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
 		this.movingThreshold	= (int) PlanningSettings.get("planning.movingThreshold");
 		this.discretization 	= new Discretization(env, (float) PlanningSettings.get("planning.discretizationSize"));
 		treePoints 				= new ArrayList<Point>();
@@ -127,145 +129,145 @@ public class RRG
 	 * @param productAutomaton
 	 * @return
 	 */
-	public BDD buildGraph(BDD fromStates, BDD toStates, Point2D xRand2D, ProductAutomaton productAutomaton, int type) 
-	{
-		
-		BDD transitions 			= ProductAutomaton.factory.zero();
-		
-		// need 'point2D' for graph and 'point' for Rtree
-		Point xRand					= convertPoint2DToPoint(xRand2D);
-		
-		TIntProcedure procedure		= new TIntProcedure()	// execute this procedure for the nearest neighbour of 'xRand'
-		{ 
-			public boolean execute(int i) 
-			{	
-				Point xNearest		= treePoints.get(i);
-				Point2D xNearest2D	= convertPointToPoint2D(xNearest);
-				
-				// steer in the direction of random point, this new point will be added to the graph/Rtree
-				Point2D xNew2D		= steer(xNearest2D, xRand2D);
-				Point xNew			= convertPoint2DToPoint(xNew2D);
-				
-				try 
-				{
-					// check if 'xNearest' is in the set 'fromStates' 					        || check if the new point is in the set 'toStates'
-					if(Environment.getLabelling().getLabel(xNearest2D).and(fromStates).isZero() || Environment.getLabelling().getLabel(xNew2D).and(toStates).isZero())	
-					{
-						return false;
-					}
-				} catch (Exception e) 
-				{
-					e.printStackTrace();
-				}
-				
-				
-				// If the points are according to the advice
-				if(env.collisionFree(xNearest2D, xNew2D))	//check if it is collision free
-				{	
-//					discretization.updatediscretization(xNew2D, 1);
-//					numOfFrontierUpdates++;
-
-					BDD transition = ProductAutomaton.factory.zero();
-					try 
-					{
-						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
-						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
-						if(type == 1 && transition.and(productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(2))).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
-							return false;
-						}
-						symbolicTransitionsInCurrentBatch = symbolicTransitionsInCurrentBatch.or(transition);
-					}
-					catch (Exception e1) {
-						e1.printStackTrace();
-					}
-					
-					
-//					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
-//					try {
-//						if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
-//							System.out.println(Environment.getLabelling().getLabel(xNearest2D).toString() + " ---> " + Environment.getLabelling().getLabel(xNew2D).toString());
+//	public BDD buildGraph(BDD fromStates, BDD toStates, Point2D xRand2D, ProductAutomaton productAutomaton, int type) 
+//	{
+//		
+//		BDD transitions 			= ProductAutomaton.factory.zero();
+//		
+//		// need 'point2D' for graph and 'point' for Rtree
+//		Point xRand					= convertPoint2DToPoint(xRand2D);
+//		
+//		TIntProcedure procedure		= new TIntProcedure()	// execute this procedure for the nearest neighbour of 'xRand'
+//		{ 
+//			public boolean execute(int i) 
+//			{	
+//				Point xNearest		= treePoints.get(i);
+//				Point2D xNearest2D	= convertPointToPoint2D(xNearest);
+//				
+//				// steer in the direction of random point, this new point will be added to the graph/Rtree
+//				Point2D xNew2D		= steer(xNearest2D, xRand2D);
+//				Point xNew			= convertPoint2DToPoint(xNew2D);
+//				
+//				try 
+//				{
+//					// check if 'xNearest' is in the set 'fromStates' 					        || check if the new point is in the set 'toStates'
+//					if(Environment.getLabelling().getLabel(xNearest2D).and(fromStates).isZero() || Environment.getLabelling().getLabel(xNew2D).and(toStates).isZero())	
+//					{
+//						return false;
+//					}
+//				} catch (Exception e) 
+//				{
+//					e.printStackTrace();
+//				}
+//				
+//				
+//				// If the points are according to the advice
+//				if(env.collisionFree(xNearest2D, xNew2D))	//check if it is collision free
+//				{	
+////					discretization.updatediscretization(xNew2D, 1);
+////					numOfFrontierUpdates++;
+//
+//					BDD transition = ProductAutomaton.factory.zero();
+//					try 
+//					{
+//						transition		= productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D));
+//						transition 		= transition.and(Environment.getLabelling().getLabel(xNearest2D));
+//						if(type == 1 && transition.and(productAutomaton.getBDD().and(ProductAutomaton.transitionLevelDomain().ithVar(2))).and(ProductAutomaton.getPropertyBDD()).and(ProductAutomaton.getLabelEquivalence()).isZero()) {
+//							return false;
 //						}
-//					} catch (Exception e1) {
+//						symbolicTransitionsInCurrentBatch = symbolicTransitionsInCurrentBatch.or(transition);
+//					}
+//					catch (Exception e1) {
 //						e1.printStackTrace();
 //					}
-					
-					
-					
-					//add the new point to the graph (it will be added later to the Rtree)
-					computeRrgRadius();
-//					addSymbolicTransitions(xNearest2D, xNew2D);
-					addGraphEdge(xNearest2D, xNew2D);
-					
-//					plotting the first time it sees a bin
-					try {
-						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-							plotGraph(null);
-							flagBin = true;
-						}
-						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-							plotGraph(null);
-							flagRoom = true;
-						}
-					} catch (Exception e1) {
-						// TODO Auto-generated catch block
-						e1.printStackTrace();
-					}
-					
-					// add the vertex in the map from abstraction to concrete
-					addToMap(source);
-					
-					
-					
-					discretization.updateDiscretization(xNearest2D, xNew2D, 2);
-					numOfFrontierUpdates++;
-					
-					float tempTime = System.nanoTime();
-					
-					if(type == 1) {
-						move(1, xNew2D, transition);
-					} else {
-						move(-1, xNew2D, transition);
-					}
-						
-					moveTime += System.nanoTime() - tempTime;
-					
-					
-					
-					tree.nearestN(xNew, 
-							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
-							{
-								public boolean execute(int i) 
-								{
-									Point neighbour			= treePoints.get(i);
-									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
-									
-									if(neighbour2D.equals(xNew2D)) return true;
-									
-									if( distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
-									{
-										addSymbolicTransitions(neighbour2D, xNew2D);
-										addGraphEdge(neighbour2D, xNew2D);
-									}
-									return true;
-								}
-							}, 
-							100, java.lang.Float.POSITIVE_INFINITY); // a max of 100 neighbours are considered
-					
-					// add point to the Rtree
-					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
-//					System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-					tree.add(rect, numPoints);
-//					System.setOut(System.out);
-					treePoints.add(xNew);
-					numPoints++;
-				}
-		        return true;
-		    }
-		};
-		tree.nearest(xRand, procedure, java.lang.Float.POSITIVE_INFINITY); // apply 'procedure' to the nearest point of xRand
-		
-		return transitions;
-	}
+//					
+//					
+////					System.out.println("Sampled Transition: " + xNearest2D.toString() + " ---> " + xNew2D.toString());
+////					try {
+////						if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+////							System.out.println(Environment.getLabelling().getLabel(xNearest2D).toString() + " ---> " + Environment.getLabelling().getLabel(xNew2D).toString());
+////						}
+////					} catch (Exception e1) {
+////						e1.printStackTrace();
+////					}
+//					
+//					
+//					
+//					//add the new point to the graph (it will be added later to the Rtree)
+//					computeRrgRadius();
+////					addSymbolicTransitions(xNearest2D, xNew2D);
+//					addGraphEdge(xNearest2D, xNew2D);
+//					
+////					plotting the first time it sees a bin
+//					try {
+//						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
+//							plotGraph(null);
+//							flagBin = true;
+//						}
+//						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
+//							plotGraph(null);
+//							flagRoom = true;
+//						}
+//					} catch (Exception e1) {
+//						// TODO Auto-generated catch block
+//						e1.printStackTrace();
+//					}
+//					
+//					// add the vertex in the map from abstraction to concrete
+//					addToMap(source);
+//					
+//					
+//					
+//					discretization.updateDiscretization(xNearest2D, xNew2D, 2);
+//					numOfFrontierUpdates++;
+//					
+//					float tempTime = System.nanoTime();
+//					
+//					if(type == 1) {
+//						move(1, xNew2D, transition);
+//					} else {
+//						move(-1, xNew2D, transition);
+//					}
+//						
+//					moveTime += System.nanoTime() - tempTime;
+//					
+//					
+//					
+//					tree.nearestN(xNew, 
+//							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
+//							{
+//								public boolean execute(int i) 
+//								{
+//									Point neighbour			= treePoints.get(i);
+//									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
+//									
+//									if(neighbour2D.equals(xNew2D)) return true;
+//									
+//									if( distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFree(xNew2D, neighbour2D) ) 
+//									{
+//										addSymbolicTransitions(neighbour2D, xNew2D);
+//										addGraphEdge(neighbour2D, xNew2D);
+//									}
+//									return true;
+//								}
+//							}, 
+//							100, java.lang.Float.POSITIVE_INFINITY); // a max of 100 neighbours are considered
+//					
+//					// add point to the Rtree
+//					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
+////					System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+//					tree.add(rect, numPoints);
+////					System.setOut(System.out);
+//					treePoints.add(xNew);
+//					numPoints++;
+//				}
+//		        return true;
+//		    }
+//		};
+//		tree.nearest(xRand, procedure, java.lang.Float.POSITIVE_INFINITY); // apply 'procedure' to the nearest point of xRand
+//		
+//		return transitions;
+//	}
 	
 	
 	private void buildGraph(ArrayList<BDD> advice, Point2D xRand2D, ProductAutomaton productAutomaton) {
@@ -315,6 +317,7 @@ public class RRG
 					computeRrgRadius();
 					addSymbolicTransitions(xNearest2D, xNew2D);
 					addGraphEdge(xNearest2D, xNew2D);
+					
 					totalPoints++;
 //					plotting the first time it sees a bin
 //					try {
@@ -350,11 +353,15 @@ public class RRG
 									
 									if(neighbour2D.equals(xNew2D)) return true;
 									
-									if(! seeBeyondObstacles  &&  ! env.collisionFree(neighbour2D, currentRobotPosition) )
+									if(! seeBeyondObstacles  &&  ! env.collisionFreeAll(neighbour2D, currentRobotPosition) )
 									{
 										return true;
 									}
-									if(distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFree(xNew2D, neighbour2D))
+									if(seeBeyondObstacles  &&  ! env.collisionFreeWalls(neighbour2D, currentRobotPosition) )
+									{
+										return true;
+									}
+									if(distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFreeAll(xNew2D, neighbour2D))
 									{
 										addSymbolicTransitions(neighbour2D, xNew2D);
 										addGraphEdge(neighbour2D, xNew2D);
@@ -398,14 +405,17 @@ public class RRG
 
 	
 	protected void addGraphEdge(Point2D xNearest2D, Point2D xNew2D) {
-		source		= findTheVertex(xNearest2D);
-		Vertex target 				= null;
+		source				= findTheVertex(xNearest2D);
+		Vertex target 		= null;
 		target				= findTheVertex(xNew2D);
 		if(target == null) {
 			target = new Vertex(xNew2D);
 			graph.addVertex(target);
 		}
-		graph.addEdge(source, target);
+		DefaultEdge edge = graph.addEdge(source, target);
+		if(edge != null) {
+			graph.setEdgeWeight(edge, distance(xNearest2D, xNew2D));
+		}
 		addToMap(target);
 	}
 
@@ -439,10 +449,13 @@ public class RRG
 	}
 
 	private boolean checkValidity(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition, ProductAutomaton productAutomaton) {
-		if(! env.collisionFree(xNearest2D, xNew2D)) {
+		if(! env.collisionFreeAll(xNearest2D, xNew2D)) {
 			return false;
 		}
-		if(! seeBeyondObstacles && ! env.collisionFree(xNew2D, currentRobotPosition)) {
+		if(! seeBeyondObstacles && ! env.collisionFreeAll(xNew2D, currentRobotPosition)) {
+			return false;
+		}
+		if(seeBeyondObstacles && ! env.collisionFreeWalls(xNew2D, currentRobotPosition)) {
 			return false;
 		}
 		if(! forwardSampledTransitions.and(transition).isZero()) {
@@ -673,25 +686,25 @@ public class RRG
 	 * @return sampled transition
 	 * @throws Exception
 	 */
-	public BDD sample(BDD fromStates, BDD toStates, ProductAutomaton productAutomaton) throws Exception 
-	{
-		Point2D.Float p;
-		BDD transition;
-		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
-		int i 		= 0;
-		while(i < ProductAutomaton.threshold)
-		{
-			p 			= sampleInSensingArea();
-			transition 	= buildGraph(fromStates, toStates, p, productAutomaton, 1);
-			if(! transition.isZero())
-			{
-				return transition;
-			}
-			i++;
-		}
-		return null;
-	}
-	
+//	public BDD sample(BDD fromStates, BDD toStates, ProductAutomaton productAutomaton) throws Exception 
+//	{
+//		Point2D.Float p;
+//		BDD transition;
+//		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
+//		int i 		= 0;
+//		while(i < ProductAutomaton.threshold)
+//		{
+//			p 			= sampleInSensingArea();
+//			transition 	= buildGraph(fromStates, toStates, p, productAutomaton, 1);
+//			if(! transition.isZero())
+//			{
+//				return transition;
+//			}
+//			i++;
+//		}
+//		return null;
+//	}
+//	
 	
 	
 
@@ -704,7 +717,7 @@ public class RRG
 			
 			if(distance(p, currentRobotPosition) < sensingRadius) 
 			{
-				if(env.obstacleFree(p)) 
+				if(env.obstacleFreeAll(p)) 
 				{
 					discretization.updateDiscretization(p, 1);
 					numOfFrontierUpdates++;
@@ -728,24 +741,24 @@ public class RRG
 	 * @param productAutomaton
 	 * @return sampled transition
 	 */
-	public BDD sampleRandomly(ProductAutomaton productAutomaton) 
-	{
-		Point2D.Float p;
-		BDD transition;
-		int i	= 0;
-		while(i < ProductAutomaton.threshold)
-		{
-			p 			= sampleInSensingArea();
-			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton, 2);
-			if(! transition.isZero())
-			{
-				countSinceLastMove++;
-				return transition;
-			}
-			i++;
-		}
-		return null;
-	}
+//	public BDD sampleRandomly(ProductAutomaton productAutomaton) 
+//	{
+//		Point2D.Float p;
+//		BDD transition;
+//		int i	= 0;
+//		while(i < ProductAutomaton.threshold)
+//		{
+//			p 			= sampleInSensingArea();
+//			transition 	= buildGraph(ProductAutomaton.factory.one(), ProductAutomaton.factory.one(), p, productAutomaton, 2);
+//			if(! transition.isZero())
+//			{
+//				countSinceLastMove++;
+//				return transition;
+//			}
+//			i++;
+//		}
+//		return null;
+//	}
 
 	/**
 	 * Set initial point
@@ -888,20 +901,26 @@ public class RRG
 
 	/**
 	 * Plot the graph
+	 * @return 
 	 * @throws IOException 
 	 */
-	public void plotGraph(List<DefaultEdge> finalPath)  
+	public float plotGraph(List<DefaultEdge> finalPath)  
 	{
 		if(finalPath != null) {
 			new ShowGraph(graph, env, findPath(movement), finalPath).setVisible(true);
-			new StoreGraph(env, graph, finalPath, findPath(movement), "end");
+			StoreGraph temp = new StoreGraph(env, graph, finalPath, findPath(movement), "end");
+			return temp.length;
 		} else if(! flagFirstMove) {
-			new StoreGraph(graph, findPath(movement), "firstMove"); 
+			StoreGraph temp = new StoreGraph(graph, findPath(movement), "firstMove"); 
+			return temp.length;
 		} else if(! flagBin) {
-			new StoreGraph(graph, findPath(movement), "bin");
+			StoreGraph temp = new StoreGraph(graph, findPath(movement), "bin");
+			return temp.length;
 		} else if(! flagRoom) {
-			new StoreGraph(graph, findPath(movement), "room");
+			StoreGraph temp = new StoreGraph(graph, findPath(movement), "room");
+			return temp.length;
 		}
+		return 0;
 	}
 	
 	

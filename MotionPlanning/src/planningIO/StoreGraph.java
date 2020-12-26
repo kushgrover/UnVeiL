@@ -16,6 +16,7 @@ import environment.Vertex;
 
 public class StoreGraph 
 {
+	public float length;
 
 	public StoreGraph(Environment env, Graph<Vertex, DefaultEdge> graph, List<DefaultEdge> finalPath, List<DefaultEdge> movement, String fileName) {
 		try {
@@ -85,12 +86,14 @@ public class StoreGraph
 		
 		DefaultEdge nextEdge;
 		Vertex source, target;
+		length = 0;
 		
 		if(movement != null) {
 			Iterator<DefaultEdge> i = movement.iterator();
 			while(i.hasNext())
 			{
 				nextEdge = i.next();
+				length += graph.getEdgeWeight(nextEdge);
 				source = graph.getEdgeSource(nextEdge);
 				target = graph.getEdgeTarget(nextEdge);
 				writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + "," + target.getPoint().getX() + "," + target.getPoint().getY() + "\n");

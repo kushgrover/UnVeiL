@@ -9,13 +9,12 @@ public class Vertex {
 	BDD label;
 	
 	public Vertex(Point2D point) {
-		this.point=point;
+		this.point = point;
 		try {
-			this.label=Environment.getLabelling().getLabel(point);
+			this.label = Environment.getLabelling().getLabel(point);
 		} catch (NullPointerException e) {
-			this.label=null;
+			this.label = null;
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

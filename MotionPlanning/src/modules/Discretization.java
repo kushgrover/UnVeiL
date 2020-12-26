@@ -301,8 +301,27 @@ public class Discretization
 		if(frontiers.size() == 0) {
 			for(int i=0;i<numX;i++) {
 				for(int j=0;j<numY;j++) {
-					if(!flag[i][j] && checkFrontierCell(i,j,2)) {
-						ArrayList<int[]> frontier = findFrontier(i,j,2);
+					if(discretization[i][j] == 1) {
+						discretization[i][j] = 0;
+					}
+//					if(!flag[i][j] && checkFrontierCell(i,j,2)) {
+//						ArrayList<int[]> frontier = findFrontier(i,j,2);
+//						if(frontier.size() > 4) {
+//							frontiers.add(frontier);
+//						}
+//					}
+				}
+			}
+			for(int i=0;i<numX;i++) {
+				for(int j=0;j<numY; j++) {
+					flag[i][j] = false;
+				}
+			}
+			
+			for(int i=0;i<numX;i++) {
+				for(int j=0;j<numY;j++) {
+					if(!flag[i][j] && checkFrontierCell(i,j,1)) {
+						ArrayList<int[]> frontier = findFrontier(i,j,1);
 						if(frontier.size() > 4) {
 							frontiers.add(frontier);
 						}
@@ -314,6 +333,8 @@ public class Discretization
 		if(frontiers.size()==0) {
 			return null;
 		}
+		
+		
 		
 		ArrayList<float[]> centers = new ArrayList<float[]>(frontiers.size());
 		float[] closest = findCenter(frontiers.get(0));

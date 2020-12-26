@@ -60,9 +60,9 @@ public class PlanningSettings
 																					"Maximum radius to find the neighbours to which current point can have an edge"},
 			{ FLOAT_TYPE,		SENSING_RADIUS,							"Sensing radius around the robot",		"1.0",			new Float(1),																"",
 																					"The radius of the sensing area arond the robot"},
-			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(50),															"",
+			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(70),															"",
 																					"After how many iterations without moving, the robot should move"},
-			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of discretization for frontiers",	"1.0",			new Float(0.1),															"",
+			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of discretization for frontiers",	"1.0",			new Float(0.05),															"",
 																					"The size of each cell for computation of frontiers"}
 																		
 		};

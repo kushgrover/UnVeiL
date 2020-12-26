@@ -22,6 +22,8 @@ public class EnvironmentReader
 		
 		Point2D.Float p1, p2, p3, p4, init;
 		ArrayList<Path2D> obstacles = new ArrayList<Path2D>();
+		ArrayList<Path2D> walls		= new ArrayList<Path2D>();
+		
 		
 		BufferedReader reader 		= new BufferedReader(new FileReader(envFile));
 
@@ -65,10 +67,54 @@ public class EnvironmentReader
 		
 		
 		
-		// For obstacles
+		// For walls
 		p 		= Pattern.compile(rectangle);
 		Path2D rect;
 		int i 	= 0;
+		if((boolean) PlanningSettings.get("planning.verbosity"))
+        {
+        	System.out.println("\n\nWalls: ");
+        }
+		
+		line = reader.readLine();
+		while(line != null)
+		{
+			if(line.equalsIgnoreCase("obstacles")) {
+				break;
+			}
+			System.out.println(line);
+			try
+			{
+				m = p.matcher(line);
+			} catch (Exception E) {
+				continue;
+			}
+			m.find();
+			
+			rect = new Path2D.Float();
+			rect.moveTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
+			rect.lineTo(Float.parseFloat(m.group(3)), Float.parseFloat(m.group(4)));
+			rect.lineTo(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
+			rect.lineTo(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
+			rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
+			rect.closePath();
+			walls.add(rect);
+			
+			
+			if((boolean) PlanningSettings.get("planning.verbosity"))
+            {
+            	System.out.println(rect.getBounds2D());
+            }
+			
+			i++;
+			line = reader.readLine();
+		}
+		
+		
+		
+		// For obstacles
+		p 		= Pattern.compile(rectangle);
+		i 	= 0;
 		if((boolean) PlanningSettings.get("planning.verbosity"))
         {
         	System.out.println("\n\nObstacles: ");
@@ -100,8 +146,8 @@ public class EnvironmentReader
             }
 			i++;
 		}
-		
-        reader.close();
+				        
+		reader.close();
         
         
         
@@ -163,7 +209,7 @@ public class EnvironmentReader
         }
         Label labelling 	= new Label(apList, labelRect);
 
-        env = new Environment(new float[] {p1.x, p3.x}, new float[] {p1.y, p3.y}, obstacles, init, labelling);
+        env = new Environment(new float[] {p1.x, p3.x}, new float[] {p1.y, p3.y}, obstacles, walls, init, labelling);
 	}
 	
 	

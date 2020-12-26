@@ -5,23 +5,22 @@ import java.util.function.Supplier;
 
 public class VertexSupplier implements Supplier<Vertex> {
 	
-	Environment env;
-	Label labelling;
+//	Environment env;
+//	Label labelling;
 	
-	public VertexSupplier(Environment env) {
-		this.env=env;
+	public VertexSupplier() {
+//		this.env=env;
 
 	}
 	
 	@Override
 	public Vertex get() {
-		Point2D x = env.sample();
-		try {
-			return new Vertex(x);
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		Point2D x = env.sample();
+//		try {
+//			return new Vertex(x);
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
 		return null;
 	}
 
