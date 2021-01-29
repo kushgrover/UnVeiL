@@ -85,7 +85,10 @@ public class RRG
 		this.tree.init(null);
 	}
 	
-	
+	/**
+	 * set the product automaton
+	 * @param productAutomaton
+	 */
 	public void setProductAutomaton(ProductAutomaton productAutomaton) {
 		this.productAutomaton = productAutomaton;
 	}
@@ -127,7 +130,11 @@ public class RRG
 	}
 	
 
-	
+	/**
+	 * Does one iteration of the algo with the point xRand
+	 * @param advice
+	 * @param xRand2D
+	 */
 	private void buildGraph(ArrayList<BDD> advice, Point2D xRand2D) {
 		
 		// need 'point2D' for graph and 'point' for Rtree
@@ -153,7 +160,7 @@ public class RRG
 				
 				if(checkValidity(advice, xNearest2D, xNew2D, transition))
 				{
-					computeRrgRadius(); 
+					updateRrgRadius(); 
 					addSymbolicTransitions(xNearest2D, xNew2D);
 					addGraphEdge(xNearest2D, xNew2D);
 					
@@ -224,8 +231,14 @@ public class RRG
 		};
 		tree.nearest(xRand, procedure, java.lang.Float.POSITIVE_INFINITY); // apply 'procedure' to the nearest point of xRand
 	}
-	
-	public BDD sample(ArrayList<BDD> advice) throws Exception {
+
+	/**
+	 * sample one batch and add them in the graphs accordingly
+	 * @param advice
+	 * @return
+	 * @throws Exception
+	 */
+	public BDD sampleBatch(ArrayList<BDD> advice) throws Exception {
 		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
 		endBatch = false;
 		Point2D p;
@@ -243,40 +256,53 @@ public class RRG
 		return symbolicTransitionsInCurrentBatch;
 	}
 
-	private void addGraphEdge(Point2D xNearest2D, Point2D xNew2D) {
-		Vertex source	= findTheVertex(xNearest2D);
-		Vertex target 	= findTheVertex(xNew2D);
+	/**
+	 * add an edge in the graph from source to target
+	 * @param start
+	 * @param end
+	 */
+	private void addGraphEdge(Point2D start, Point2D end) {
+		Vertex source	= findTheVertex(start);
+		Vertex target 	= findTheVertex(end);
 		if(target == null) {
-			target = new Vertex(xNew2D);
+			target = new Vertex(end);
 			graph.addVertex(target);
 		}
 		try {
 			DefaultEdge edge = graph.addEdge(source, target);
 			if(edge != null) {
-				graph.setEdgeWeight(edge, distance(xNearest2D, xNew2D));
+				graph.setEdgeWeight(edge, distance(start, end));
 			}
 			addToMap(target);
 		} catch (Exception IllegalArgumentException) {}		
 	}
 
-	private void computeRrgRadius() {
+	/**
+	 * updates the RRG radius
+	 */
+	private void updateRrgRadius() {
 		if(totalPoints > 1)
 			rrgRadius = (float) Math.min(gamma * Math.pow(Math.log(totalPoints)/(totalPoints), (0.5)), maximumRRGStepSize);
 		else
 			rrgRadius = maximumRRGStepSize;
 	}
 
-	private void addSymbolicTransitions(Point2D xNearest2D, Point2D xNew2D) {
+	/**
+	 * adds symbolic transitions from source to target in the set of transition of current batch
+	 * @param source
+	 * @param target
+	 */
+	private void addSymbolicTransitions(Point2D source, Point2D target) {
 		try {
-			BDD transition	= (Environment.getLabelling().getLabel(xNearest2D));
-			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
-			if(! Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+			BDD transition	= (Environment.getLabelling().getLabel(source));
+			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(target)));
+			if(! Environment.getLabelling().getLabel(source).equals(Environment.getLabelling().getLabel(target))) {
 				forwardSampledTransitions = forwardSampledTransitions.or(transition);
 			}
 			symbolicTransitionsInCurrentBatch.orWith(transition);
 			
-			transition		= Environment.getLabelling().getLabel(xNew2D);
-			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNearest2D)));
+			transition		= Environment.getLabelling().getLabel(target);
+			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(source)));
 			symbolicTransitionsInCurrentBatch.orWith(transition);
 		}
 		catch (Exception e1) {
@@ -284,6 +310,14 @@ public class RRG
 		}
 	}
 
+	/**
+	 * Checks if the edge is collision-free, have been sampled before and selects the edge according to its prob
+	 * @param advice
+	 * @param xNearest2D
+	 * @param xNew2D
+	 * @param transition
+	 * @return
+	 */
 	private boolean checkValidity(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition) {
 		if(! env.collisionFreeAll(xNearest2D, xNew2D)) return false; // new edge is obstacle free
 		if(! env.collisionFreeFromOpaqueObstacles(xNew2D, currentRobotPosition)) return false; // new edge is visible
@@ -331,6 +365,16 @@ public class RRG
 	}
 	
 	/**
+	 * compute distance between two points
+	 * @param p
+	 * @param q
+	 * @return
+	 */
+	private float distance(Point2D p, Point2D q) {
+		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2)+Math.pow(p.getY() - q.getY(), 2));
+	}
+	
+	/**
 	 * give a point in the direction of 'dest' from source at a distance <= maximumRRGStepSize
 	 * @param source
 	 * @param dest
@@ -351,6 +395,14 @@ public class RRG
 	
 	
 	boolean alreadyFound = false; // has to be a global var
+	/**
+	 * move to a new location if required
+	 * @param rank
+	 * @param xNew2D
+	 * @param transition
+	 * @param advice
+	 * @throws Exception
+	 */
 	public void move(int rank, Point2D xNew2D, BDD transition, ArrayList<BDD> advice) throws Exception {
 		if(rank != -1 && productAutomaton.sampledTransitions.and(transition).isZero()) // if sampled from advice and have not sampled it before
 		{ 
@@ -468,7 +520,11 @@ public class RRG
 	}
 
 	
-
+	/**
+	 * sample a point inside sensing area
+	 * @return
+	 * @throws Exception
+	 */
 	private Point2D sampleInSensingArea() throws Exception 
 	{
 		Point2D p;
@@ -490,9 +546,7 @@ public class RRG
 		}
 	}
 
-	private float distance(Point2D p, Point2D q) {
-		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2)+Math.pow(p.getY() - q.getY(), 2));
-	}
+	
 
 	/**
 	 * Sample a point from anywhere and add it to the Rtree/graph
@@ -553,6 +607,11 @@ public class RRG
 		return finalPath;
 	}   
 	
+	/**
+	 * find the path of the robot movement
+	 * @param movement
+	 * @return
+	 */
 	public List<DefaultEdge> findPath(ArrayList<Point2D> movement) {
 		Vertex source, dest;
 		
@@ -656,7 +715,11 @@ public class RRG
 		return 0;
 	}
 	
-	
+	/**
+	 * prints the list of atomic propsition true at an abstract state
+	 * @param state
+	 * @throws PlanningException
+	 */
 	public void printAPList(BDD state) throws PlanningException 
 	{
 		ArrayList<String> apList	= findAPList(state);
@@ -674,7 +737,13 @@ public class RRG
 		}
 		System.out.print("]  ");
 	}
-
+	
+	/**
+	 * Finds the list of atomic propositions true in an abstract state
+	 * @param state
+	 * @return
+	 * @throws PlanningException
+	 */
 	private ArrayList<String> findAPList(BDD state) throws PlanningException 
 	{
 		ArrayList<String> list		= new ArrayList<String>();

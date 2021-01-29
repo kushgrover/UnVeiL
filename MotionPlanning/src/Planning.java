@@ -78,7 +78,7 @@ public class Planning
         	adviceTime += System.nanoTime() - processStartTime;
         	
         	processStartTime = System.nanoTime();
-        	transitions = rrg.sample(advice);
+        	transitions = rrg.sampleBatch(advice);
 //        	transition = null; // no advice
         	if(transitions == null) {
         		System.out.println("Something wrong happened O.o");
