@@ -44,10 +44,7 @@ public class Initialize
 		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
 
 		
-		PrintStream out = System.out;
-		System.setOut(new PrintStream(OutputStream.nullOutputStream()));
 		rrg 						= new RRG(env);
-		System.setOut(out);
 
 		
         ProductAutomaton.apListProperty			= prop.propertyParser.getAPListProperty();

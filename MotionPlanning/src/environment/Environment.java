@@ -58,9 +58,18 @@ public class Environment {
 		return init;
 	}
 	
-	public Boolean obstacleFreeAll(Point2D.Float x) 
+	public Boolean obstacleFreeAll(Point2D x) 
 	{
 		Iterator<Path2D> i = obstacles.iterator();
+		while(i.hasNext())
+		{
+			Path2D next = i.next();
+			if(next.contains(x))
+			{
+				return false;
+			}
+		}
+		i = walls.iterator();
 		while(i.hasNext())
 		{
 			Path2D next = i.next();
@@ -92,7 +101,7 @@ public class Environment {
 		}
 	}
 	
-	public Boolean collisionFreeWalls(Point2D start, Point2D end) 
+	public Boolean collisionFreeFromOpaqueObstacles(Point2D start, Point2D end) 
 	{
 		Line2D line		= new Line2D.Float(start,end), boundary;
 		float[] coords1	= new float[6], coords2=new float[6];

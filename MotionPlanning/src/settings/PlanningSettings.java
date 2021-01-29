@@ -56,11 +56,11 @@ public class PlanningSettings
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
-			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(0.5),																"",
+			{ FLOAT_TYPE,		ETA,									"Maximum radius for RRG",				"1.0",			new Float(1),																"",
 																					"Maximum radius to find the neighbours to which current point can have an edge"},
 			{ FLOAT_TYPE,		SENSING_RADIUS,							"Sensing radius around the robot",		"1.0",			new Float(1),																"",
 																					"The radius of the sensing area arond the robot"},
-			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(70),															"",
+			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(50),															"",
 																					"After how many iterations without moving, the robot should move"},
 			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of discretization for frontiers",	"1.0",			new Float(0.05),															"",
 																					"The size of each cell for computation of frontiers"}

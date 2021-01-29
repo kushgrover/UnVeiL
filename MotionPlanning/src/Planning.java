@@ -5,8 +5,6 @@ import settings.PlanningSettings;
 import modules.RRG;
 import modules.learnAskExperiments.DefaultExperiment;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -54,160 +52,72 @@ public class Planning
         double initializationTime 			= System.nanoTime() - startTime;
 //      >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         
-        
-        // for output of advice
-        int[] adviceSampled 						= new int[50];
-        for(int k=0 ;k<50; k++) 
-        {
-        	adviceSampled[k]						= 0;
-        }
-        
-        // for calculating time of different parts
         double samplingTime = 0, pathTime = 0, learnTime = 0, processStartTime = 0, adviceTime = 0;
         
         int iterationNumber					= 0;
-    	BDD transition = null, fromStates = null, toStates = null;
+    	BDD transitions 					= null;
         boolean computePath 				= false;
         List<DefaultEdge> finalPath 		= new ArrayList<DefaultEdge>();
-        boolean needNewAdvice = true;
-        ArrayList<BDD> advice = null;
-        
-        
+        boolean needNewAdvice 				= true;
+        ArrayList<BDD> advice 				= null;
 
         while(true)  //until the property is satisfied
         {
-        	if(iterationNumber==300) {
+        	if(iterationNumber == 1000) {
         		rrg.discretization.printDiscretization();
         		rrg.discretization.printFrontiers();
         		break;
         	}
         	System.out.println("Iter num: " + iterationNumber);
         	
-        	// Don't output random things
-//        	System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-        	
-        	// Sample transitions <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         	processStartTime = System.nanoTime();
-        	if(needNewAdvice) 
-        	{
+        	if(needNewAdvice) {
         		advice	= exper.getAdvice(currentStates);
         		needNewAdvice = false;
-        		
-        		
-//        		System.out.println("Advice length: " + advice.size());
-//        		if(iterationNumber >= 250) {
-//        			advice	= exper.getAdvice(currentStates);
-//            		
-//	        		BDD temp;
-//	        		for(int i=0; i<advice.size();i++) {
-//	        			System.out.println("\nAdvice: " + i + "*******************");
-//	        			BDDIterator it = advice.get(i).iterator(ProductAutomaton.allPreSystemVars());
-//	        			while(it.hasNext()) {
-//	        				temp = (BDD) it.next();
-//	        				rrg.printAPList(temp);
-//	        			}
-//	        		}
-//        		}
         	}
         	adviceTime += System.nanoTime() - processStartTime;
         	
         	processStartTime = System.nanoTime();
-        	
-//        	---------------------------------------------------------------------------------------
-//        	---------------------------------------------------------------------------------------
-        	
-//        	=============== Better use of advice =================
-        	transition = rrg.sample(advice, productAutomaton);
-        	
-//        	---------------------------------------------------------------------------------------
-        			
-//        	=============== Naive use of advice ================		
-//        	int currentPathLength			= 1;
-//        	while(currentPathLength < advice.size()) //First try to sample from the advice
-//        	{
-//        		
-//        		fromStates					= currentStates.and(advice.get(currentPathLength));
-//        		toStates 					= advice.get(currentPathLength-1);
-//
-//        		transition					= rrg.sample(productAutomaton.removeAllExceptPreSystemVars(fromStates),productAutomaton.removeAllExceptPreSystemVars(toStates), productAutomaton);
-//        		if(transition == null) {
-//        			currentPathLength++;
-//        			continue;
-//        		}
-//        		else {
-//        			adviceSampled[currentPathLength - 1]++;
-//        			break;
-//        		}
-//        	}
-        	
-//        	---------------------------------------------------------------------------------------
-        	
-//        	=============== No advice ================
-//        	transition = null;
-
-//        	---------------------------------------------------------------------------------------
-//        	---------------------------------------------------------------------------------------
-        	
-//        	if(transition == null || transition.isZero()) // sample anywhere
-//        	{
-//        		transition					= rrg.sampleRandomly(productAutomaton);
-//        		rrg.countSinceLastMove++;
-//        		
-//        	}
-        	
-        	if(transition == null) // if transition is still null
-        	{
+        	transitions = rrg.sample(advice);
+//        	transition = null; // no advice
+        	if(transitions == null) {
         		System.out.println("Something wrong happened O.o");
         		continue;
         	}
         	samplingTime += System.nanoTime() - processStartTime;
-//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        	
         	
         	// if the sampled transition is accepting, path checking will happen
-        	if(productAutomaton.isAcceptingTransition(transition)) {
-        		computePath = true;
-        	}
-        	
+        	if(productAutomaton.isAcceptingTransition(transitions)) computePath = true;
 
-        	// Learning <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        	processStartTime 				= System.nanoTime();
-        	BDDIterator ite 				= transition.iterator(ProductAutomaton.allSystemVars());
+        	// Learning ==============
+        	processStartTime 			= System.nanoTime();
+        	BDDIterator ite 			= transitions.iterator(ProductAutomaton.allSystemVars());
         	while(ite.hasNext())
         	{
-        		transition 					= (BDD) ite.next();
+        		transitions 			= (BDD) ite.next();
         		//if transition has been sampled before or transition is a self loop in the abstraction, skip learning
-        		if(transition.and(productAutomaton.sampledTransitions).isZero() && ! productAutomaton.removeAllExceptPreSystemVars(transition).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transition))))
-            	{
-        			exper.learn(transition);
-            		currentStates 				= currentStates.or(productAutomaton.getSecondStateSystem(transition));	//update the set of current states
-            		
+        		if(transitions.and(productAutomaton.sampledTransitions).isZero() && ! productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)))){
+        			exper.learn(transitions);
+            		currentStates 		= currentStates.or(productAutomaton.getSecondStateSystem(transitions));	//update the set of current states
             		needNewAdvice = true; 
             	}
         	}
         	learnTime 					+= System.nanoTime() - processStartTime;
-        	//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        	//------------------------
         	
-        	// If an accepting transition was sampled, check for path <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-        	processStartTime				= System.nanoTime();
-        	if(computePath) 
-        	{
-        		// computing the path
+        	processStartTime			= System.nanoTime();
+        	if(computePath) {
         		ArrayList<BDD> path		= productAutomaton.findAcceptingPath();
-        		if(path	!= null) 
-            	{
+        		if(path	!= null) {
         			System.out.println("\nPath found in the abstraction: ");
             		productAutomaton.printPath(path);
-            		
-            		// Lifing the path to RRG graph
-                	finalPath = rrg.liftPath(path);
+                	finalPath = rrg.liftPath(path); //Lifing the path to RRG graph
             		break;
             	}
         	}
         	pathTime					+= System.nanoTime() - processStartTime;
 //        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         	
-//        	computePath = false;
         	iterationNumber++;
         }
         
@@ -216,17 +126,14 @@ public class Planning
         double totalTime = System.nanoTime() - startTime;
 
         float pathLength = rrg.plotGraph(finalPath);
+        
+        int adviceSamples = 0;
+		for(int k=0; k<10; k++) 
+			adviceSamples += rrg.adviceSampled[k];
+        
         System.out.println("No of frontiers update: " + rrg.numOfFrontierUpdates);
-        // Output
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + rrg.totalPoints);
-		
-		int adviceSamples = 0;
-		for(int k=0; k<10; k++) 
-		{
-			adviceSamples += rrg.adviceSampled[k];
-		}
-		
 		System.out.println("Path length = " + pathLength);
 		System.out.println("Sampled from advice = " + adviceSamples);
 		System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled));

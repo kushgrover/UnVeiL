@@ -83,11 +83,34 @@ public class ShowGraph extends JFrame {
 //			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
 //		}
 
-		
+		//walls
+		plot.setColor("blue");
+		Iterator<Path2D> i = env.getWalls().iterator();
+		while(i.hasNext())
+		{
+			Path2D rect = i.next();
+			PathIterator it = rect.getPathIterator(null);
+			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			while(! it.isDone()) {
+				switch(it.currentSegment(coords)) {
+					case(PathIterator.SEG_MOVETO):
+						from = coords.clone();
+						break;
+					case(PathIterator.SEG_LINETO):
+						to = coords.clone();
+						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+						from = to.clone();
+						break;
+					default:
+						break;
+				}
+				it.next();
+			}
+		}
 		
 		//Obstacles
 		plot.setColor("blue");
-		Iterator<Path2D> i = env.getObstacles().iterator();
+		i = env.getObstacles().iterator();
 		while(i.hasNext())
 		{
 			Path2D rect = i.next();
