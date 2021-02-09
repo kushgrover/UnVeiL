@@ -1,20 +1,19 @@
 package settings;
 
 
-import java.io.File;
 import java.util.logging.Logger;
 
 public class PlanningSettings 
 {
 	
 	//Default Constants
-	public static final String DEFAULT_STRING = "";
-	public static final int DEFAULT_INT = 0;
-	public static final double DEFAULT_DOUBLE = 0.0;
-	public static final float DEFAULT_FLOAT = 0.0f;
-	public static final long DEFAULT_LONG = 0l;
-	public static final boolean DEFAULT_BOOLEAN = false;
-	public static final File DEFAULT_FILE = null;
+//	public static final String DEFAULT_STRING = "";
+//	public static final int DEFAULT_INT = 0;
+//	public static final double DEFAULT_DOUBLE = 0.0;
+//	public static final float DEFAULT_FLOAT = 0.0f;
+//	public static final long DEFAULT_LONG = 0l;
+//	public static final boolean DEFAULT_BOOLEAN = false;
+//	public static final File DEFAULT_FILE = null;
 	
 	public static final String STRING_TYPE = "s";
 	public static final String INTEGER_TYPE = "i";
@@ -23,16 +22,19 @@ public class PlanningSettings
 	public static final String COLOUR_TYPE = "c";
 	
 	
-	public static final String VERBOSITY					=	"planning.verbosity";
-	public static final String BDD_FACTORY_CACHE_SIZE		=	"planning.bddFactoryCacheSize";
-	public static final String USE_SPOT						= 	"planning.useSpot";
-	public static final String MAX_LEVEL_TRANSITION			=	"planning.maxLevelTransition";
-	public static final String SAMPLING_THRESHOLD			=	"planning.samplingThreshold";
-	public static final String TRANSITION_THRESHOLD			= 	"planning.transitionThreshold";
-	public static final String ETA							=	"planning.eta";
-	public static final String SENSING_RADIUS				=	"planning.sensingRadius";
-	public static final String MOVING_THRESHOLD				=  	"planning.movingThreshold";
-	public static final String DISCRETIZATION_SIZE			=  	"planning.discretizationSize";
+	public static final String VERBOSITY					=	"verbosity";
+	public static final String BDD_FACTORY_CACHE_SIZE		=	"bddFactoryCacheSize";
+	public static final String USE_SPOT						= 	"useSpot";
+	public static final String MAX_LEVEL_TRANSITION			=	"maxLevelTransition";
+	public static final String SAMPLING_THRESHOLD			=	"samplingThreshold";
+	public static final String TRANSITION_THRESHOLD			= 	"transitionThreshold";
+	public static final String ETA							=	"eta";
+	public static final String SENSING_RADIUS				=	"sensingRadius";
+	public static final String BATCH_SIZE					=  	"batchSize";
+	public static final String DISCRETIZATION_SIZE			=  	"discretizationSize";
+	public static final String USE_ADVICE					=	"useAdvice";
+	public static final String FIRST_EXPL_THEN_PLAN			=	"firstExplThenPlan";
+	public static final String DEBUG						=	"debug";
 	
 	
 	public static final Logger RTREELOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
@@ -52,7 +54,7 @@ public class PlanningSettings
 																					"Use SPOT or OWL for generating the automaton."},
 			{ INTEGER_TYPE,		MAX_LEVEL_TRANSITION,					"Levels of transitions",				"1.0",			new Integer(4),																"",
 																					"Possible levels of transitions possible"},
-			{ INTEGER_TYPE,		SAMPLING_THRESHOLD,						"Threshold for sampling",				"1.0",			new Integer(200),															"",
+			{ INTEGER_TYPE,		SAMPLING_THRESHOLD,						"Threshold for sampling",				"1.0",			new Integer(50),															"",
 																					"After how many samples, return null if don't find anything from the advised transitions"},									
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
@@ -60,11 +62,17 @@ public class PlanningSettings
 																					"Maximum radius to find the neighbours to which current point can have an edge"},
 			{ FLOAT_TYPE,		SENSING_RADIUS,							"Sensing radius around the robot",		"1.0",			new Float(1),																"",
 																					"The radius of the sensing area arond the robot"},
-			{ INTEGER_TYPE,		MOVING_THRESHOLD,						"Threshold for moving the robot",		"1.0",			new Integer(50),															"",
+			{ INTEGER_TYPE,		BATCH_SIZE,								"Threshold for moving the robot",		"1.0",			new Integer(50),															"",
 																					"After how many iterations without moving, the robot should move"},
 			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of discretization for frontiers",	"1.0",			new Float(0.05),															"",
-																					"The size of each cell for computation of frontiers"}
-																		
+																					"The size of each cell for computation of frontiers"},
+			{ BOOLEAN_TYPE,		USE_ADVICE,								"Use advice or not",	"1.0",							new Boolean(false),															"",
+																					"Bias exploration using advice"},
+			{ BOOLEAN_TYPE,		FIRST_EXPL_THEN_PLAN,					"Exploration first, then planning",	"1.0",				new Boolean(false),															"",
+																					"First explore the environment completely, then do planning with known environment"},
+			{ BOOLEAN_TYPE,		DEBUG,									"Debug mode",	"1.0",									new Boolean(true),															"",
+																					"Output a lot of things"},
+
 		};
 																			
 	
@@ -94,12 +102,21 @@ public class PlanningSettings
 		} else if (VARIABLE.equals(SENSING_RADIUS))
 		{
 			propertyData[7][4]	= value;
-		} else if (VARIABLE.equals(MOVING_THRESHOLD))
+		} else if (VARIABLE.equals(BATCH_SIZE))
 		{
 			propertyData[8][4]	= value;
-		} else if (VARIABLE.equals(MOVING_THRESHOLD))
+		} else if (VARIABLE.equals(DISCRETIZATION_SIZE))
 		{
 			propertyData[9][4]	= value;
+		} else if (VARIABLE.equals(USE_ADVICE))
+		{
+			propertyData[10][4]	= value;
+		} else if (VARIABLE.equals(FIRST_EXPL_THEN_PLAN))
+		{
+			propertyData[11][4]	= value;
+		} else if (VARIABLE.equals(DEBUG))
+		{
+			propertyData[12][4]	= value;
 		}
 	}
 	
@@ -129,12 +146,21 @@ public class PlanningSettings
 		} else if (VARIABLE.equals(SENSING_RADIUS))
 		{
 			return propertyData[7][4];
-		} else if (VARIABLE.equals(MOVING_THRESHOLD))
+		} else if (VARIABLE.equals(BATCH_SIZE))
 		{
 			return propertyData[8][4];
 		} else if (VARIABLE.equals(DISCRETIZATION_SIZE))
 		{
 			return propertyData[9][4];
+		} else if (VARIABLE.equals(USE_ADVICE))
+		{
+			return propertyData[10][4];
+		} else if (VARIABLE.equals(FIRST_EXPL_THEN_PLAN))
+		{
+			return propertyData[11][4];
+		} else if (VARIABLE.equals(DEBUG))
+		{
+			return propertyData[12][4];
 		}
 		return null;
 	}

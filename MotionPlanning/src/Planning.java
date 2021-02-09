@@ -1,10 +1,14 @@
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import settings.Initialize;
+import settings.PlanningException;
 import settings.PlanningSettings;
+import modules.Discretization;
 import modules.RRG;
+import modules.UnknownRRG;
 import modules.learnAskExperiments.DefaultExperiment;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -21,117 +25,64 @@ import environment.Label;
  */
 public class Planning
 {	
-	public static void main(String[] args) throws Exception
-	{    	
-    	
-		// Initialise everything <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-		double startTime					= System.nanoTime();
-		
-		// use default values for everything
-		new PlanningSettings();
-		
-		// read the files and initialise everything
-        Initialize initialize				= new Initialize();
+	RRG rrg;
+	ProductAutomaton productAutomaton;
+	DefaultExperiment exper;
+	Environment env;
+	
+	BDD currentStates;
+	
+	int iterationNumber 	= 0;
+	double initTime 		= 0;
+	double beginTime 		= 0;
+	double startTime 		= 0;
+	double samplingTime 	= 0;
+	double pathTime 		= 0;
+	double learnTime 		= 0;
+	double explTime 		= 0;
+	double adviceTime 		= 0;
+    boolean needNewAdvice 	= true;
+    ArrayList<BDD> advice 	= null;
+    List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
 
-        Environment env 					= initialize.getEnvironment();
-        RRG rrg 							= initialize.getRRG();
-        Label label							= Environment.getLabelling();
-        ProductAutomaton productAutomaton	= initialize.getProductAutomaton();
+    /**
+     * initialize everything
+     * @throws Exception
+     */
+	public Planning() throws Exception 
+	{
+		beginTime				= System.nanoTime();
+		
+		Initialize initialize	= new Initialize();// read the files and initialise everything
+        rrg 					= initialize.getRRG();
+        productAutomaton		= initialize.getProductAutomaton();
+        exper					= new DefaultExperiment(productAutomaton); // learn and advce procedures
+        env 					= initialize.getEnvironment();
         
-        // new learn/ask experiment
-        DefaultExperiment exper				= new DefaultExperiment(productAutomaton);
+        Label label				= Environment.getLabelling();
+        BDD initStateSystem		= label.getLabel(env.getInit());
+        currentStates			= initStateSystem.id(); //stores the set of states in the abstraction we have seen till now
         
-        //add initial point
-        BDD initStateSystem					= label.getLabel(env.getInit());
         rrg.setStartingPoint(env.getInit());
         productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for initial state in the product automaton
         
-        
-        BDD currentStates					= initStateSystem.id(); //stores the set of states in the abstraction we have seen till now
-        
-        double initializationTime 			= System.nanoTime() - startTime;
-//      >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        
-        double samplingTime = 0, pathTime = 0, learnTime = 0, processStartTime = 0, adviceTime = 0;
-        
-        int iterationNumber					= 0;
-    	BDD transitions 					= null;
-        boolean computePath 				= false;
-        List<DefaultEdge> finalPath 		= new ArrayList<DefaultEdge>();
-        boolean needNewAdvice 				= true;
-        ArrayList<BDD> advice 				= null;
-
-        while(true)  //until the property is satisfied
-        {
-        	if(iterationNumber == 1000) {
-        		rrg.discretization.printDiscretization();
-        		rrg.discretization.printFrontiers();
-        		break;
-        	}
-        	System.out.println("Iter num: " + iterationNumber);
-        	
-        	processStartTime = System.nanoTime();
-        	if(needNewAdvice) {
-        		advice	= exper.getAdvice(currentStates);
-        		needNewAdvice = false;
-        	}
-        	adviceTime += System.nanoTime() - processStartTime;
-        	
-        	processStartTime = System.nanoTime();
-        	transitions = rrg.sampleBatch(advice);
-//        	transition = null; // no advice
-        	if(transitions == null) {
-        		System.out.println("Something wrong happened O.o");
-        		continue;
-        	}
-        	samplingTime += System.nanoTime() - processStartTime;
-        	
-        	// if the sampled transition is accepting, path checking will happen
-        	if(productAutomaton.isAcceptingTransition(transitions)) computePath = true;
-
-        	// Learning ==============
-        	processStartTime 			= System.nanoTime();
-        	BDDIterator ite 			= transitions.iterator(ProductAutomaton.allSystemVars());
-        	while(ite.hasNext())
-        	{
-        		transitions 			= (BDD) ite.next();
-        		//if transition has been sampled before or transition is a self loop in the abstraction, skip learning
-        		if(transitions.and(productAutomaton.sampledTransitions).isZero() && ! productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)))){
-        			exper.learn(transitions);
-            		currentStates 		= currentStates.or(productAutomaton.getSecondStateSystem(transitions));	//update the set of current states
-            		needNewAdvice = true; 
-            	}
-        	}
-        	learnTime 					+= System.nanoTime() - processStartTime;
-        	//------------------------
-        	
-        	processStartTime			= System.nanoTime();
-        	if(computePath) {
-        		ArrayList<BDD> path		= productAutomaton.findAcceptingPath();
-        		if(path	!= null) {
-        			System.out.println("\nPath found in the abstraction: ");
-            		productAutomaton.printPath(path);
-                	finalPath = rrg.liftPath(path); //Lifing the path to RRG graph
-            		break;
-            	}
-        	}
-        	pathTime					+= System.nanoTime() - processStartTime;
-//        	>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        	
-        	iterationNumber++;
-        }
-        
+        initTime 				= System.nanoTime() - beginTime;
+	}
+	
+	/**
+	 * outputs the results and times
+	 * @throws Exception
+	 */
+	void printOutput() throws Exception 
+	{
     	productAutomaton.createDot(iterationNumber);
-        Initialize.getFactory().done();
-        double totalTime = System.nanoTime() - startTime;
-
-        float pathLength = rrg.plotGraph(finalPath);
+		float pathLength = rrg.plotGraph(finalPath);
+		double totalTime = System.nanoTime() - beginTime;
         
         int adviceSamples = 0;
-		for(int k=0; k<10; k++) 
+		for( int k=0; k<10; k++ )
 			adviceSamples += rrg.adviceSampled[k];
-        
-        System.out.println("No of frontiers update: " + rrg.numOfFrontierUpdates);
+		
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + rrg.totalPoints);
 		System.out.println("Path length = " + pathLength);
@@ -140,7 +91,7 @@ public class Planning
 		System.out.print("\nTotal time taken (in ms):");
         System.out.println(totalTime / 1000000);
         System.out.print("\nInitialization time (in ms):");
-        System.out.println((initializationTime) / 1000000);
+        System.out.println((initTime) / 1000000);
         System.out.print("Sampling time (in ms):");
         System.out.println(samplingTime / 1000000);
         System.out.print("Advice time (in ms):");
@@ -149,9 +100,192 @@ public class Planning
         System.out.println(pathTime / 1000000);
         System.out.print("Learning time (in ms):");
         System.out.println(learnTime / 1000000);
-        System.out.print("Moving time (in ms):");
-        System.out.println(rrg.moveTime / 1000000);
+        System.out.print("Exploration time (in ms):");
+        System.out.println(explTime / 1000000);
         System.out.print("Time taken other than these things (in ms):");
-        System.out.println((totalTime - initializationTime - samplingTime - adviceTime - pathTime - learnTime) / 1000000);    
+        System.out.println((totalTime - initTime - samplingTime - adviceTime - pathTime - learnTime) / 1000000);    
+	}
+	
+	/**
+	 * check if learning is required for the set of transitions
+	 * @param transitions
+	 * @return
+	 * @throws PlanningException
+	 */
+	boolean needLearning(BDD transitions) throws PlanningException {
+		return transitions.and(productAutomaton.sampledTransitions).isZero() && ! productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)));
+	}
+	
+	/**
+	 * update advice if required
+	 * @throws Exception
+	 */
+	void updateAdvice() throws Exception {
+		startTime 	= System.nanoTime(); // Advice time
+    	if ( needNewAdvice ) {
+    		advice			= exper.getAdvice(currentStates);
+    		needNewAdvice 	= false;
+    	}
+    	adviceTime 			+= System.nanoTime() - startTime;
+	}
+	
+	/**
+	 * sample a batch
+	 * @return
+	 * @throws Exception
+	 */
+	BDD sampleBatch(RRG rrg) throws Exception {
+		startTime = System.nanoTime(); 
+    	BDD transitions = rrg.sampleBatch(advice);
+    	samplingTime += System.nanoTime() - startTime;
+    	return transitions;
+	}
+	
+	/**
+	 * call learn procedure
+	 * @param transitions
+	 * @throws Exception
+	 */
+	void learn(BDD transitions) throws Exception {
+		startTime = System.nanoTime(); 
+    	BDDIterator ite = transitions.iterator(ProductAutomaton.allSystemVars());
+    	while( ite.hasNext() ) 
+    	{
+    		transitions = (BDD) ite.next();
+    		if( needLearning(transitions) ) {
+    			exper.learn(transitions);
+        		currentStates = currentStates.or(productAutomaton.getSecondStateSystem(transitions));
+        		needNewAdvice = true;
+        	}
+    	}
+    	learnTime += System.nanoTime() - startTime;
+	}
+	
+	/**
+	 * Do exploration and planning simultaneously
+	 * @throws Exception
+	 */
+	public void explAndPlanTogether() throws Exception 
+	{    
+    	BDD transitions 					= null;
+        boolean computePath 				= false;
+        boolean debug 						= (boolean) PlanningSettings.get("debug");
+        
+        UnknownRRG urrg = (UnknownRRG) rrg;
+        urrg.discretization.knowDiscretization(env, productAutomaton, env.getInit(), (float) PlanningSettings.get("sensingRadius"));
+        while( true )
+        {
+        	if( debug ) {
+	        	if( iterationNumber == 100 ) {
+	        		urrg.discretization.printDiscretization();
+	        		urrg.discretization.printFrontiers();
+	        		break;
+	        	}
+        	}
+        	
+        	iterationNumber++;
+        	System.out.println("Iter num: " + iterationNumber);
+        	
+        	if ( (boolean) PlanningSettings.get("useAdvice") )
+        		updateAdvice();
+        	transitions = sampleBatch(urrg);
+        	if ( transitions == null ) 
+        		continue;
+        	if( productAutomaton.isAcceptingTransition(transitions) )
+        		computePath = true;
+        	learn(transitions);
+        	
+        	startTime = System.nanoTime(); 
+        	if( computePath ) {
+        		ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
+        		if( path != null ) {
+        			System.out.println("\nPath found in the abstraction: ");
+            		productAutomaton.printPath(path);
+                	finalPath = urrg.liftPath(path); 
+            		break;
+            	}
+        	}
+        	pathTime += System.nanoTime() - startTime;
+        }
+        printOutput();
+        System.out.print("Moving time (in ms):");
+        System.out.println(urrg.moveTime / 1000000);
+        Initialize.getFactory().done();
+    }
+	
+	/**
+	 * Do exploration first, then do the planning
+	 * @throws Exception
+	 */
+	void firstExplThenPlan() throws Exception {
+		Discretization discretization = new Discretization(env, (float) PlanningSettings.get("discretizationSize"));
+		startTime = System.nanoTime();
+		exploreDiscretization(discretization);
+		explTime = System.nanoTime() - startTime;
+		
+		BDD transitions 					= null;
+        boolean computePath 				= true;
+        boolean debug 						= (boolean) PlanningSettings.get("debug");
+
+		while( true )
+		{
+			if( debug ) {
+	        	if( iterationNumber == 1000 ) {
+	        		break;
+	        	}
+        	}
+			iterationNumber++;
+        	System.out.println("Iter num: " + iterationNumber);
+        	
+        	if ( (boolean) PlanningSettings.get("useAdvice") )
+            	updateAdvice();
+
+        	transitions = sampleBatch(rrg);
+        	if ( transitions == null )
+        		continue;
+        	if( productAutomaton.isAcceptingTransition(transitions) )
+        		computePath = true;
+        	learn(transitions);
+        	
+        	startTime = System.nanoTime();
+        	if( computePath ) {
+        		ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
+        		if( path != null ) {
+        			System.out.println("\nPath found in the abstraction: ");
+            		productAutomaton.printPath(path);
+                	finalPath = rrg.liftPath(path);
+            		break;
+            	}
+        	}
+        	pathTime += System.nanoTime() - startTime;
+		}
+		printOutput();
+        Initialize.getFactory().done();
+	}
+
+	private float exploreDiscretization(Discretization discretization) throws Exception {
+		float pathLength = 0;
+		Point2D currentPosition = env.getInit();
+		Point2D newPosition;
+		discretization.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
+		
+		int i = 0;
+		while(! discretization.exploredCompletely()) {
+			newPosition = discretization.findAMove(currentPosition);
+			pathLength += discretization.findAPath(currentPosition, newPosition);
+			currentPosition = newPosition;
+			discretization.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
+			i++;
+		}
+		return pathLength;
 	}
 }
+
+
+
+
+
+
+
+
+

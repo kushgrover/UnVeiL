@@ -16,7 +16,7 @@ public class PrintProductAutomaton
 	public PrintProductAutomaton(ProductAutomaton productAutomaton, int num) throws Exception
 	{
 		visited 				= new boolean[ProductAutomaton.getNumStates()];
-		writer 					= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/productAutomaton"+num+".dot"));
+		writer 					= new BufferedWriter(new FileWriter("temp/productAutomaton"+num+".dot"));
 		
 		this.productAutomaton	= productAutomaton;
 		BDD productAutomatonBDD = productAutomaton.getBDD();
@@ -24,7 +24,7 @@ public class PrintProductAutomaton
 		writer.write("digraph G {\n");
 		BDDIterator iterator	= productAutomatonBDD.iterator(ProductAutomaton.allVars());
 		
-		while(iterator.hasNext()) 
+		while(iterator.hasNext())
 		{
 			BDD transition		= (BDD) iterator.next();
 			addTransitionToDotFile(transition);
@@ -34,7 +34,7 @@ public class PrintProductAutomaton
 		writer.close();
 	}
 
-	private void addTransitionToDotFile(BDD transition) throws Exception{
+	private void addTransitionToDotFile(BDD transition) throws Exception {
 		
 		BDD fromState		= productAutomaton.removeAllExceptPreVars(transition);
 		BDD toState			= productAutomaton.removeAllExceptPostVars(transition);
@@ -55,18 +55,17 @@ public class PrintProductAutomaton
 		}
 
 		int level			= transition.scanVar(ProductAutomaton.transitionLevelDomain()).intValue();
+		
 		String labelString	= getTransitionLabelString(transition);
-		switch(level)
-		{
-		case(3):
+		
+		if(level == 3)
 			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=green, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
-		case(2):
+		if(level == 2)
 			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=blue, label=\""  + labelString + " (" + acceptingSet + ")\"];\n");
-		case(1):
-//			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=red, label=\""   + labelString + " (" + acceptingSet + ")\"];\n");;
-		case(0):
-//			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=black, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
-		}
+		if(level == 1)
+			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=red, label=\""   + labelString + " (" + acceptingSet + ")\"];\n");;
+		if(level == 0)
+			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=black, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
 	}
 	
 	private String getTransitionLabelString(BDD transition) throws Exception

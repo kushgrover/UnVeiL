@@ -86,12 +86,8 @@ public class ProductAutomaton
 	 * threshold and counter are to add level 1 transitions
 	 * apListProperty and apListSystem are lists of atomic props used in property and automaton resp.</p>
 	 */
-//-----------------------------------------------------------------------------------------------------------------	
-/**
- * For initialization
- */
-	
-	
+//-----------------------------------------------------------------------------------------------------------------
+
 	/**
 	 * <p>Creating the counter array and initializing all values to 0</p>
 	 */
@@ -1165,11 +1161,6 @@ public class ProductAutomaton
 	 */
 	public BDD addTransition(BDD transitions, int level) throws PlanningException 
 	{
-//		if(! hasOnlyPreVars(fromState) 	||	! hasOnlyPreVars(toState)) 
-//		{
-//			throw new PlanningException("Extra vars appearing in a state BDD");
-//		}
-//		BDD toStatePrime		= changePreSystemVarsToPostSystemVars(toState);
 		transitions				= propertyBDD.and(getLabelEquivalence()).and(transitions).and(transitionLevelDomain().ithVar(level));
 		productAutomatonBDD		= productAutomatonBDD.or(transitions);
 		return transitions;
@@ -1183,11 +1174,6 @@ public class ProductAutomaton
 	 */
 	public void removeTransition(BDD transitions) throws PlanningException 
 	{
-//		if(! hasOnlyPreVars(fromState) 	|| 	! hasOnlyPreVars(toState)) 
-//		{
-//			throw new PlanningException("Extra vars appearing in a state BDD");
-//		}
-//		BDD toStatePrime		= getSecondState(transitions);
 		productAutomatonBDD		= productAutomatonBDD.and((propertyBDD.and(getLabelEquivalence()).and(transitions.not())));
 	}
 	
@@ -1499,6 +1485,9 @@ public class ProductAutomaton
 
 	public boolean isAcceptingTransition(BDD transition) throws PlanningException 
 	{
+		if(transition == null)
+			return false;
+		
 		if(productAutomatonBDD.and(propertyBDD.and(getLabelEquivalence()).and(transition).and(transitionLevelDomain().ithVar(3)).and(acceptingSetDomain().ithVar(0).not())).isZero())
 		{
 			return false;

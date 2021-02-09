@@ -7,6 +7,7 @@ import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import settings.PlanningException;
+import settings.PlanningSettings;
 import net.sf.javabdd.BDDFactory;
 
 /**
@@ -46,34 +47,29 @@ public class DefaultExperiment implements Experiments
 		double startTime = System.nanoTime();
 //		BDD transition		= fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
 		BDD productTransitions = ProductAutomaton.factory.zero();
-		if(transitions.and(productAutomaton.sampledTransitions).isZero())
-		{
+		if(transitions.and(productAutomaton.sampledTransitions).isZero()) {
 			productAutomaton.sampledTransitions			= productAutomaton.sampledTransitions.or(transitions);
 			productAutomaton.removeTransition(transitions);
 			productTransitions 							= productAutomaton.addTransition(transitions, 3);
 			productAutomaton.sampledProductTransitions 	= productAutomaton.sampledProductTransitions.or(productTransitions);
 		}
-		else
-		{
+		else {
 			time += System.nanoTime() - startTime;
-
 			return null;
 		}
 
-		BDD nextTransition, fromState, toState;
-		BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
-		while(it.hasNext()) {
-			nextTransition = (BDD) it.next();
-			fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
-			toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
-//			fromState.printDot();
-//			toState.printDot();
-			learnSimilarTransitions(fromState, toState);
+		if((boolean) PlanningSettings.get("useAdvice")) {
+			BDD nextTransition, fromState, toState;
+			BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
+			while(it.hasNext()) {
+				nextTransition = (BDD) it.next();
+				fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
+				toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
+				learnSimilarTransitions(fromState, toState);
+			}
 		}
 		
-		
 //		int counter			= productAutomaton.increaseCounter(productAutomaton.getFirstState(fromState));
-
 //		BDDIterator ite = fromState.iterator(ProductAutomaton.allPreSystemVars());
 //		int counter;
 //		while(ite.hasNext())
@@ -86,9 +82,7 @@ public class DefaultExperiment implements Experiments
 //			}
 //		}
 		
-		
 		time += System.nanoTime() - startTime;
-		
 		return productTransitions;
 	}
 
@@ -165,10 +159,6 @@ public class DefaultExperiment implements Experiments
 	public ArrayList<BDD> getAdvice(BDD currentStates) throws Exception
 	{
 		ArrayList<BDD> advice	= new ArrayList<BDD>();
-
-//    	---------------------------------------------------------------------------------------
-//    	---------------------------------------------------------------------------------------
-	
 		BDD target = productAutomaton.finalStatesSystem();
 		BDD source = productAutomaton.preImageOfFinalStatesSystem();
 		
@@ -181,48 +171,8 @@ public class DefaultExperiment implements Experiments
 			source = productAutomaton.removeAllExceptPreSystemVars(advice.get(i));
 			totalTransitions = totalTransitions.or(advice.get(i));
 			i++;
-			
-//			BDDIterator it = advice.get(i-1).iterator(ProductAutomaton.allSystemVars());
-//			System.out.println("**************" + i);
-//			while(it.hasNext()) {
-//				printAPList((BDD) it.next());
-//			}
-//			System.out.println("\n**  **  **  **");
 		}
-		
-//    	---------------------------------------------------------------------------------------
-			
-//		reachableStates.add(productAutomaton.finalStatesSystem());
-//		reachableStates.add(productAutomaton.preImageOfFinalStatesSystem());
-//		
-//		if(reachableStates.get(0).isZero() || reachableStates.get(1).isZero()) {
-//			return reachableStates;
-//		}
-//		
-//		int i	= 1;
-//		BDD backwardReachableStates		= reachableStates.get(1);
-//		while(!productAutomaton.preImageSystem(reachableStates.get(i)).and(backwardReachableStates.not()).isZero()) {
-//			reachableStates.add(productAutomaton.preImageSystem(reachableStates.get(i)));
-//			i++;
-//			backwardReachableStates		= backwardReachableStates.or(reachableStates.get(i));
-//			BDDIterator it = reachableStates.get(i).iterator(ProductAutomaton.allPreSystemVars());
-//			System.out.println("**************" + i);
-//			while(it.hasNext()) {
-//				printAPList((BDD) it.next());
-//			}
-//			System.out.println("\n**  **  **  **");
-//		}
-		
-//    	---------------------------------------------------------------------------------------
-		
-//		reachableStates.add(ProductAutomaton.factory.one());
-//		reachableStates.add(ProductAutomaton.factory.one());
-
-//    	---------------------------------------------------------------------------------------
-//    	---------------------------------------------------------------------------------------
-	
 		return advice;
-		
 	}
 	
 	public void printAPList(BDD state) throws PlanningException 

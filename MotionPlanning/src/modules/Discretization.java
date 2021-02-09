@@ -2,6 +2,9 @@ package modules;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+
+import org.jgrapht.alg.util.Pair;
+
 import abstraction.ProductAutomaton;
 import environment.Environment;
 import net.sf.javabdd.BDD;
@@ -47,59 +50,46 @@ public class Discretization
 	 */
 	private boolean checkFrontierCell(int i, int j, int level) 
 	{
-		int count = 0;
-		
-		if(level == 2 && discretization[i][j] == 1) {
-			return true;
-		}
-		
-		if(discretization[i][j] < level) {
+		int count = 0;	
+		if(discretization[i][j] == level) {
 			if (j+1<numY) {
-				if (discretization[i][j+1] == level) {
+				if (discretization[i][j+1] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if(i+1<numX) {
-				if (discretization[i+1][j] == level) {
+				if (discretization[i+1][j] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if(i>0) {
-				if (discretization[i-1][j] == level) {
+				if (discretization[i-1][j] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if(j>0) {
-				if (discretization[i][j-1] == level) {
+				if (discretization[i][j-1] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if (j+1<numY && i>0) {
-				if (discretization[i-1][j+1] == level) {
+				if (discretization[i-1][j+1] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if (j+1<numY && i+1<numX) {
-				if (discretization[i+1][j+1] == level) {
+				if (discretization[i+1][j+1] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if (j>0 && i>0) {
-				if (discretization[i-1][j-1] == level) {
+				if (discretization[i-1][j-1] < level) {
 					count++;
-//					return true;
 				}
 			}
 			if (i+1<numX && j>0) {
-				if (discretization[i+1][j-1] == level) {
+				if (discretization[i+1][j-1] < level) {
 					count++;
-//					return true;
 				}
 			}
 		}
@@ -161,38 +151,38 @@ public class Discretization
 		float py = (float) p.getY();
 		float qx = (float) q.getX();
 		float qy = (float) q.getY();
-		int pi 	= (int) ((px-x1)/size);
+		int pi 	= (int) ((px - x1)/size);
 		if(pi == numX) {
 			pi--;
 		}
-		int pj 	= (int) ((py-y1)/size);
+		int pj 	= (int) ((py - y1)/size);
 		if(pj == numY) {
 			pj--;
 		}
-		int qi 	= (int) ((qx-x1)/size);
+		int qi 	= (int) ((qx - x1)/size);
 		if(qi == numX) {
 			qi--;
 		}
-		int qj 	= (int) ((qy-y1)/size);
+		int qj 	= (int) ((qy - y1)/size);
 		if(qj == numY) {
 			qj--;
 		}
-		float slope = (qy-py)/(qx-px);
+		float slope = (qy - py)/(qx - px);
 		
 		if(slope<1 && slope >-1) {
 			float m;
 			for(int n=pi+1; n<qi+1; n++) {
-				m = slope*(n*size-0.00001f-px)+py;
-				updateDiscretization(new Point2D.Float(n*size-0.00001f, m), value);
-				m = slope*(n*size+0.00001f-px)+py;
-				updateDiscretization(new Point2D.Float(n*size+0.00001f, m), value);
+				m = slope*(n*size - 0.00001f - px) + py;
+				updateDiscretization(new Point2D.Float(n*size - 0.00001f, m), value);
+				m = slope*(n*size + 0.00001f - px) + py;
+				updateDiscretization(new Point2D.Float(n*size + 0.00001f, m), value);
 			}
 		} else {
 			float n;
 			for(int m=pj+1; m<qj+1; m++) {
-				n = (m*size-0.00001f-py)/slope+px;
+				n = (m*size - 0.00001f - py)/slope + px;
 				updateDiscretization(new Point2D.Float(n, m*size-0.00001f), value);
-				n = (m*size+0.00001f-py)/slope+px;
+				n = (m*size + 0.00001f - py)/slope + px;
 				updateDiscretization(new Point2D.Float(n, m*size+0.00001f), value);
 			}
 		}
@@ -209,33 +199,45 @@ public class Discretization
 	{	
 		for(int i = 0; i<numX; i++) {
 			for(int j=0; j<numY; j++) {
-				if(distance(findCentre(i,j), currentPosition) < sensingRadius) {
+				if(cellInsideSensingRadius(i, j, currentPosition, sensingRadius)) {
 					Point2D tempPoint = findCentre(i,j);
 					if(env.collisionFreeFromOpaqueObstacles(currentPosition, tempPoint) && env.obstacleFreeAll(tempPoint)) {
 						BDD label = Environment.getLabelling().getLabel(tempPoint);
 						updateDiscretization(tempPoint, 1, label);
 					}
-					else if(env.collisionFreeFromOpaqueObstacles(currentPosition, tempPoint) && ! env.obstacleFreeAll(tempPoint)) {
-						BDD label = Environment.getLabelling().getLabel(tempPoint);
-						updateDiscretization(tempPoint, 4, label);
+					else if(! env.obstacleFreeAll(tempPoint)) {
+						updateDiscretization(tempPoint, 3, null);
 					}
 				}
 			}
 		}
 	}
+	
+	private boolean cellInsideSensingRadius(int i, int j, Point2D currentPosition, float sensingRadius) {
+		if(distance(new float[] {i*size, j*size}, currentPosition) > sensingRadius) 
+			return false;
+		if(distance(new float[] {i*size, (j+1)*size}, currentPosition) > sensingRadius) 
+			return false;
+		if(distance(new float[] {(i+1)*size, j*size}, currentPosition) > sensingRadius) 
+			return false;
+		if(distance(new float[] {(i+1)*size, (j+1)*size}, currentPosition) > sensingRadius) 
+			return false;
+		return true;
+	}
+	
 
 	/*
 	 * compute distance
 	 */
 	private float distance(Point2D p, Point2D q) {
-		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2)+Math.pow(p.getY() - q.getY(), 2));
+		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2) + Math.pow(p.getY() - q.getY(), 2));
 	}
 	
 	/*
 	 * compute distance
 	 */
 	private float distance(float[] p, Point2D q) {
-		return (float) Math.sqrt(Math.pow(p[0] - q.getX(), 2)+Math.pow(p[1] - q.getY(), 2));
+		return (float) Math.sqrt(Math.pow(p[0] - q.getX(), 2) + Math.pow(p[1] - q.getY(), 2));
 	}
 
 	/*
@@ -254,14 +256,14 @@ public class Discretization
 	public Point2D findAMove(Point2D xRobot)
 	{
 		frontiers = new ArrayList<ArrayList<int[]>>();
-		for(int i=0;i<numX;i++) {
-			for(int j=0;j<numY; j++) {
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
 				flag[i][j] = false;
 			}
 		}
 		
-		for(int i=0;i<numX;i++) {
-			for(int j=0;j<numY;j++) {
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
 				if(!flag[i][j] && checkFrontierCell(i,j,1)) {
 					ArrayList<int[]> frontier = findFrontier(i,j,1);
 					if(frontier.size() > 4) {
@@ -272,16 +274,18 @@ public class Discretization
 		}
 		
 		if(frontiers.size() == 0) {
-			for(int i=0;i<numX;i++) {
-				for(int j=0;j<numY; j++) {
+			frontiers = new ArrayList<ArrayList<int[]>>();
+			for(int i=0; i<numX; i++) {
+				for(int j=0; j<numY; j++) {
 					flag[i][j] = false;
 				}
 			}
-			for(int i=0;i<numX;i++) {
-				for(int j=0;j<numY;j++) {
-					if(!flag[i][j] && checkFrontierCell(i,j,2)) {
-						ArrayList<int[]> frontier = findFrontier(i,j,2);
-						if(frontier.size() > 4) {
+			
+			for(int i=0; i<numX; i++) {
+				for(int j=0; j<numY; j++) {
+					if(!flag[i][j] && checkFrontierCell(i,j,1)) {
+						ArrayList<int[]> frontier = findFrontier(i,j,1);
+						if(frontier.size() > 0) {
 							frontiers.add(frontier);
 						}
 					}
@@ -289,7 +293,25 @@ public class Discretization
 			}
 		}
 		
-		if(frontiers.size()==0) {
+//		if(frontiers.size() == 0) {
+//			for(int i=0;i<numX;i++) {
+//				for(int j=0;j<numY; j++) {
+//					flag[i][j] = false;
+//				}
+//			}
+//			for(int i=0;i<numX;i++) {
+//				for(int j=0;j<numY;j++) {
+//					if(!flag[i][j] && checkFrontierCell(i,j,2)) {
+//						ArrayList<int[]> frontier = findFrontier(i,j,2);
+//						if(frontier.size() > 4) {
+//							frontiers.add(frontier);
+//						}
+//					}
+//				}
+//			}
+//		}
+		
+		if(frontiers.size() == 0) {
 			return null;
 		}
 		
@@ -313,7 +335,7 @@ public class Discretization
 	 */
 	private float[] findCenter(ArrayList<int[]> frontier) {
 		float x=size/2, y=size/2;
-		for(int i=0;i<frontier.size();i++) {
+		for(int i=0; i<frontier.size(); i++) {
 			x += frontier.get(i)[0];
 			y += frontier.get(i)[1];
 		}
@@ -328,42 +350,42 @@ public class Discretization
 		if(flag[i][j] == false) {
 			flag[i][j] = true;
 			frontier.add(new int[] {i,j});
-			if(i+1<numX) {
+			if(i+1 < numX) {
 				if(checkFrontierCell(i+1,j,level)) {
 					frontier.addAll(findFrontier(i+1,j,level));
 				}
 			}
-			if(j+1<numY) {
+			if(j+1 < numY) {
 				if(checkFrontierCell(i,j+1,level)) {
 					frontier.addAll(findFrontier(i,j+1,level));
 				}
 			}
-			if(j>0) {
+			if(j > 0) {
 				if(checkFrontierCell(i,j-1,level)) {
 					frontier.addAll(findFrontier(i,j-1,level));
 				}
 			}
-			if(i>0) {
+			if(i > 0) {
 				if(checkFrontierCell(i-1,j,level)) {
 					frontier.addAll(findFrontier(i-1,j,level));
 				}
 			}
-			if(i+1<numX && j+1<numY) {
+			if(i+1 < numX && j+1 < numY) {
 				if(checkFrontierCell(i+1,j+1,level)) {
 					frontier.addAll(findFrontier(i+1,j+1,level));
 				}
 			}
-			if(i>0 && j+1<numY) {
+			if(i > 0 && j+1 < numY) {
 				if(checkFrontierCell(i-1,j+1,level)) {
 					frontier.addAll(findFrontier(i-1,j+1,level));
 				}
 			}
-			if(i+1<numX && j>0) {
+			if(i+1 < numX && j > 0) {
 				if(checkFrontierCell(i+1,j-1,level)) {
 					frontier.addAll(findFrontier(i+1,j-1,level));
 				}
 			}
-			if(i>0 && j>0) {
+			if(i > 0 && j > 0) {
 				if(checkFrontierCell(i-1,j-1,level)) {
 					frontier.addAll(findFrontier(i-1,j-1,level));
 				}
@@ -376,9 +398,9 @@ public class Discretization
 	 * print all frontiers
 	 */
 	public void printFrontiers() {
-		for(int i=0;i<frontiers.size();i++) {
-			for(int j=0;j<frontiers.get(i).size();j++) {
-				System.out.print("["+frontiers.get(i).get(j)[0]+", "+frontiers.get(i).get(j)[1]+"]  ");
+		for(int i=0; i<frontiers.size(); i++) {
+			for(int j=0; j<frontiers.get(i).size(); j++) {
+				System.out.print("[" + frontiers.get(i).get(j)[0] + ", " + frontiers.get(i).get(j)[1] + "]  ");
 			}
 			System.out.print("\n");
 		}
@@ -390,23 +412,23 @@ public class Discretization
 	 */
 	public void printDiscretization() 
 	{
-		for(int i=0;i<numX;i++) {
-			for(int j=0;j<numY;j++) {
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
 				if(checkFrontierCell(i,j,1)) {
-					System.out.print(8+",");
+					System.out.print("F,");
 				} else if(checkFrontierCell(i,j,2)){
 					System.out.print("X,");
 				} else {
-					System.out.print(discretization[i][j]+",");
+					System.out.print(discretization[i][j] + ",");
 				}
 			}
 			System.out.print("\n");
 		}
 		
 		System.out.println("\n\n\n\n");
-		for(int i=0;i<numX;i++) {
-			for(int j=0;j<numY;j++) {
-					System.out.print(discretization[i][j]+",");
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
+					System.out.print(discretization[i][j] + ",");
 			}
 			System.out.print("\n");
 		}
@@ -415,16 +437,19 @@ public class Discretization
 	/*
 	 * finds rank of a transition from source to target according to the advice
 	 */
-	private int findRank(
+	private int findRank (
 			ArrayList<BDD> advice, 
 			Point2D source, 
 			Point2D target, 
 			BDD transition,
 			ProductAutomaton productAutomaton) throws Exception 
 	{
+		if(advice == null){
+			return -1;
+		}
 		try {
 			if(Environment.getLabelling().getLabel(source).equals(Environment.getLabelling().getLabel(target))) return -1;
-			for(int i=0;i<advice.size();i++) {
+			for(int i=0; i<advice.size(); i++) {
 				if(! transition.and(advice.get(i)).isZero()) return i;
 			}
 		} catch (Exception e) {
@@ -436,7 +461,7 @@ public class Discretization
 	/*
 	 * finds a best ranked point according to the advice
 	 */
-	public Point2D sampleFromAdvice(
+	public Point2D sampleFromAdvice (
 			ArrayList<BDD> advice, 
 			Point2D currentPosition,
 			float sensingRadius,
@@ -468,6 +493,47 @@ public class Discretization
 		}
 		if(bestRank != -1) return findCentre(bestI, bestJ);
 		else return null;
+	}
+
+
+	public boolean exploredCompletely() {
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
+				if(discretization[i][j] == 0)
+					return false;
+			}
+		}
+		return true;
+	}
+
+	private Pair<Integer, Integer> findCell(Point2D p){
+		int i = (int) (p.getX()/size);
+		int j = (int) (p.getY()/size);
+		return new Pair<Integer, Integer>(i, j);
+	}
+
+	public float findAPath(Point2D currentPosition, Point2D newPosition) {
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
+				flag[i][j] = false;
+			}
+		}
+		float pathLength = findAPath(findCell(currentPosition), findCell(newPosition));
+		return pathLength;
+	}
+
+
+	private float findAPath(Pair<Integer, Integer> cell1, Pair<Integer, Integer> cell2) {
+		
+		return 0;
+	}
+
+
+	public boolean isExplored(Point2D p) {
+		Pair<Integer, Integer> c = findCell(p);
+		if(discretization[c.getFirst()][c.getSecond()] > 0)
+			return true;
+		return false;
 	}
 
 }

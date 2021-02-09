@@ -31,8 +31,6 @@ public class EnvironmentReader
 		String point 				= "\\(\\s*(\\d*|\\d*\\.\\d*)\\s*,\\s*(\\d*|\\d*\\.\\d*)\\s*\\)";
         String rectangle 			= "\\[\\s*" + point + "\\s*,\\s*" + point + "\\s*,\\s*" + point + "\\s*,\\s*" + point + "\\s*\\]";
 
-        
-        
 		
 		// For env boundaries
 		String line 	= reader.readLine();
@@ -44,11 +42,10 @@ public class EnvironmentReader
 		p3 	= new Point2D.Float(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
 		p4 	= new Point2D.Float(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
 		
-		if((boolean) PlanningSettings.get("planning.verbosity"))
+		if((boolean) PlanningSettings.get("verbosity"))
 		{
 			System.out.println("Environment boundaries: " + p1.toString() + ", " + p2.toString() + ", " + p3.toString() + ", " + p4.toString());
 		}
-		
 		
 		
 		
@@ -59,11 +56,10 @@ public class EnvironmentReader
         m.find();
 		init 	= new Point2D.Float(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
 		
-		if ((boolean) PlanningSettings.get("planning.verbosity"))
+		if ((boolean) PlanningSettings.get("verbosity"))
 		{
 			System.out.println("\n\nInitial Point: " + init.toString());
 		}
-		
 		
 		
 		
@@ -71,7 +67,7 @@ public class EnvironmentReader
 		p 		= Pattern.compile(rectangle);
 		Path2D rect;
 		int i 	= 0;
-		if((boolean) PlanningSettings.get("planning.verbosity"))
+		if((boolean) PlanningSettings.get("verbosity"))
         {
         	System.out.println("\n\nWalls: ");
         }
@@ -101,7 +97,7 @@ public class EnvironmentReader
 			walls.add(rect);
 			
 			
-			if((boolean) PlanningSettings.get("planning.verbosity"))
+			if((boolean) PlanningSettings.get("verbosity"))
             {
             	System.out.println(rect.getBounds2D());
             }
@@ -115,7 +111,7 @@ public class EnvironmentReader
 		// For obstacles
 		p 		= Pattern.compile(rectangle);
 		i 	= 0;
-		if((boolean) PlanningSettings.get("planning.verbosity"))
+		if((boolean) PlanningSettings.get("verbosity"))
         {
         	System.out.println("\n\nObstacles: ");
         }
@@ -140,7 +136,7 @@ public class EnvironmentReader
 			obstacles.add(rect);
 			
 			
-			if((boolean) PlanningSettings.get("planning.verbosity"))
+			if((boolean) PlanningSettings.get("verbosity"))
             {
             	System.out.println(rect.getBounds2D());
             }
@@ -148,9 +144,7 @@ public class EnvironmentReader
 		}
 				        
 		reader.close();
-        
-        
-        
+
         
         // For Label
         reader 				= new BufferedReader(new FileReader(labelFile));
@@ -164,7 +158,7 @@ public class EnvironmentReader
     	ArrayList<Path2D> labelRect = new ArrayList<Path2D>();
     	ArrayList<String> apList 	= new ArrayList<String>();
     	i	= 0;
-        if ((boolean) PlanningSettings.get("planning.verbosity"))
+        if ((boolean) PlanningSettings.get("verbosity"))
         {
         	System.out.println("\n\nLabelling: ");
         }
@@ -174,7 +168,7 @@ public class EnvironmentReader
         	m 		= apNameRegex.matcher(line);
         	m.find();
         	apList.add(m.group(1));
-        	if((boolean) PlanningSettings.get("planning.verbosity"))
+        	if((boolean) PlanningSettings.get("verbosity"))
             {
             	System.out.print(apList.get(i) + ": ");
             }
@@ -190,7 +184,7 @@ public class EnvironmentReader
         		rect.lineTo(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
         		rect.lineTo(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
         		rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
-        		if((boolean) PlanningSettings.get("planning.verbosity"))
+        		if((boolean) PlanningSettings.get("verbosity"))
         		{
         			System.out.print(rect.getBounds2D() + "  ");
         		}
@@ -198,7 +192,7 @@ public class EnvironmentReader
     		rect.closePath();
     		labelRect.add(rect);
 
-        	if((boolean) PlanningSettings.get("planning.verbosity"))
+        	if((boolean) PlanningSettings.get("verbosity"))
     		{
     			System.out.println("");
     		}

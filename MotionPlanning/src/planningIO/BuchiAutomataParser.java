@@ -141,7 +141,7 @@ public class BuchiAutomataParser
 		bddDomain					= ProductAutomaton.factory.extDomain(new int[] {numberOfStates, 
 										numberOfStates, 
 										acceptingSets+1, 
-										(int) PlanningSettings.get("planning.maxLevelTransition")});
+										(int) PlanningSettings.get("maxLevelTransition")});
 		
 		ProductAutomaton.factory.extVarNum(2 * apListSystem.size() + apListProperty.size());
 		numVars[0]					= bddDomain[0].varNum() + bddDomain[1].varNum() + bddDomain[2].varNum();

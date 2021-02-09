@@ -1,11 +1,10 @@
 package settings;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
-
 import abstraction.ProductAutomaton;
 import environment.Environment;
+import modules.KnownRRG;
 import modules.RRG;
+import modules.UnknownRRG;
 import net.sf.javabdd.BDDFactory;
 import net.sf.javabdd.BuDDyFactory;
 import planningIO.EnvironmentReader;
@@ -29,9 +28,9 @@ public class Initialize
 	public Initialize() throws Exception
 	{
 		
-		factory			= BuDDyFactory.init(20, (int) PlanningSettings.get("planning.bddFactoryCacheSize"));
+		factory			= BuDDyFactory.init(20, (int) PlanningSettings.get("bddFactoryCacheSize"));
 		ProductAutomaton.factory				= factory;
-        ProductAutomaton.threshold				= (int) PlanningSettings.get("planning.transitionThreshold");
+        ProductAutomaton.threshold				= (int) PlanningSettings.get("transitionThreshold");
 		
 		
 		
@@ -43,8 +42,12 @@ public class Initialize
         String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/property.pr";
 		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
 
-		
-		rrg 						= new RRG(env);
+		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
+			rrg 						= new KnownRRG(env);
+		}
+		else {
+			rrg 						= new UnknownRRG(env);			
+		}
 
 		
         ProductAutomaton.apListProperty			= prop.propertyParser.getAPListProperty();
