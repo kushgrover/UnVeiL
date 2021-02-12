@@ -28,12 +28,10 @@ public class Label
 		BDD label 	= factory.one();
 		for(int i=0; i<numOfAP; i++) 
 		{
-			if(checkIthAP(x, i)) 
-			{
+			if(checkIthAP(x, i)) {
 				label.andWith(ProductAutomaton.ithVarSystemPre(i));
 			}
-			else
-			{
+			else {
 				label.andWith(ProductAutomaton.ithVarSystemPre(i).not());
 			}
 		}
@@ -42,7 +40,6 @@ public class Label
 	
 	private Boolean checkIthAP(Point2D x, int i)
 	{
-		
 		return areas.get(i).contains(x);
 	}
 	

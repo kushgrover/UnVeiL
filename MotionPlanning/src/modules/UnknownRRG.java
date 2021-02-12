@@ -14,6 +14,7 @@ import java.util.Iterator;
 import java.util.List;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -117,18 +118,18 @@ public class UnknownRRG extends RRG
 					addGraphEdge(xNearest2D, xNew2D);
 										
 //					plotting the first time it sees a bin
-//					try {
-//						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-//							plotGraph(null);
-//							flagBin = true;
-//						}
-//						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-//							plotGraph(null);
-//							flagRoom = true;
-//						}
-//					} catch (Exception e1) {
-//						e1.printStackTrace();
-//					}
+					try {
+						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
+							plotGraph(null);
+							flagBin = true;
+						}
+						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
+							plotGraph(null);
+							flagRoom = true;
+						}
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
 					
 					tree.nearestN(xNew, 
 							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
@@ -226,6 +227,7 @@ public class UnknownRRG extends RRG
 		movement.add(currentRobotPosition);
 		discretization.knowDiscretization(env, productAutomaton, currentRobotPosition, sensingRadius);
 		endBatch = true;
+		System.out.println("Moving to: " + xNew2D);
 	}
 
 	
@@ -241,12 +243,14 @@ public class UnknownRRG extends RRG
 	public void tryMove(int rank, Point2D xNew2D, BDD transition, ArrayList<BDD> advice) throws Exception {
 
 		if(rank != -1 && productAutomaton.sampledTransitions.and(transition).isZero()) // if sampled from advice and have not sampled it before
-			move(xNew2D, rank);
+			discretization.addAdviceFrontier(xNew2D, currentRobotPosition, rank);
+//			move(xNew2D, rank);
 		else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) { // batch is finished
-//			if(! flagFirstMove) { // plotting before the first time it moves
-//				plotGraph(null);
-//				flagFirstMove = true;
-//			}
+			
+			if(! flagFirstMove) { // plotting before the first time it moves
+				plotGraph(null);
+				flagFirstMove = true;
+			}
 			
 			Point2D p = discretization.findAMove(currentRobotPosition);
 			if(p != null) {
@@ -266,6 +270,7 @@ public class UnknownRRG extends RRG
 								catch (Exception e) {
 									e.printStackTrace();
 								}
+								return false;
 							}
 							return true;
 							
@@ -281,7 +286,6 @@ public class UnknownRRG extends RRG
 										return false;
 									}
 									Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
-									if(env.collisionFreeFromOpaqueObstacles(p, newPoint)) {
 										alreadyFound = true;
 										try {
 											move(newPoint, -1);
@@ -289,12 +293,12 @@ public class UnknownRRG extends RRG
 										catch (Exception e) {
 											e.printStackTrace();
 										}
-									}
+//									}
 									return true;
 									
 								}
 							},
-							100,
+							200,
 							java.lang.Float.POSITIVE_INFINITY);
 				}
 				
@@ -306,8 +310,6 @@ public class UnknownRRG extends RRG
 			}
 		} 
 	}
-
-	
 
 	/**
 	 * sample a point inside sensing area
@@ -361,48 +363,45 @@ public class UnknownRRG extends RRG
 		source = findTheVertex(firstPoint);
 		dest = findTheVertex(nextPoint);
 		GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, dest);
-		finalPath 			= new ArrayList<DefaultEdge>();
+		finalPath = new ArrayList<DefaultEdge>();
 		finalPath.addAll(nextPath.getEdgeList());
-		
 		
 		// iterate over the abstract path
 		while(it.hasNext())
 		{
-			source 			= dest;
-			nextPoint 		= it.next();
-			dest 			= findTheVertex(nextPoint);
-			nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
+			source 	  = dest;
+			nextPoint = it.next();
+			dest 	  = findTheVertex(nextPoint);
+			nextPath  = DijkstraShortestPath.findPathBetween(graph, source, dest);
 			if(nextPath != null) {
 				finalPath.addAll(nextPath.getEdgeList());
 			}
 		}
 		return finalPath;
 	}   
-	
-
-	
+		
 	/**
 	 * Plot the graph
 	 * @return 
 	 * @throws IOException 
 	 */
-	public float plotGraph(List<DefaultEdge> finalPath)  
+	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath)  
 	{
 		if(finalPath != null) {
 			new ShowGraph(graph, env, findPath(movement), finalPath).setVisible(true);
 			StoreGraph temp = new StoreGraph(env, graph, finalPath, findPath(movement), "end");
-			return temp.length;
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagFirstMove) {
-			StoreGraph temp = new StoreGraph(graph, findPath(movement), "firstMove"); 
-			return temp.length;
+			StoreGraph temp = new StoreGraph(graph, findPath(movement), "firstMove");
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagBin) {
 			StoreGraph temp = new StoreGraph(graph, findPath(movement), "bin");
-			return temp.length;
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagRoom) {
 			StoreGraph temp = new StoreGraph(graph, findPath(movement), "room");
-			return temp.length;
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		}
-		return 0;
+		return new Pair<Float, Float>(0f,0f);
 	}
 	
 	

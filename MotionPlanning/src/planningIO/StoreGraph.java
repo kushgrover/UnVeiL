@@ -16,7 +16,7 @@ import environment.Vertex;
 
 public class StoreGraph 
 {
-	public float length;
+	public float movementLength, remainingPathLength;
 
 	public StoreGraph(Environment env, Graph<Vertex, DefaultEdge> graph, List<DefaultEdge> finalPath, List<DefaultEdge> movement, String fileName) {
 		try {
@@ -40,7 +40,7 @@ public class StoreGraph
 	
 	
 	public void outputGraph(Graph<Vertex, DefaultEdge> graph, String fileName) throws IOException {
-		BufferedWriter writer 		= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/"+fileName+".csv"));
+		BufferedWriter writer 		= new BufferedWriter(new FileWriter("temp/"+fileName+".csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
 		
@@ -61,17 +61,19 @@ public class StoreGraph
 	}
 	
 	public void outputFinalPath(Graph<Vertex, DefaultEdge> graph, List<DefaultEdge> finalPath, String fileName) throws IOException {
-		BufferedWriter writer 		= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/"+fileName+"-finalpath.csv"));
+		BufferedWriter writer 		= new BufferedWriter(new FileWriter("temp/"+fileName+"-finalpath.csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
 		
 		DefaultEdge nextEdge;
 		Vertex source, target;
+		remainingPathLength = 0;
 		
 		Iterator<DefaultEdge> i = finalPath.iterator();
 		while(i.hasNext())
 		{
 			nextEdge = i.next();
+			remainingPathLength += graph.getEdgeWeight(nextEdge);
 			source = graph.getEdgeSource(nextEdge);
 			target = graph.getEdgeTarget(nextEdge);
 			writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + "," + target.getPoint().getX() + "," + target.getPoint().getY() + "\n");
@@ -80,20 +82,20 @@ public class StoreGraph
 	}
 	
 	public void outputMovement(Graph<Vertex, DefaultEdge> graph, List<DefaultEdge> movement, String fileName) throws IOException {
-		BufferedWriter writer 		= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/"+fileName+"-movement.csv"));
+		BufferedWriter writer 		= new BufferedWriter(new FileWriter("temp/"+fileName+"-movement.csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
 		
 		DefaultEdge nextEdge;
 		Vertex source, target;
-		length = 0;
+		movementLength = 0;
 		
 		if(movement != null) {
 			Iterator<DefaultEdge> i = movement.iterator();
 			while(i.hasNext())
 			{
 				nextEdge = i.next();
-				length += graph.getEdgeWeight(nextEdge);
+				movementLength += graph.getEdgeWeight(nextEdge);
 				source = graph.getEdgeSource(nextEdge);
 				target = graph.getEdgeTarget(nextEdge);
 				writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + "," + target.getPoint().getX() + "," + target.getPoint().getY() + "\n");
@@ -103,7 +105,7 @@ public class StoreGraph
 	}
 	
 	public void outputObstacles(Environment env) throws IOException {
-		BufferedWriter writer 		= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/obstacles.csv"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter("temp/obstacles.csv"));
 		writer.write("x1,y1,x2,y2\n");
 		writer.write("0.0,0.0,6.0,0.0\n");
 		writer.write("6.0,0.0,6.0,3.0\n");

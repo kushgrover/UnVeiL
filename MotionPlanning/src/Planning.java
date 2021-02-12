@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 
 import abstraction.ProductAutomaton;
@@ -43,6 +44,7 @@ public class Planning
 	double adviceTime 		= 0;
     boolean needNewAdvice 	= true;
     ArrayList<BDD> advice 	= null;
+    float moveLength, pathLength;
     List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
 
     /**
@@ -75,8 +77,11 @@ public class Planning
 	 */
 	void printOutput() throws Exception 
 	{
-    	productAutomaton.createDot(iterationNumber);
-		float pathLength = rrg.plotGraph(finalPath);
+//    	productAutomaton.createDot(iterationNumber);
+		Pair<Float, Float> pathLength = rrg.plotGraph(finalPath);
+		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
+			pathLength.setFirst(moveLength);
+		}
 		double totalTime = System.nanoTime() - beginTime;
         
         int adviceSamples = 0;
@@ -85,7 +90,8 @@ public class Planning
 		
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + rrg.totalPoints);
-		System.out.println("Path length = " + pathLength);
+		System.out.println("Movement Length = " + pathLength.getFirst());
+		System.out.println("Remaining path Length = " + pathLength.getSecond());
 		System.out.println("Sampled from advice = " + adviceSamples);
 		System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled));
 		System.out.print("\nTotal time taken (in ms):");
@@ -220,20 +226,13 @@ public class Planning
 	void firstExplThenPlan() throws Exception {
 		Discretization discretization = new Discretization(env, (float) PlanningSettings.get("discretizationSize"));
 		startTime = System.nanoTime();
-		exploreDiscretization(discretization);
+		moveLength = exploreDiscretization(discretization);
 		explTime = System.nanoTime() - startTime;
 		
-		BDD transitions 					= null;
-        boolean computePath 				= true;
-        boolean debug 						= (boolean) PlanningSettings.get("debug");
+		BDD transitions = null;
+        boolean computePath = true;
 
-		while( true )
-		{
-			if( debug ) {
-	        	if( iterationNumber == 1000 ) {
-	        		break;
-	        	}
-        	}
+		while( true ){
 			iterationNumber++;
         	System.out.println("Iter num: " + iterationNumber);
         	
@@ -264,20 +263,20 @@ public class Planning
 	}
 
 	private float exploreDiscretization(Discretization discretization) throws Exception {
-		float pathLength = 0;
+		float length = 0;
 		Point2D currentPosition = env.getInit();
 		Point2D newPosition;
+		discretization.initializeGraph();
 		discretization.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		
-		int i = 0;
 		while(! discretization.exploredCompletely()) {
 			newPosition = discretization.findAMove(currentPosition);
-			pathLength += discretization.findAPath(currentPosition, newPosition);
+			length += discretization.findAPath(currentPosition, newPosition);
 			currentPosition = newPosition;
 			discretization.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
-			i++;
 		}
-		return pathLength;
+		System.out.println(length);
+		return length;
 	}
 }
 

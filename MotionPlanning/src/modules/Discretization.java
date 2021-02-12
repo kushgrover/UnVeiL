@@ -2,12 +2,23 @@ package modules;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Set;
 
+import org.jgrapht.Graph;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.util.Pair;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleGraph;
 
 import abstraction.ProductAutomaton;
+import environment.EdgeSupplier;
 import environment.Environment;
+import environment.Vertex;
+import environment.VertexSupplier;
 import net.sf.javabdd.BDD;
+import settings.PlanningSettings;
 
 public class Discretization 
 { 
@@ -17,7 +28,9 @@ public class Discretization
 	ArrayList<ArrayList<BDD>> labels;
 	boolean flag[][]; // used to compute frontiers
 	ArrayList<ArrayList<int[]>> frontiers;
-	ArrayList<Point2D> previousSelectedPoints; 
+	ArrayList<Pair<Point2D, Float>> adviceFrontiers;
+	Graph<Vertex, DefaultEdge> graph;
+	
 	
 	public Discretization(Environment env, float size) 
 	{
@@ -30,6 +43,7 @@ public class Discretization
 		this.size = size;
 		this.flag = new boolean[numX][numY];
 		discretization = new int[numX][numY];
+		this.graph = new SimpleGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
 		labels = new ArrayList<ArrayList<BDD>>();
 		
 		for(int i=0;i<numX;i++) {
@@ -39,12 +53,19 @@ public class Discretization
 				discretization[i][j] = 0;
 			}
 		}
-		
 		frontiers = new ArrayList<ArrayList<int[]>>();
-		previousSelectedPoints = new ArrayList<Point2D>();
+		adviceFrontiers = new ArrayList<Pair<Point2D, Float>>();
 	}
 
-
+	public void initializeGraph() {
+		for(int i=0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
+				Vertex v = new Vertex(findCentre(i,j));
+				graph.addVertex(v);
+			}
+		}
+	}
+	
 	/*
 	 * Checks if a cell is a frontier cell by looking at its neighbours
 	 */
@@ -211,8 +232,99 @@ public class Discretization
 				}
 			}
 		}
+		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
+			for(int i = 0; i<numX; i++) {
+				for(int j=0; j<numY; j++) {
+					if(cellInsideSensingRadius(i, j, currentPosition, sensingRadius)) {
+						Point2D tempPoint = findCentre(i,j);
+						if(env.collisionFreeFromOpaqueObstacles(currentPosition, tempPoint) && env.obstacleFreeAll(tempPoint)) {
+							updateGraph(tempPoint);
+						}
+					}
+				}
+			}
+		}
 	}
 	
+	/**
+	 * Find a vertex in the graph whose point is p
+	 * @param p
+	 * @return
+	 */
+	protected Vertex findTheVertex(Point2D p) 
+	{
+		Set<Vertex> vertexSet 	= graph.vertexSet();
+		Iterator<Vertex> it 	= vertexSet.iterator();
+		Vertex temp;
+		while(it.hasNext()) {
+			temp 				= it.next();
+			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) {
+				return temp;
+			}
+		}
+		Vertex v = new Vertex(p);
+		graph.addVertex(v);
+		return v;
+	}
+	
+	private void updateGraph(Point2D centre) {
+		Point2D left   = new Point2D.Float((float) centre.getX()-size, (float) centre.getY());
+		Point2D right  = new Point2D.Float((float) centre.getX()+size, (float) centre.getY());
+		Point2D up 	   = new Point2D.Float((float) centre.getX(), (float) centre.getY()-size);
+		Point2D down   = new Point2D.Float((float) centre.getX(), (float) centre.getY()+size);
+		Vertex leftV   = findTheVertex(left);
+		Vertex rightV  = findTheVertex(right);
+		Vertex upV     = findTheVertex(up);
+		Vertex downV   = findTheVertex(down);
+		Vertex centreV = findTheVertex(centre);
+		
+		int i = clampX(findCell(left).getFirst());
+		int j = clampY(findCell(left).getSecond());
+		if(discretization[i][j] == 1){
+			DefaultEdge edge = graph.addEdge(leftV, centreV);
+			if(edge != null) {
+				graph.setEdgeWeight(edge, distance(left, centre));
+			}
+		}
+		i = clampX(findCell(right).getFirst());
+		j = clampY(findCell(right).getSecond());
+		if(discretization[i][j] == 1){
+			DefaultEdge edge = graph.addEdge(rightV, centreV);
+			if(edge != null) {
+				graph.setEdgeWeight(edge, distance(right, centre));
+			}
+		}
+		i = clampX(findCell(up).getFirst());
+		j = clampY(findCell(up).getSecond());
+		if(discretization[i][j] == 1){
+			DefaultEdge edge = graph.addEdge(upV, centreV);
+			if(edge != null) {
+				graph.setEdgeWeight(edge, distance(up, centre));
+			}
+		}
+		i = clampX(findCell(down).getFirst());
+		j = clampY(findCell(down).getSecond());
+		if(discretization[i][j] == 1){
+			DefaultEdge edge = graph.addEdge(downV, centreV);
+			if(edge != null) {
+				graph.setEdgeWeight(edge, distance(down, centre));
+			}		
+		}
+	}
+	
+	private int clampX(int i) {
+		if(i == numX)
+			return i-1;
+		return i;
+	}
+	
+	private int clampY(int j) {
+		if(j == numY)
+			return j-1;
+		return j;
+	}
+
+
 	private boolean cellInsideSensingRadius(int i, int j, Point2D currentPosition, float sensingRadius) {
 		if(distance(new float[] {i*size, j*size}, currentPosition) > sensingRadius) 
 			return false;
@@ -293,53 +405,69 @@ public class Discretization
 			}
 		}
 		
-//		if(frontiers.size() == 0) {
-//			for(int i=0;i<numX;i++) {
-//				for(int j=0;j<numY; j++) {
-//					flag[i][j] = false;
-//				}
-//			}
-//			for(int i=0;i<numX;i++) {
-//				for(int j=0;j<numY;j++) {
-//					if(!flag[i][j] && checkFrontierCell(i,j,2)) {
-//						ArrayList<int[]> frontier = findFrontier(i,j,2);
-//						if(frontier.size() > 4) {
-//							frontiers.add(frontier);
-//						}
-//					}
-//				}
-//			}
-//		}
-		
 		if(frontiers.size() == 0) {
 			return null;
 		}
 		
-		ArrayList<float[]> centers = new ArrayList<float[]>(frontiers.size());
-		float[] closest = findCenter(frontiers.get(0));
+		Point2D bestFrontier = findCenter(frontiers.get(0)), currentFrontier;
+		float bestIG = 0, currentIG;
+		int bestIndex = 0;
 		for(int i=0;i<frontiers.size();i++) {
-			centers.add(i, findCenter(frontiers.get(i)));
-//			if(distance(centers.get(i), xRobot) < distance(closest, xRobot)) {
-			if(frontiers.get(i).size()/distance(centers.get(i), xRobot) > frontiers.get(i).size()/distance(closest, xRobot)) {
-				closest = centers.get(i);
+			currentFrontier = findCenter(frontiers.get(i));
+			currentIG = frontiers.get(i).size()/distance(currentFrontier, xRobot);
+//			if(distance(currentFrontier, xRobot) < distance(bestFrontier, xRobot)) {
+			if(currentIG > bestIG) {
+				bestFrontier = currentFrontier;
+				bestIG = currentIG;
+				bestIndex = i;
 			}
 		}
-		Point2D foundPoint = new Point2D.Float(closest[0], closest[1]);
-
-		System.out.println("Found move: " + closest[0] + ", " + closest[1]);
-		return foundPoint;
+		
+		int removeAdviceFrontier = -1;
+		for(int i=0; i<adviceFrontiers.size(); i++) {
+			if(adviceFrontiers.get(i).getSecond() > bestIG) {
+				bestFrontier = adviceFrontiers.get(i).getFirst();
+				bestIG = adviceFrontiers.get(i).getSecond();
+				removeAdviceFrontier = i;
+			}
+		}
+		
+		if(removeAdviceFrontier != -1) {
+			System.out.println("Used Advice frontier: " + bestFrontier + " with IG = " + bestIG);
+			adviceFrontiers.remove(removeAdviceFrontier);
+		}
+		else {
+			if((boolean) PlanningSettings.get("firstExplThenPlan")) {
+				int bestCell = 0;
+				float bestD = distance(frontiers.get(bestIndex).get(0), bestFrontier);
+				for(int i=1; i<frontiers.get(bestIndex).size(); i++) {
+					if(distance(frontiers.get(bestIndex).get(i), bestFrontier) < bestD) {
+						bestCell = i;
+					}
+				}
+				bestFrontier = findCentre(frontiers.get(bestIndex).get(bestCell)[0], frontiers.get(bestIndex).get(bestCell)[1]);
+			}
+			System.out.println("Used frontier: " + bestFrontier + " with IG = " + bestIG);			
+		}
+		
+		return bestFrontier;
 	}
 	
+	private float distance(int[] p, Point2D q) {
+		Point2D p2D = findCentre(p[0], p[1]);
+		return distance(p,q);
+	}
+
 	/*
 	 * finds centre of a frontier
 	 */
-	private float[] findCenter(ArrayList<int[]> frontier) {
+	private Point2D findCenter(ArrayList<int[]> frontier) {
 		float x=size/2, y=size/2;
 		for(int i=0; i<frontier.size(); i++) {
 			x += frontier.get(i)[0];
 			y += frontier.get(i)[1];
 		}
-		return new float[] {x/frontier.size()*size, y/frontier.size()*size};
+		return new Point2D.Float(x/frontier.size()*size, y/frontier.size()*size);
 	}
 	
 	/*
@@ -513,19 +641,28 @@ public class Discretization
 	}
 
 	public float findAPath(Point2D currentPosition, Point2D newPosition) {
-		for(int i=0; i<numX; i++) {
-			for(int j=0; j<numY; j++) {
-				flag[i][j] = false;
-			}
-		}
 		float pathLength = findAPath(findCell(currentPosition), findCell(newPosition));
 		return pathLength;
 	}
 
 
 	private float findAPath(Pair<Integer, Integer> cell1, Pair<Integer, Integer> cell2) {
-		
-		return 0;
+		Point2D source = findCentre(cell1.getFirst(), cell1.getSecond());
+		Point2D target = findCentre(cell2.getFirst(), cell2.getSecond());
+		Vertex sourceV = findTheVertex(source);
+		Vertex targetV = findTheVertex(target);
+
+		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, sourceV, targetV);
+		ArrayList<DefaultEdge> pathList = new ArrayList<DefaultEdge>();
+		pathList.addAll(path.getEdgeList());
+		Iterator<DefaultEdge> i = pathList.iterator();
+		float pathLength = 0;
+		DefaultEdge nextEdge;
+		while(i.hasNext()) {
+			nextEdge = i.next();
+			pathLength += graph.getEdgeWeight(nextEdge);
+		}
+		return pathLength;
 	}
 
 
@@ -534,6 +671,12 @@ public class Discretization
 		if(discretization[c.getFirst()][c.getSecond()] > 0)
 			return true;
 		return false;
+	}
+
+	public void addAdviceFrontier(Point2D p, Point2D currentPosition, int rank) {
+		Pair<Point2D, Float> f = new Pair<Point2D, Float>(p, 1 / (2 * (rank+1) * (rank+1) * size * distance(p, currentPosition)));
+		System.out.println("Advice frontier " + f.getFirst() + " with IG = " + f.getSecond());
+		adviceFrontiers.add(f);
 	}
 
 }

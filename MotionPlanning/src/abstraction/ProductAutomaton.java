@@ -283,8 +283,6 @@ public class ProductAutomaton
 		return factory.getDomain(3);
 	}
 	
-	
-	
 	/**
 	 * 
 	 * @param i
@@ -293,8 +291,7 @@ public class ProductAutomaton
 	 */
 	public static BDD ithVarSystemPre(int i) throws PlanningException 
 	{
-		if(i > numAPSystem) 
-		{
+		if(i > numAPSystem) {
 			throw new PlanningException("Index out of bounds");
 		}
 		return factory.ithVar(varsBeforeSystemVars + i);
@@ -308,8 +305,7 @@ public class ProductAutomaton
 	 */
 	public static BDD ithVarSystemPost(int i) throws PlanningException 
 	{
-		if(i > numAPSystem)
-		{
+		if(i > numAPSystem) {
 			throw new PlanningException("Index out of bounds");
 		}
 		return factory.ithVar(varsBeforeSystemVars + numAPSystem + i);

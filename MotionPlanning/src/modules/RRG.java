@@ -406,5 +406,5 @@ public abstract class RRG {
 	 * @return 
 	 * @throws IOException 
 	 */
-	public abstract float plotGraph(List<DefaultEdge> finalPath);
+	public abstract Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath);
 }

@@ -4,6 +4,7 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleGraph;
 
@@ -80,20 +81,19 @@ public class KnownRRG extends RRG {
 					addSymbolicTransitions(xNearest2D, xNew2D);
 					addGraphEdge(xNearest2D, xNew2D);
 					
-					
-//							plotting the first time it sees a bin
-//							try {
-//								if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-//									plotGraph(null);
-//									flagBin = true;
-//								}
-//								if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-//									plotGraph(null);
-//									flagRoom = true;
-//								}
-//							} catch (Exception e1) {
-//								e1.printStackTrace();
-//							}
+//					plotting the first time it sees a bin
+					try {
+						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
+							plotGraph(null);
+							flagBin = true;
+						}
+						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
+							plotGraph(null);
+							flagRoom = true;
+						}
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
 				
 					tree.nearestN(xNew, 
 							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
@@ -115,7 +115,7 @@ public class KnownRRG extends RRG {
 							100, java.lang.Float.POSITIVE_INFINITY); // a max of 100 neighbours are considered
 					
 					// add point to the Rtree
-					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
+					Rectangle rect = new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
 					tree.add(rect, totalPoints);
 					treePoints.add(xNew);
 					totalPoints++;
@@ -139,25 +139,23 @@ public class KnownRRG extends RRG {
 		return symbolicTransitionsInCurrentBatch;
 	}
 
-	
-
 	@Override
-	public float plotGraph(List<DefaultEdge> finalPath) {
+	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath) {
 		if(finalPath != null) {
 			new ShowGraph(graph, env, null, finalPath).setVisible(true);
 			StoreGraph temp = new StoreGraph(env, graph, finalPath, null, "end");
-			return temp.length;
-		} else if(! flagFirstMove) {
-			StoreGraph temp = new StoreGraph(graph, null, "firstMove"); 
-			return temp.length;
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagBin) {
 			StoreGraph temp = new StoreGraph(graph, null, "bin");
-			return temp.length;
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagRoom) {
 			StoreGraph temp = new StoreGraph(graph, null, "room");
-			return temp.length;
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
+		} else if(! flagFirstMove) {
+			StoreGraph temp = new StoreGraph(graph, null, "firstMove"); 
+			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		}
-		return 0;
+		return new Pair<Float, Float>(0f,0f);
 	}
 
 }
