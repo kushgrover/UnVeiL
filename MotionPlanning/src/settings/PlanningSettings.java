@@ -17,7 +17,7 @@ public class PlanningSettings
 	public static final String BDD_FACTORY_CACHE_SIZE		=	"bddFactoryCacheSize";
 	public static final String USE_SPOT						= 	"useSpot";
 	public static final String MAX_LEVEL_TRANSITION			=	"maxLevelTransition";
-	public static final String SAMPLING_THRESHOLD			=	"samplingThreshold";
+	public static final String RANDOM_ENV					=	"randomEnv";
 	public static final String TRANSITION_THRESHOLD			= 	"transitionThreshold";
 	public static final String ETA							=	"eta";
 	public static final String SENSING_RADIUS				=	"sensingRadius";
@@ -26,6 +26,8 @@ public class PlanningSettings
 	public static final String USE_ADVICE					=	"useAdvice";
 	public static final String FIRST_EXPL_THEN_PLAN			=	"firstExplThenPlan";
 	public static final String DEBUG						=	"debug";
+	public static final String INPUT_FILE					=	"inputFile"; 
+	public static final String ONLY_OPAQUE_OBSTACLES		=	"onlyOpaqueObstacles"; 
 	
 	
 	public static final Logger RTREELOGGER = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
@@ -49,8 +51,8 @@ public class PlanningSettings
 			{ INTEGER_TYPE,		MAX_LEVEL_TRANSITION,					"Levels of transitions",				"1.0",			new Integer(4),																"",
 																					"Possible levels of transitions possible"},
 			
-			{ INTEGER_TYPE,		SAMPLING_THRESHOLD,						"Threshold for sampling",				"1.0",			new Integer(50),															"",
-																					"After how many samples, return null if don't find anything from the advised transitions"},	
+			{ BOOLEAN_TYPE,		RANDOM_ENV,								"Generate a random env",				"1.0",			new Boolean(false),															"",
+																					"Generate a random environment and run the algorithm on that"},	
 			
 			{ INTEGER_TYPE,		TRANSITION_THRESHOLD,					"Threshold for transitions",			"1.0",			new Integer(20),															"",
 																					"Threshold after how many copies of a transition would decrease its level by 1."},
@@ -64,21 +66,65 @@ public class PlanningSettings
 			{ INTEGER_TYPE,		BATCH_SIZE,								"Size of one batch",					"1.0",			new Integer(50),															"",
 																					"Maximun size of each batch"},
 			
-			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of discretization for frontiers",	"1.0",			new Float(0.05),															"",
+			{ FLOAT_TYPE,		DISCRETIZATION_SIZE,					"Size of grid for frontiers",			"1.0",			new Float(0.05),															"",
 																					"The size of each cell for computation of frontiers"},
 			
-			{ BOOLEAN_TYPE,		USE_ADVICE,								"Use advice or not",					"1.0",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		USE_ADVICE,								"Use advice or not",					"1.0",			new Boolean(true),															"",
 																					"Bias exploration using advice"},
 			
 			{ BOOLEAN_TYPE,		FIRST_EXPL_THEN_PLAN,					"Exploration first, then planning",		"1.0",			new Boolean(false),															"",
 																					"First explore the environment completely, then do planning with known environment"},
 			
-			{ BOOLEAN_TYPE,		DEBUG,									"Debug mode",	"1.0",									new Boolean(true),															"",
+			{ BOOLEAN_TYPE,		DEBUG,									"Debug mode",							"1.0",			new Boolean(true),															"",
 																					"Output a lot of things"},
+			
+			{ STRING_TYPE,		INPUT_FILE,								"Input file name",						"1.0",			new String("temp/Env/random"),												"",
+																					"Name of the input files without the extension"},
+
+			{ BOOLEAN_TYPE,		ONLY_OPAQUE_OBSTACLES,					"Consider only Opaque obstacle",		"1.0",			new Boolean(false),															"",
+																					"Flag for not having see through obstacles"},
 
 		};
 																			
 	
+	@SuppressWarnings("deprecation")
+	public PlanningSettings(String[] args) throws Exception {
+		try {
+			if(! args[0].startsWith("--")) {
+				set(INPUT_FILE, args[0]);
+			}
+		}
+		catch(ArrayIndexOutOfBoundsException e) {
+//			throw new Exception("No input file given");
+		}
+		for(int i=0; i<args.length; i++) {
+			if(args[i].equals("--first-expl-then-plan")) {
+				set(FIRST_EXPL_THEN_PLAN, new Boolean(true));
+			}
+			if(args[i].equals("--debug")) {
+				set(DEBUG, new Boolean(true));
+			}
+			if(args[i].equals("--no-advice")) {
+				set(USE_ADVICE, new Boolean(false));
+			}
+			if(args[i].equals("--set-grid-size")) {
+				set(DISCRETIZATION_SIZE, new Float(args[i+1]));
+			}
+			if(args[i].equals("--set-sensing-radius")) {
+				set(SENSING_RADIUS, new Float(args[i+1]));
+			}
+			if(args[i].equals("--set-batch-size")) {
+				set(BATCH_SIZE, new Integer(args[i+1]));
+			}
+			if(args[i].equals("--random-env")) {
+				set(RANDOM_ENV, new Boolean(true));
+			}
+			if(args[i].equals("--only-opaque-obstacles")) {
+				set(ONLY_OPAQUE_OBSTACLES, new Boolean(true));
+			}
+		}
+	}
+
 	public void set(String VARIABLE, Object value)
 	{
 		if(VARIABLE.equals(VERBOSITY)) {
@@ -93,7 +139,7 @@ public class PlanningSettings
 		else if (VARIABLE.equals(MAX_LEVEL_TRANSITION)) {
 			propertyData[3][4]	= value;
 		}
-		else if (VARIABLE.equals(SAMPLING_THRESHOLD)) {
+		else if (VARIABLE.equals(RANDOM_ENV)) {
 			propertyData[4][4]	= value;
 		}
 		else if (VARIABLE.equals(TRANSITION_THRESHOLD)) {
@@ -120,6 +166,12 @@ public class PlanningSettings
 		else if (VARIABLE.equals(DEBUG)) {
 			propertyData[12][4]	= value;
 		}
+		else if (VARIABLE.equals(INPUT_FILE)) {
+			propertyData[13][4] = value;
+		}
+		else if (VARIABLE.equals(ONLY_OPAQUE_OBSTACLES)) {
+			propertyData[14][4] = value;
+		}
 	}
 	
 	public static Object get(String VARIABLE)
@@ -136,7 +188,7 @@ public class PlanningSettings
 		else if (VARIABLE.equals(MAX_LEVEL_TRANSITION)) {
 			return propertyData[3][4];
 		} 
-		else if (VARIABLE.equals(SAMPLING_THRESHOLD)) {
+		else if (VARIABLE.equals(RANDOM_ENV)) {
 			return propertyData[4][4];
 		} 
 		else if (VARIABLE.equals(TRANSITION_THRESHOLD)) {
@@ -162,6 +214,12 @@ public class PlanningSettings
 		}
 		else if (VARIABLE.equals(DEBUG)) {
 			return propertyData[12][4];
+		}
+		else if (VARIABLE.equals(INPUT_FILE)) {
+			return propertyData[13][4];
+		}
+		else if (VARIABLE.equals(ONLY_OPAQUE_OBSTACLES)) {
+			return propertyData[14][4];
 		}
 		return null;
 	}

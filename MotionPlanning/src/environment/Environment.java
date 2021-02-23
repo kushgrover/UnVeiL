@@ -11,7 +11,7 @@ import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import modules.Discretization;
+import modules.Grid;
 
 public class Environment {
 	Shape bounds;
@@ -25,11 +25,11 @@ public class Environment {
 	Area allObs;
 	int numOfObs;
 	int numOfWalls;
-	static Point2D.Float init;
+	static Point2D init;
 	static Label labelling;
-	Discretization discretization;
+	Grid discretization;
 	
-	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> obstacles, ArrayList<Path2D> walls, Point2D.Float init, Label labelling) 
+	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> obstacles, ArrayList<Path2D> walls, Point2D init, Label labelling) 
 	{
 		this.bounds				= new Rectangle2D.Float(boundsX[0],boundsY[0],boundsX[1]-boundsX[0],boundsY[1]-boundsY[0]);
 		this.setBoundsX(boundsX);
@@ -43,7 +43,7 @@ public class Environment {
 		Environment.labelling	= labelling;
 	}
 	
-	public void setdiscretization(Discretization discretization) 
+	public void setdiscretization(Grid discretization) 
 	{
 		this.discretization = discretization;
 	}
@@ -103,7 +103,8 @@ public class Environment {
 	
 	public Boolean collisionFreeFromOpaqueObstacles(Point2D start, Point2D end) 
 	{
-		Line2D line		= new Line2D.Float(start,end), boundary;
+		Line2D line		= new Line2D.Float(start, end);
+		Line2D boundary;
 		float[] coords1	= new float[6], coords2=new float[6];
 		int segmentType;
 		

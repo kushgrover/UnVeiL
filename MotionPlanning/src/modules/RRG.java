@@ -1,7 +1,6 @@
 package modules;
 
 import java.awt.geom.Point2D;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +11,7 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.graph.SimpleGraph;
 
 import com.infomatiq.jsi.Point;
 import com.infomatiq.jsi.Rectangle;
@@ -19,10 +19,13 @@ import com.infomatiq.jsi.SpatialIndex;
 import com.infomatiq.jsi.rtree.RTree;
 
 import abstraction.ProductAutomaton;
+import environment.EdgeSupplier;
 import environment.Environment;
 import environment.Vertex;
+import environment.VertexSupplier;
 import net.sf.javabdd.BDD;
 import settings.PlanningException;
+import settings.PlanningSettings;
 
 public abstract class RRG {
 
@@ -31,9 +34,9 @@ public abstract class RRG {
 
 	SpatialIndex tree = new RTree();
 	Graph<Vertex, DefaultEdge> graph;
-	ArrayList<Point> treePoints = new ArrayList<Point>();; // list of all the points in the Rtree/graph
+	ArrayList<Point> treePoints = new ArrayList<Point>();; // list of all the points in the Rtree/graphRRG
 	ArrayList<Pair<BDD, Vertex>> map = new ArrayList<Pair<BDD, Vertex>>(); // map between abstraction and rtree
-	Vertex initVertex;  //initial vertex in the graph
+	Vertex initVertex;  //initial vertex in the graphRRG
 
 	float rrgRadius;
 	float maximumRRGStepSize;
@@ -46,15 +49,41 @@ public abstract class RRG {
 	int currentBatchSize = 0;
 	boolean endBatch; // flag for ending the current batch
 	BDD symbolicTransitionsInCurrentBatch;
+	int currentRank;
+	public ArrayList<DefaultEdge> movement = new ArrayList<DefaultEdge>();
+	public Point2D currentRobotPosition;
 
-	public Discretization discretization;
+	// used for exporting graphRRG
+	boolean flagBin = false;
+	boolean flagRoom = false;
+	boolean flagFirstMove = false;
 
+	/**
+	 * Initialise the RRG object with the constructor
+	 * @param env
+	 */
+	public RRG(Environment env) 
+	{
+		this.env 				= env;
+		this.maximumRRGStepSize = (float) PlanningSettings.get("eta");
+		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
+		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
+		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
+		this.forwardSampledTransitions = ProductAutomaton.factory.zero();
+		this.tree.init(null);
+	}
+	
+	
 	/**
 	 * set the product automaton
 	 * @param productAutomaton
 	 */
 	public void setProductAutomaton(ProductAutomaton productAutomaton) {
 		this.productAutomaton = productAutomaton;
+	}
+	
+	public void setMovement(ArrayList<DefaultEdge> movement) {
+		this.movement = movement;
 	}
 	
 	/**
@@ -70,11 +99,12 @@ public abstract class RRG {
 		Point p 		= new Point((float) p2D.getX(), (float) p2D.getY());
 		treePoints.add(p);
 		tree.add(rect, totalPoints);
+		this.currentRobotPosition = p2D;
 		totalPoints++;
 	}
 	
 	/**
-	 * Retrun the RRG graph
+	 * Retrun the RRG graphRRG
 	 * @return
 	 */
 	public Graph<Vertex, DefaultEdge> getGraph(){
@@ -84,7 +114,7 @@ public abstract class RRG {
 	/**
 	 * updates the RRG radius
 	 */
-	void updateRrgRadius() {
+	public void updateRrgRadius() {
 		if(totalPoints > 1)
 			rrgRadius = (float) Math.min(gamma * Math.pow(Math.log(totalPoints)/(totalPoints), (0.5)), maximumRRGStepSize);
 		else
@@ -114,6 +144,33 @@ public abstract class RRG {
 		}
 	}
 	
+	public void updateMovement(Point2D newPosition) throws Exception {
+		Vertex source = findTheVertex(currentRobotPosition);
+		if(source == null) {
+			source = new Vertex(currentRobotPosition);
+			graph.addVertex(source);
+			Point2D center = findCellCenter(currentRobotPosition);
+			System.out.println("Found Point "+ center);
+			Vertex centerV = findTheVertex(center);
+			graph.addEdge(source, centerV);
+		}
+		Vertex target = findTheVertex(newPosition);
+		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, source, target);
+		ArrayList<DefaultEdge> edges;
+		edges = (ArrayList<DefaultEdge>) path.getEdgeList();
+		movement.addAll(edges);
+	}
+	
+	protected Point2D findCellCenter(Point2D p) {
+		float i = (float) Math.floor( p.getX() / (float) PlanningSettings.get("discretizationSize") );
+		float j = (float) Math.floor( p.getY() / (float) PlanningSettings.get("discretizationSize") );
+		i += 0.5;
+		j += 0.5;
+		i *= (float) PlanningSettings.get("discretizationSize");
+		j *= (float) PlanningSettings.get("discretizationSize");
+		return new Point2D.Float(i, j);
+	}
+
 	/**
 	 * find the rank of a transition according to advice
 	 * @param advice
@@ -141,17 +198,11 @@ public abstract class RRG {
 	 */
 	protected float getProb(int rank) 
 	{
-		switch(rank) 
-		{
-			case -1: return 0.1f; // not found in advice
-			case 0: return 1f;
-			case 1: return 1f;
-			case 2: return 0.95f;
-			case 3: return 0.9f;
-			case 4: return 0.8f;
-			case 5: return 0.7f;
-			case 6: return 0.6f;
-			default: return 0.5f;
+		if(rank == -1) {
+			return 0.5f;
+		}
+		else {
+			return 1f;
 		}
 	}
 	
@@ -178,7 +229,7 @@ public abstract class RRG {
 	}
 	
 	/**
-	 * Find a vertex in the graph where labelling is
+	 * Find a vertex in the graphRRG where labelling is
 	 * @param nextState
 	 * @return
 	 */
@@ -197,7 +248,7 @@ public abstract class RRG {
 	}
 	
 	/**
-	 * Find a vertex in the graph whose point is p
+	 * Find a vertex in the graphRRG whose point is p
 	 * @param p
 	 * @return
 	 */
@@ -209,7 +260,7 @@ public abstract class RRG {
 		while(it.hasNext()) 
 		{
 			temp 				= it.next();
-			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.00001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.00001) 
+			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) 
 			{
 				return temp;
 			}
@@ -270,7 +321,7 @@ public abstract class RRG {
 	
 	
 	/**
-	 * add an edge in the graph from source to target
+	 * add an edge in the graphRRG from source to target
 	 * @param start
 	 * @param end
 	 */
@@ -309,7 +360,7 @@ public abstract class RRG {
 	}
 
 	/**
-	 * Lift the path from abstraction to the graph
+	 * Lift the path from abstraction to the graphRRG
 	 * @param path
 	 * @return 
 	 */
@@ -386,6 +437,8 @@ public abstract class RRG {
 		System.out.print("]  ");
 	}
 	
+//	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath)
+	
 	/**
 	 * Does one iteration of the algo with the point xRand
 	 * @param advice
@@ -401,10 +454,4 @@ public abstract class RRG {
 	 */
 	public abstract BDD sampleBatch(ArrayList<BDD> advice) throws Exception;
 
-	/**
-	 * Plot the graph
-	 * @return 
-	 * @throws IOException 
-	 */
-	public abstract Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath);
 }

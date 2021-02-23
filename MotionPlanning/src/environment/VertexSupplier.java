@@ -1,6 +1,5 @@
 package environment;
 
-import java.awt.geom.Point2D;
 import java.util.function.Supplier;
 
 public class VertexSupplier implements Supplier<Vertex> {

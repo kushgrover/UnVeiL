@@ -5,8 +5,8 @@ import java.awt.geom.Point2D;
 import java.io.IOException;
 import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
-import planningIO.StoreGraph;
-import planningIO.printing.ShowGraph;
+import planningIO.StoreGraphUnknown;
+import planningIO.printing.ShowGraphUnknown;
 import settings.PlanningSettings;
 
 import java.util.ArrayList;
@@ -16,32 +16,28 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleGraph;
-
 import com.infomatiq.jsi.Point;
 import com.infomatiq.jsi.Rectangle;
 import abstraction.ProductAutomaton;
-import environment.EdgeSupplier;
 import environment.Environment;
 import environment.Vertex;
-import environment.VertexSupplier;
 
 public class UnknownRRG extends RRG
 {
-	public Discretization discretization;
-	public ArrayList<Point2D> movement = new ArrayList<Point2D>();
+	public UnknownGrid grid;
 
 	float sensingRadius;
 	public int numOfFrontierUpdates = 0;
 	public float moveTime = 0;
-	Point2D currentRobotPosition;
 
-	// used for exporting graph
+	// used for exporting graphRRG
 	boolean flagBin = false;
 	boolean flagRoom = false;
 	boolean flagFirstMove = false;
 	
 	boolean explorationComplete = false;
+	
+	ArrayList<BDD> movementBDD;
 	
 	
 	/**
@@ -50,17 +46,11 @@ public class UnknownRRG extends RRG
 	 */
 	public UnknownRRG(Environment env) 
 	{
-		this.env 				= env;
-		this.maximumRRGStepSize = (float) PlanningSettings.get("eta");
-		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
+		super(env);
 		this.sensingRadius		= (float) PlanningSettings.get("sensingRadius");
-		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
-		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
-		this.discretization 	= new Discretization(env, (float) PlanningSettings.get("discretizationSize"));
-		this.forwardSampledTransitions = ProductAutomaton.factory.zero();
-		this.tree.init(null);
+		this.grid 				= new UnknownGrid(env, (float) PlanningSettings.get("discretizationSize"), graph, tree, treePoints);
+		this.movementBDD 		= new ArrayList<BDD>();
 	}
-	
 	
 	/**
 	 * Set initial point
@@ -70,16 +60,51 @@ public class UnknownRRG extends RRG
 	@Override
 	public void setStartingPoint(Point2D p2D) throws Exception 
 	{
-		this.initVertex = new Vertex(p2D);
-		Rectangle rect 	= new Rectangle((float) p2D.getX(), (float) p2D.getY(), (float) p2D.getX(), (float) p2D.getY());
 		Point p 		= new Point((float) p2D.getX(), (float) p2D.getY());
+		Rectangle rect 	= new Rectangle((float) p2D.getX(), (float) p2D.getY(), (float) p2D.getX(), (float) p2D.getY());
+		this.initVertex = new Vertex(p2D);
 		graph.addVertex(initVertex);
-		treePoints.add(p);
-		currentRobotPosition = p2D;
-		movement.add(p2D);
 		tree.add(rect, totalPoints);
-		discretization.knowDiscretization(env, productAutomaton, p2D, sensingRadius);
+		treePoints.add(p);
+		grid.knowDiscretization(env, productAutomaton, p2D, sensingRadius);
+		this.currentRobotPosition = p2D;
 		totalPoints++;
+	}
+	
+	@Override
+	public void updateMovement(Point2D newPosition) throws Exception {
+		Vertex source = findTheVertex(currentRobotPosition);
+		if(source == null) {
+			source = new Vertex(currentRobotPosition);
+			graph.addVertex(source);
+			Point2D center = findCellCenter(currentRobotPosition);
+			Vertex centerV = findTheVertex(center);
+			graph.addEdge(source, centerV);
+		}
+		Vertex target = findTheVertex(newPosition);
+		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, source, target);
+		ArrayList<DefaultEdge> edges = new ArrayList<DefaultEdge>();
+		edges.addAll(path.getEdgeList());
+		movement.addAll(edges);
+		
+		Iterator<DefaultEdge> it = edges.iterator();
+		BDD lastMovement = null;
+		if(! movementBDD.isEmpty())
+			lastMovement = movementBDD.get(movementBDD.size()-1);
+		
+		while(it.hasNext()) {
+			DefaultEdge nextEdge = it.next();
+			if(lastMovement == null) {
+				BDD sourceBDD = Environment.getLabelling().getLabel(graph.getEdgeSource(nextEdge).getPoint());
+				movementBDD.add(sourceBDD);
+				lastMovement = sourceBDD;
+			}
+			BDD targetBDD = Environment.getLabelling().getLabel(graph.getEdgeTarget(nextEdge).getPoint());
+			if(lastMovement.and(targetBDD.not()).isZero()) {
+				movementBDD.add(targetBDD);
+				lastMovement = targetBDD;
+			}
+		}
 	}
 	
 	/**
@@ -89,7 +114,7 @@ public class UnknownRRG extends RRG
 	 */
 	void buildGraph(ArrayList<BDD> advice, Point2D xRand2D) {
 		
-		// need 'point2D' for graph and 'point' for Rtree
+		// need 'point2D' for graphRRG and 'point' for Rtree
 		Point xRand					= convertPoint2DToPoint(xRand2D);
 		
 		TIntProcedure procedure		= new TIntProcedure()	// execute this procedure for the nearest neighbour of 'xRand'
@@ -220,14 +245,19 @@ public class UnknownRRG extends RRG
 		}
 	}
 	
+	
+	
 	private void move(Point2D xNew2D, int rank) throws Exception {
-		if(rank != -1)
+		if(rank != -1 && rank < 10)
 			adviceSampled[rank]++;
+		updateMovement(xNew2D);
 		currentRobotPosition = (Point2D.Float) xNew2D.clone();
-		movement.add(currentRobotPosition);
-		discretization.knowDiscretization(env, productAutomaton, currentRobotPosition, sensingRadius);
+		grid.knowDiscretization(env, productAutomaton, currentRobotPosition, sensingRadius);
 		endBatch = true;
-		System.out.println("Moving to: " + xNew2D);
+		if(grid.exploredCompletely()) {
+			System.out.println("Exploration complete");
+			explorationComplete = true;
+		}
 	}
 
 	
@@ -243,70 +273,27 @@ public class UnknownRRG extends RRG
 	public void tryMove(int rank, Point2D xNew2D, BDD transition, ArrayList<BDD> advice) throws Exception {
 
 		if(rank != -1 && productAutomaton.sampledTransitions.and(transition).isZero()) // if sampled from advice and have not sampled it before
-			discretization.addAdviceFrontier(xNew2D, currentRobotPosition, rank);
-//			move(xNew2D, rank);
+			grid.addAdviceFrontier(xNew2D, currentRobotPosition, rank);
 		else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) { // batch is finished
 			
 			if(! flagFirstMove) { // plotting before the first time it moves
 				plotGraph(null);
 				flagFirstMove = true;
 			}
-			
-			Point2D p = discretization.findAMove(currentRobotPosition);
+			if(explorationComplete) {
+				return;
+			}
+			Pair<Point2D, Integer> foundMove = grid.findAMove(currentRobotPosition);
+			Point2D p = foundMove.getFirst();
 			if(p != null) {
 				alreadyFound = false;
-				tree.nearestN(convertPoint2DToPoint(p),
-					new TIntProcedure() {
-						public boolean execute(int i) {
-							if(alreadyFound) {
-								return false;
-							}
-							Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
-							if(env.collisionFreeFromOpaqueObstacles(p, newPoint)) {
-								alreadyFound = true;
-								try {
-									move(newPoint, -1);
-								}
-								catch (Exception e) {
-									e.printStackTrace();
-								}
-								return false;
-							}
-							return true;
-							
-						}
-					},
-					50,
-					java.lang.Float.POSITIVE_INFINITY);
-				if(!alreadyFound) {
-					tree.nearestN(convertPoint2DToPoint(p),
-							new TIntProcedure() {
-								public boolean execute(int i) {
-									if(alreadyFound) {
-										return false;
-									}
-									Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
-										alreadyFound = true;
-										try {
-											move(newPoint, -1);
-										}
-										catch (Exception e) {
-											e.printStackTrace();
-										}
-//									}
-									return true;
-									
-								}
-							},
-							200,
-							java.lang.Float.POSITIVE_INFINITY);
+				Vertex V = findTheVertex(p);
+				if(V != null) {
+					move(p, foundMove.getSecond());
 				}
-				
 			} 
 			else {
 				endBatch = true;
-				System.out.println("Exploration complete");
-				explorationComplete = true;
 			}
 		} 
 	}
@@ -321,16 +308,16 @@ public class UnknownRRG extends RRG
 		Point2D p;
 		while(true) {
 			p = env.sample();
-			if(discretization.isExplored(p)) {
+			if(grid.isExplored(p)) {
 				if(env.obstacleFreeAll(p)) {
 					if(env.collisionFreeFromOpaqueObstacles(currentRobotPosition, p)) {
-						discretization.updateDiscretization(p, 1);
+//						grid.updateDiscretization(p, 1);
 						numOfFrontierUpdates++;
 					}
 					totalSampledPoints++;
 					return p;
 				} else {
-					discretization.updateDiscretization(p, 3);
+					grid.updateDiscretization(p, 3);
 					numOfFrontierUpdates++;
 				}
 			}
@@ -381,24 +368,24 @@ public class UnknownRRG extends RRG
 	}   
 		
 	/**
-	 * Plot the graph
+	 * Plot the graphRRG
 	 * @return 
 	 * @throws IOException 
 	 */
 	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath)  
 	{
 		if(finalPath != null) {
-			new ShowGraph(graph, env, findPath(movement), finalPath).setVisible(true);
-			StoreGraph temp = new StoreGraph(env, graph, finalPath, findPath(movement), "end");
+			new ShowGraphUnknown(graph, env, movement, finalPath).setVisible(true);
+			StoreGraphUnknown temp = new StoreGraphUnknown(env, graph, finalPath, movement, "end");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagFirstMove) {
-			StoreGraph temp = new StoreGraph(graph, findPath(movement), "firstMove");
+			StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, "firstMove");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagBin) {
-			StoreGraph temp = new StoreGraph(graph, findPath(movement), "bin");
+			StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, "bin");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagRoom) {
-			StoreGraph temp = new StoreGraph(graph, findPath(movement), "room");
+			StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, "room");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		}
 		return new Pair<Float, Float>(0f,0f);

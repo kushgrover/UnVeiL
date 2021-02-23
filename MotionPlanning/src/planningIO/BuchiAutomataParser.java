@@ -49,12 +49,12 @@ public class BuchiAutomataParser
 			{
 				newEdge	= ProductAutomaton.factory.one();
 				newEdge.andWith(bddDomain[0].ithVar(stateId));
-				newEdge.andWith(bddDomain[1].ithVar(i));
+				newEdge = newEdge.and(bddDomain[1].ithVar(i));
 				
 				try 
 				{
 					newEdge.andWith(bddDomain[2].ithVar(accSignature.get(0)+1));
-//					System.out.println("Added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {"+accSignature.get(0)+"}");
+					System.out.println("Added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {"+accSignature.get(0)+"}");
 				} catch(NullPointerException E) 
 				{
 					newEdge.andWith(bddDomain[2].ithVar(0));

@@ -4,40 +4,27 @@ import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.jgrapht.Graph;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleGraph;
-
 import com.infomatiq.jsi.Point;
 import com.infomatiq.jsi.Rectangle;
 
 import abstraction.ProductAutomaton;
-import environment.EdgeSupplier;
 import environment.Environment;
 import environment.Vertex;
-import environment.VertexSupplier;
 import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
-import planningIO.StoreGraph;
-import planningIO.printing.ShowGraph;
+import planningIO.StoreGraphKnown;
+import planningIO.printing.ShowGraphKnown;
 import settings.PlanningSettings;
 
 public class KnownRRG extends RRG {
 	
-	// used for exporting graph
-	boolean flagBin = false;
-	boolean flagRoom = false;
-	boolean flagFirstMove = false;
+	
 	
 	public KnownRRG(Environment env) {
-		this.env 				= env;
-		this.maximumRRGStepSize = (float) PlanningSettings.get("eta");
-		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
-		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
-		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
-		this.discretization 	= new Discretization(env, (float) PlanningSettings.get("discretizationSize"));
-		this.forwardSampledTransitions = ProductAutomaton.factory.zero();
-		this.tree.init(null);
+		super(env);
 	}
 	
 	
@@ -84,11 +71,11 @@ public class KnownRRG extends RRG {
 //					plotting the first time it sees a bin
 					try {
 						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-							plotGraph(null);
+							plotGraph(null, null);
 							flagBin = true;
 						}
 						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-							plotGraph(null);
+							plotGraph(null, null);
 							flagRoom = true;
 						}
 					} catch (Exception e1) {
@@ -139,20 +126,19 @@ public class KnownRRG extends RRG {
 		return symbolicTransitionsInCurrentBatch;
 	}
 
-	@Override
-	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath) {
+	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath, Graph<Vertex, DefaultEdge> graphMovement) {
 		if(finalPath != null) {
-			new ShowGraph(graph, env, null, finalPath).setVisible(true);
-			StoreGraph temp = new StoreGraph(env, graph, finalPath, null, "end");
+			new ShowGraphKnown(graph, graphMovement, env, movement, finalPath).setVisible(true);
+			StoreGraphKnown temp = new StoreGraphKnown(env, graph, graphMovement, finalPath, null, "end");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagBin) {
-			StoreGraph temp = new StoreGraph(graph, null, "bin");
+			StoreGraphKnown temp = new StoreGraphKnown(graph, graphMovement, movement, "bin");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagRoom) {
-			StoreGraph temp = new StoreGraph(graph, null, "room");
+			StoreGraphKnown temp = new StoreGraphKnown(graph, graphMovement, movement, "room");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagFirstMove) {
-			StoreGraph temp = new StoreGraph(graph, null, "firstMove"); 
+			StoreGraphKnown temp = new StoreGraphKnown(graph, graphMovement, movement, "firstMove"); 
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		}
 		return new Pair<Float, Float>(0f,0f);

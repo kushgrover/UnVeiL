@@ -2,6 +2,7 @@ package settings;
 
 import abstraction.ProductAutomaton;
 import environment.Environment;
+import environment.GenerateRandomEnv;
 import modules.KnownRRG;
 import modules.RRG;
 import modules.UnknownRRG;
@@ -28,25 +29,29 @@ public class Initialize
 	public Initialize() throws Exception
 	{
 		
-		factory			= BuDDyFactory.init(20, (int) PlanningSettings.get("bddFactoryCacheSize"));
-		ProductAutomaton.factory				= factory;
-        ProductAutomaton.threshold				= (int) PlanningSettings.get("transitionThreshold");
-		
-		
+		factory = BuDDyFactory.init(20, (int) PlanningSettings.get("bddFactoryCacheSize"));
+		ProductAutomaton.factory = factory;
+        ProductAutomaton.threshold = (int) PlanningSettings.get("transitionThreshold");
 		
 //		Read environment
-		String envFile				= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/env.env";
-		String labelFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/label.lb";
-        env = (new EnvironmentReader(envFile, labelFile)).env;
-		
-        String propertyFile			= "/home/kush/Projects/robotmotionplanning/MotionPlanning/Examples/6rooms/property.pr";
-		PropertyReader prop 		= new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
+        
+		String envFile		= PlanningSettings.get("inputFile") + ".env";
+		String labelFile	= PlanningSettings.get("inputFile") + ".lb";
+        String propertyFile	= PlanningSettings.get("inputFile") + ".pr";
+
+        if((boolean) PlanningSettings.get("randomEnv")) {
+        	env = (new GenerateRandomEnv()).env;
+        }
+        else {
+        	env = (new EnvironmentReader(envFile, labelFile)).env;
+        }
+		PropertyReader prop = new PropertyReader(Environment.getLabelling().getApListSystem(), propertyFile);
 
 		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
-			rrg 						= new KnownRRG(env);
+			rrg = new KnownRRG(env);
 		}
 		else {
-			rrg 						= new UnknownRRG(env);			
+			rrg = new UnknownRRG(env);			
 		}
 
 		

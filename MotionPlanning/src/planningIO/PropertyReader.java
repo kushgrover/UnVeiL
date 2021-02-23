@@ -9,6 +9,7 @@ import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import jhoafparser.parser.generated.ParseException;
+import settings.PlanningSettings;
 
 public class PropertyReader 
 {
@@ -17,13 +18,18 @@ public class PropertyReader
 	
 	public PropertyReader(ArrayList<String> apListSystem, String propertyFile) throws IOException 
 	{
-		// Read property from the file
-		BufferedReader propertyReader 	= new BufferedReader(new FileReader(propertyFile));
-        String propertyString			= propertyReader.readLine();
-        propertyReader.close();
-        
+		String propertyString;
+		if((boolean) PlanningSettings.get("randomEnv")) {
+			propertyString = "GF (r1 & b) & GF (r2 & b) & GF (r3 & b) & GF (r4 & b) & GF (r5 & b) & GF (r6 & b)";
+		}
+		else {
+			// Read property from the file
+			BufferedReader propertyReader 	= new BufferedReader(new FileReader(propertyFile));
+	        propertyString			= propertyReader.readLine();
+	        propertyReader.close();
+		}
         // Output 
-        System.out.println("\nProperty to satisfty: " + propertyString + "\n\n");
+        System.out.println("\nConstructing automaton for property: " + propertyString + " ...\n\n");
         
     	
         // Using SPOT
@@ -51,7 +57,7 @@ public class PropertyReader
         
         BufferedReader r 		= new BufferedReader(new InputStreamReader(p3.getInputStream()));
         String line;
-        BufferedWriter writer 	= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/propertyAutomata.hoa"));
+        BufferedWriter writer 	= new BufferedWriter(new FileWriter("temp/propertyAutomata.hoa"));
         
         while (true) 
         {
@@ -67,6 +73,7 @@ public class PropertyReader
 			propertyParser		= new BuchiAutomataParser( p1.getInputStream(), 
 					p2.getInputStream(), 
 					apListSystem);
+			System.out.println("done!");
 		} catch (ParseException e) 
         {
 			e.printStackTrace();

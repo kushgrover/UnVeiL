@@ -3,7 +3,8 @@ import net.sf.javabdd.BDD.BDDIterator;
 import settings.Initialize;
 import settings.PlanningException;
 import settings.PlanningSettings;
-import modules.Discretization;
+import modules.KnownGrid;
+import modules.KnownRRG;
 import modules.RRG;
 import modules.UnknownRRG;
 import modules.learnAskExperiments.DefaultExperiment;
@@ -19,6 +20,7 @@ import org.jgrapht.graph.DefaultEdge;
 import abstraction.ProductAutomaton;
 import environment.Environment;
 import environment.Label;
+
 
 /**
  * @author kush
@@ -66,6 +68,7 @@ public class Planning
         currentStates			= initStateSystem.id(); //stores the set of states in the abstraction we have seen till now
         
         rrg.setStartingPoint(env.getInit());
+
         productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for initial state in the product automaton
         
         initTime 				= System.nanoTime() - beginTime;
@@ -78,9 +81,14 @@ public class Planning
 	void printOutput() throws Exception 
 	{
 //    	productAutomaton.createDot(iterationNumber);
-		Pair<Float, Float> pathLength = rrg.plotGraph(finalPath);
+		Pair<Float, Float> length = new Pair<Float, Float>(0f, 0f);
+		if(! (boolean) PlanningSettings.get("firstExplThenPlan")) {
+			UnknownRRG urrg = (UnknownRRG) rrg;
+			length = urrg.plotGraph(finalPath);			
+		}
 		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
-			pathLength.setFirst(moveLength);
+			length.setFirst(moveLength);
+			length.setSecond(pathLength);
 		}
 		double totalTime = System.nanoTime() - beginTime;
         
@@ -90,8 +98,8 @@ public class Planning
 		
 		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
 		System.out.println("\nTotal useful sampled points = " + rrg.totalPoints);
-		System.out.println("Movement Length = " + pathLength.getFirst());
-		System.out.println("Remaining path Length = " + pathLength.getSecond());
+		System.out.println("Movement Length = " + length.getFirst());
+		System.out.println("Remaining path Length = " + length.getSecond());
 		System.out.println("Sampled from advice = " + adviceSamples);
 		System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled));
 		System.out.print("\nTotal time taken (in ms):");
@@ -176,22 +184,22 @@ public class Planning
     	BDD transitions 					= null;
         boolean computePath 				= false;
         boolean debug 						= (boolean) PlanningSettings.get("debug");
-        
+
         UnknownRRG urrg = (UnknownRRG) rrg;
-        urrg.discretization.knowDiscretization(env, productAutomaton, env.getInit(), (float) PlanningSettings.get("sensingRadius"));
+        urrg.grid.knowDiscretization(env, productAutomaton, env.getInit(), (float) PlanningSettings.get("sensingRadius"));
         while( true )
         {
         	if( debug ) {
-	        	if( iterationNumber == 100 ) {
-	        		urrg.discretization.printDiscretization();
-	        		urrg.discretization.printFrontiers();
+	        	if( iterationNumber == 0 ) {
+//	        		urrg.grid.printDiscretization();
+//	        		urrg.grid.printFrontiers();
 	        		break;
 	        	}
         	}
         	
         	iterationNumber++;
         	System.out.println("Iter num: " + iterationNumber);
-        	
+
         	if ( (boolean) PlanningSettings.get("useAdvice") )
         		updateAdvice();
         	transitions = sampleBatch(urrg);
@@ -224,9 +232,9 @@ public class Planning
 	 * @throws Exception
 	 */
 	void firstExplThenPlan() throws Exception {
-		Discretization discretization = new Discretization(env, (float) PlanningSettings.get("discretizationSize"));
+		KnownGrid grid = new KnownGrid(env, (float) PlanningSettings.get("discretizationSize"));
 		startTime = System.nanoTime();
-		moveLength = exploreDiscretization(discretization);
+		moveLength = exploreDiscretization(grid);
 		explTime = System.nanoTime() - startTime;
 		
 		BDD transitions = null;
@@ -258,24 +266,28 @@ public class Planning
         	}
         	pathTime += System.nanoTime() - startTime;
 		}
-		printOutput();
         Initialize.getFactory().done();
+		KnownRRG krrg = (KnownRRG) rrg;
+		Pair<Float, Float> length = krrg.plotGraph(finalPath, grid.getGraph());
+		pathLength = length.getSecond();
+		printOutput();
 	}
 
-	private float exploreDiscretization(Discretization discretization) throws Exception {
+	private float exploreDiscretization(KnownGrid grid) throws Exception {
 		float length = 0;
 		Point2D currentPosition = env.getInit();
 		Point2D newPosition;
-		discretization.initializeGraph();
-		discretization.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
-		
-		while(! discretization.exploredCompletely()) {
-			newPosition = discretization.findAMove(currentPosition);
-			length += discretization.findAPath(currentPosition, newPosition);
+		grid.initializeGraph();
+		grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
+		grid.updateInitPoint(currentPosition);
+		while(! grid.exploredCompletely()) {
+			newPosition = grid.findAMove(currentPosition).getFirst();
+			grid.updateMovement(currentPosition, newPosition);
+			length += grid.findAPath(currentPosition, newPosition);
 			currentPosition = newPosition;
-			discretization.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
+			grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		}
-		System.out.println(length);
+		rrg.setMovement(grid.getMovement());
 		return length;
 	}
 }
