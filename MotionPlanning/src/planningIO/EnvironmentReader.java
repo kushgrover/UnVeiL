@@ -42,11 +42,9 @@ public class EnvironmentReader
 		p3 	= new Point2D.Float(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
 		p4 	= new Point2D.Float(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
 		
-		if((boolean) PlanningSettings.get("verbosity"))
-		{
-			System.out.println("Environment boundaries: " + p1.toString() + ", " + p2.toString() + ", " + p3.toString() + ", " + p4.toString());
-		}
-		
+		if((boolean) PlanningSettings.get("debug"))
+			System.out.println("\nEnvironment boundaries: " + p1.toString() + ", " + p2.toString() + ", " + p3.toString() + ", " + p4.toString());
+
 		
 		
 		// For initial point
@@ -56,22 +54,18 @@ public class EnvironmentReader
         m.find();
 		init 	= new Point2D.Float(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
 		
-		if ((boolean) PlanningSettings.get("verbosity"))
-		{
-			System.out.println("\n\nInitial Point: " + init.toString());
-		}
-		
+		if ((boolean) PlanningSettings.get("debug"))
+			System.out.println("Initial Point: " + init.toString());
+
 		
 		
 		// For obstacles
-		p 		= Pattern.compile(rectangle);
+		p = Pattern.compile(rectangle);
 		Path2D rect;
-		int i 	= 0;
-		if((boolean) PlanningSettings.get("verbosity"))
-        {
-        	System.out.println("\n\nWalls: ");
-        }
-		
+		int i = 0;
+		if((boolean) PlanningSettings.get("debug"))
+        	System.out.println("\nObstacles: ");
+
 		line = reader.readLine();
 		if(line.equalsIgnoreCase("obstacles")) {
 			line = reader.readLine();
@@ -81,7 +75,8 @@ public class EnvironmentReader
 			if(line.equalsIgnoreCase("see through obstacles")) {
 				break;
 			}
-			System.out.println(line);
+			if((boolean) PlanningSettings.get("debug"))
+				System.out.println(line);
 			try
 			{
 				m = p.matcher(line);
@@ -98,13 +93,7 @@ public class EnvironmentReader
 			rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
 			rect.closePath();
 			obstacles.add(rect);
-			
-			
-			if((boolean) PlanningSettings.get("verbosity"))
-            {
-            	System.out.println(rect.getBounds2D());
-            }
-			
+
 			i++;
 			line = reader.readLine();
 		}
@@ -112,12 +101,11 @@ public class EnvironmentReader
 		
 		
 		// For see through obstacles
-		p 		= Pattern.compile(rectangle);
-		i 	= 0;
-		if((boolean) PlanningSettings.get("verbosity"))
-        {
-        	System.out.println("\n\nObstacles: ");
-        }
+		p = Pattern.compile(rectangle);
+		i = 0;
+		if((boolean) PlanningSettings.get("debug"))
+        	System.out.println("\nSee through Obstacles: ");
+
 		while(line != null)
 		{
 			line = reader.readLine();
@@ -138,11 +126,9 @@ public class EnvironmentReader
 			rect.closePath();
 			seeThroughObstacles.add(rect);
 			
-			
-			if((boolean) PlanningSettings.get("verbosity"))
-            {
-            	System.out.println(rect.getBounds2D());
-            }
+			if((boolean) PlanningSettings.get("debug"))
+            	System.out.println(line);
+
 			i++;
 		}
 				        
@@ -161,17 +147,15 @@ public class EnvironmentReader
     	ArrayList<Path2D> labelRect = new ArrayList<Path2D>();
     	ArrayList<String> apList 	= new ArrayList<String>();
     	i	= 0;
-        if ((boolean) PlanningSettings.get("verbosity"))
-        {
+        if ((boolean) PlanningSettings.get("debug"))
         	System.out.println("\n\nLabelling: ");
-        }
 
         while (line != null)
         {
         	m 		= apNameRegex.matcher(line);
         	m.find();
         	apList.add(m.group(1));
-        	if((boolean) PlanningSettings.get("verbosity"))
+        	if((boolean) PlanningSettings.get("debug"))
             {
             	System.out.print(apList.get(i) + ": ");
             }
@@ -187,7 +171,7 @@ public class EnvironmentReader
         		rect.lineTo(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
         		rect.lineTo(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
         		rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
-        		if((boolean) PlanningSettings.get("verbosity"))
+        		if((boolean) PlanningSettings.get("debug"))
         		{
         			System.out.print(rect.getBounds2D() + "  ");
         		}
@@ -195,7 +179,7 @@ public class EnvironmentReader
     		rect.closePath();
     		labelRect.add(rect);
 
-        	if((boolean) PlanningSettings.get("verbosity"))
+        	if((boolean) PlanningSettings.get("debug"))
     		{
     			System.out.println("");
     		}

@@ -115,7 +115,7 @@ public class KnownGrid extends Grid {
 		Vertex temp;
 		while(it.hasNext()) {
 			temp 				= it.next();
-			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) {
+			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.000001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.000001) {
 				return temp;
 			}
 		}
@@ -183,8 +183,9 @@ public class KnownGrid extends Grid {
 			return null;
 		}
 		Pair<Point2D, Pair<Integer, Float>> bestFrontier = findBestFrontier(frontiers, xRobot); // point, index, IG
-		
-		System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
+
+		if((boolean) PlanningSettings.get("debug"))
+			System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
 		return new Pair<Point2D, Integer>(bestFrontier.getFirst(), -1);
 	}
 	

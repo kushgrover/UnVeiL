@@ -48,7 +48,7 @@ public class UnknownRRG extends RRG
 	{
 		super(env);
 		this.sensingRadius		= (float) PlanningSettings.get("sensingRadius");
-		this.grid 				= new UnknownGrid(env, (float) PlanningSettings.get("discretizationSize"), graph, tree, treePoints);
+		this.grid 				= new UnknownGrid(env, (float) PlanningSettings.get("gridSize"), graph, tree, treePoints);
 		this.movementBDD 		= new ArrayList<BDD>();
 	}
 	
@@ -375,7 +375,8 @@ public class UnknownRRG extends RRG
 	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath)  
 	{
 		if(finalPath != null) {
-			new ShowGraphUnknown(graph, env, movement, finalPath).setVisible(true);
+			if((boolean) PlanningSettings.get("generatePlot"))
+				new ShowGraphUnknown(graph, env, movement, finalPath).setVisible(true);
 			StoreGraphUnknown temp = new StoreGraphUnknown(env, graph, finalPath, movement, "end");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagFirstMove) {

@@ -8,10 +8,10 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/owl-19.XX-development.jar"/>
-	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jsi-1.0.0.jar" sourcepath="/home/kush/Projects/robotmotionplanning/jsi-1.0.0/jsi-1.0.0-sources.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jsi-1.0.0.jar" sourcepath="/home/kush/Projects/robotmotionplanning/Library used/jsi-1.0.0/jsi-1.0.0-sources.jar"/>
 	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jhoafparser-1.1.1.jar"/>
 	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/javabdd-1.0b2.jar" sourcepath="/home/kush/Projects/robotmotionplanning/Library used/javabdd/javabdd source"/>
-	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jgrapht-bundle-1.4.0.jar"/>
+	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/jgrapht-bundle-1.4.0.jar" sourcepath="/home/kush/Projects/robotmotionplanning/Library used/jgrapht-1.4.0/source"/>
 	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/trove-2.0.4.jar"/>
 	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/ij.jar" sourcepath="/home/kush/Projects/robotmotionplanning/Library used/ImageJ/plugins"/>
 	<classpathentry kind="lib" path="/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/slf4j-api-2.0.0-alpha1.jar"/>

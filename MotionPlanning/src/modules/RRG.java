@@ -198,8 +198,9 @@ public abstract class RRG {
 	 */
 	protected float getProb(int rank) 
 	{
+
 		if(rank == -1) {
-			return 0.5f;
+			return (float) PlanningSettings.get("biasProb");
 		}
 		else {
 			return 1f;
@@ -230,7 +231,7 @@ public abstract class RRG {
 	
 	/**
 	 * Find a vertex in the graphRRG where labelling is
-	 * @param nextState
+	 * @param label
 	 * @return
 	 */
 	private Vertex findTheVertex(BDD label) 
@@ -260,7 +261,7 @@ public abstract class RRG {
 		while(it.hasNext()) 
 		{
 			temp 				= it.next();
-			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) 
+			if(temp.getPoint().getX() == p.getX()  &&  temp.getPoint().getY() == p.getY())
 			{
 				return temp;
 			}
@@ -269,7 +270,7 @@ public abstract class RRG {
 	}
 	
 	/**
-	 * add a vertex to the {@link #Map map}
+	 * add a vertex to the map
 	 * @param v
 	 */
 	protected void addToMap(Vertex v) {

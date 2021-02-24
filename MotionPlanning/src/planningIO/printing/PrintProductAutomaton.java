@@ -16,7 +16,7 @@ public class PrintProductAutomaton
 	public PrintProductAutomaton(ProductAutomaton productAutomaton, int num) throws Exception
 	{
 		visited 				= new boolean[ProductAutomaton.getNumStates()];
-		writer 					= new BufferedWriter(new FileWriter("foundPoint/productAutomaton"+num+".dot"));
+		writer 					= new BufferedWriter(new FileWriter("temp/productAutomaton"+num+".dot"));
 		
 		this.productAutomaton	= productAutomaton;
 		BDD productAutomatonBDD = productAutomaton.getBDD();

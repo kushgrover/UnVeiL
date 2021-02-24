@@ -13,7 +13,7 @@ public class GenerateRandomEnv {
 	public Environment env;
 
 	public GenerateRandomEnv() throws IOException {
-		System.out.println("Generating random environment...");
+		System.out.print("Generating random environment ... ");
 		
 		
 		Point2D p1, p3, init;

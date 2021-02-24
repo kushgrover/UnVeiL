@@ -128,7 +128,8 @@ public class KnownRRG extends RRG {
 
 	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath, Graph<Vertex, DefaultEdge> graphMovement) {
 		if(finalPath != null) {
-			new ShowGraphKnown(graph, graphMovement, env, movement, finalPath).setVisible(true);
+			if((boolean) PlanningSettings.get("generatePlot"))
+				new ShowGraphKnown(graph, graphMovement, env, movement, finalPath).setVisible(true);
 			StoreGraphKnown temp = new StoreGraphKnown(env, graph, graphMovement, finalPath, null, "end");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		} else if(! flagBin) {

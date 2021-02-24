@@ -26,11 +26,11 @@ public class Initialize
 	
 	
 	@SuppressWarnings("static-access")
-	public Initialize() throws Exception
+	public Initialize(BDDFactory factory) throws Exception
 	{
-		
-		factory = BuDDyFactory.init(20, (int) PlanningSettings.get("bddFactoryCacheSize"));
-		ProductAutomaton.factory = factory;
+		this.factory = factory;
+//		factory = BuDDyFactory.init(20, (int) PlanningSettings.get("bddFactoryCacheSize"));
+		ProductAutomaton.factory = Initialize.factory;
         ProductAutomaton.threshold = (int) PlanningSettings.get("transitionThreshold");
 		
 //		Read environment

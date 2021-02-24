@@ -28,8 +28,9 @@ public class PropertyReader
 	        propertyString			= propertyReader.readLine();
 	        propertyReader.close();
 		}
-        // Output 
-        System.out.println("\nConstructing automaton for property: " + propertyString + " ...\n\n");
+        // Output
+        if((boolean) PlanningSettings.get("debug"))
+            System.out.print("\nConstructing automaton for property: " + propertyString + " ... ");
         
     	
         // Using SPOT
@@ -39,7 +40,7 @@ public class PropertyReader
 //      ProcessBuilder builder3 = new ProcessBuilder(command,"--deterministic",propertyString);
         
         // Using OWL
-        String command					= "/home/kush/Projects/robotmotionplanning/owl/build/install/owl/bin/ltl2ldba";
+        String command					= "lib/owl/bin/ltl2ldba";
 //        String command 					= "/home/kush/Projects/robotmotionplanning/MotionPlanning/lib/ltl2ldba";
         ProcessBuilder builder1 		= new ProcessBuilder(command, propertyString);
         ProcessBuilder builder2 		= new ProcessBuilder(command, propertyString);
@@ -73,7 +74,8 @@ public class PropertyReader
 			propertyParser		= new BuchiAutomataParser( p1.getInputStream(), 
 					p2.getInputStream(), 
 					apListSystem);
-			System.out.println("done!");
+            if((boolean) PlanningSettings.get("debug"))
+                System.out.println("done!");
 		} catch (ParseException e) 
         {
 			e.printStackTrace();

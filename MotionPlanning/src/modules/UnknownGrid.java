@@ -16,6 +16,7 @@ import com.infomatiq.jsi.SpatialIndex;
 import environment.Environment;
 import environment.Vertex;
 import gnu.trove.TIntProcedure;
+import settings.PlanningSettings;
 
 public class UnknownGrid extends Grid {
 
@@ -74,18 +75,21 @@ public class UnknownGrid extends Grid {
 		if(bestAdviceFrontier.getSecond().getSecond() > bestFrontier.getSecond().getSecond()) {
 			int index = bestAdviceFrontier.getSecond().getFirst();
 			adviceFrontiers.remove(index);
-			System.out.println("Used Advice frontier: " + bestAdviceFrontier.getFirst() + " with IG = " + bestAdviceFrontier.getSecond().getSecond());
+			if((boolean) PlanningSettings.get("debug"))
+				System.out.println("Used Advice frontier: " + bestAdviceFrontier.getFirst() + " with IG = " + bestAdviceFrontier.getSecond().getSecond());
 			return new Pair<Point2D, Integer>(bestAdviceFrontier.getFirst(), bestAdviceFrontier.getSecond().getFirst());
 		}
 		else {
-			System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
+			if((boolean) PlanningSettings.get("debug"))
+				System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
 			return new Pair<Point2D, Integer>(bestFrontier.getFirst(), -1);
 		}
 	}
 
 	public void addAdviceFrontier(Point2D p, Point2D currentPosition, int rank) {
 		Pair<Point2D, Integer> f = new Pair<Point2D, Integer>(p, rank);
-		System.out.println("Added advice frontier " + p); 
+		if((boolean) PlanningSettings.get("debug"))
+			System.out.println("Added advice frontier " + p);
 		adviceFrontiers.add(f);
 	}
 	

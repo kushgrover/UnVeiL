@@ -1,5 +1,6 @@
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
+import net.sf.javabdd.BDDFactory;
 import settings.Initialize;
 import settings.PlanningException;
 import settings.PlanningSettings;
@@ -44,6 +45,7 @@ public class Planning
 	double learnTime 		= 0;
 	double explTime 		= 0;
 	double adviceTime 		= 0;
+	double totalTime		= 0;
     boolean needNewAdvice 	= true;
     ArrayList<BDD> advice 	= null;
     float moveLength, pathLength;
@@ -52,12 +54,13 @@ public class Planning
     /**
      * initialize everything
      * @throws Exception
+	 * @param factory
      */
-	public Planning() throws Exception 
+	public Planning(BDDFactory factory) throws Exception
 	{
 		beginTime				= System.nanoTime();
 		
-		Initialize initialize	= new Initialize();// read the files and initialise everything
+		Initialize initialize	= new Initialize(factory);// read the files and initialise everything
         rrg 					= initialize.getRRG();
         productAutomaton		= initialize.getProductAutomaton();
         exper					= new DefaultExperiment(productAutomaton); // learn and advce procedures
@@ -80,44 +83,57 @@ public class Planning
 	 */
 	void printOutput() throws Exception 
 	{
-//    	productAutomaton.createDot(iterationNumber);
-		Pair<Float, Float> length = new Pair<Float, Float>(0f, 0f);
-		if(! (boolean) PlanningSettings.get("firstExplThenPlan")) {
-			UnknownRRG urrg = (UnknownRRG) rrg;
-			length = urrg.plotGraph(finalPath);			
+		if((boolean) PlanningSettings.get("debug")){
+			System.out.print("Exporting product automaton ... ");
+	    	productAutomaton.createDot(iterationNumber);
+			System.out.println("done");
 		}
+		Pair<Float, Float> length = new Pair<Float, Float>(0f, 0f);
 		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
 			length.setFirst(moveLength);
 			length.setSecond(pathLength);
 		}
-		double totalTime = System.nanoTime() - beginTime;
+		else{
+			UnknownRRG urrg = (UnknownRRG) rrg;
+			System.out.print("Storing output ... ");
+			length = urrg.plotGraph(finalPath);
+			System.out.println("done");
+			moveLength = length.getFirst();
+			pathLength = length.getSecond();
+		}
+		totalTime = System.nanoTime() - beginTime;
         
         int adviceSamples = 0;
 		for( int k=0; k<10; k++ )
 			adviceSamples += rrg.adviceSampled[k];
-		
-		System.out.println("\n\nTotal sampled points = " + rrg.totalSampledPoints);	
-		System.out.println("\nTotal useful sampled points = " + rrg.totalPoints);
-		System.out.println("Movement Length = " + length.getFirst());
-		System.out.println("Remaining path Length = " + length.getSecond());
-		System.out.println("Sampled from advice = " + adviceSamples);
-		System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled));
-		System.out.print("\nTotal time taken (in ms):");
-        System.out.println(totalTime / 1000000);
-        System.out.print("\nInitialization time (in ms):");
-        System.out.println((initTime) / 1000000);
-        System.out.print("Sampling time (in ms):");
-        System.out.println(samplingTime / 1000000);
-        System.out.print("Advice time (in ms):");
-        System.out.println(adviceTime / 1000000);
-        System.out.print("Path checking time (in ms):");
-        System.out.println(pathTime / 1000000);
-        System.out.print("Learning time (in ms):");
-        System.out.println(learnTime / 1000000);
-        System.out.print("Exploration time (in ms):");
-        System.out.println(explTime / 1000000);
-        System.out.print("Time taken other than these things (in ms):");
-        System.out.println((totalTime - initTime - samplingTime - adviceTime - pathTime - learnTime) / 1000000);    
+
+		if((Integer) PlanningSettings.get("numberOfRuns") == 1 || (boolean) PlanningSettings.get("debug")) {
+			System.out.println("\nNumber of iterations = " + iterationNumber);
+			System.out.println("Total sampled points = " + rrg.totalSampledPoints);
+			System.out.println("RRG size = " + rrg.totalPoints);
+			System.out.println("\nMovement Length = " + length.getFirst());
+			System.out.println("Remaining path Length = " + length.getSecond());
+			System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled) + " (" + adviceSamples + ")");
+			System.out.print("\nTotal time taken (in ms):");
+			System.out.println(totalTime / 1000000);
+		}
+
+		if((boolean) PlanningSettings.get("debug")) {
+			System.out.print("\nInitialization time (in ms):");
+			System.out.println((initTime) / 1000000);
+			System.out.print("Sampling time (in ms):");
+			System.out.println(samplingTime / 1000000);
+			System.out.print("Advice time (in ms):");
+			System.out.println(adviceTime / 1000000);
+			System.out.print("Path checking time (in ms):");
+			System.out.println(pathTime / 1000000);
+			System.out.print("Learning time (in ms):");
+			System.out.println(learnTime / 1000000);
+			System.out.print("Exploration time (in ms):");
+			System.out.println(explTime / 1000000);
+			System.out.print("Time taken other than these things (in ms):");
+			System.out.println((totalTime - initTime - samplingTime - adviceTime - pathTime - learnTime) / 1000000);
+		}
 	}
 	
 	/**
@@ -179,18 +195,19 @@ public class Planning
 	 * Do exploration and planning simultaneously
 	 * @throws Exception
 	 */
-	public void explAndPlanTogether() throws Exception 
+	public Object[] explAndPlanTogether() throws Exception
 	{    
     	BDD transitions 					= null;
         boolean computePath 				= false;
         boolean debug 						= (boolean) PlanningSettings.get("debug");
 
-        UnknownRRG urrg = (UnknownRRG) rrg;
+		System.out.println("Starting planning ...");
+		UnknownRRG urrg = (UnknownRRG) rrg;
         urrg.grid.knowDiscretization(env, productAutomaton, env.getInit(), (float) PlanningSettings.get("sensingRadius"));
         while( true )
         {
         	if( debug ) {
-	        	if( iterationNumber == 0 ) {
+	        	if( iterationNumber == 100 ) {
 //	        		urrg.grid.printDiscretization();
 //	        		urrg.grid.printFrontiers();
 	        		break;
@@ -198,10 +215,12 @@ public class Planning
         	}
         	
         	iterationNumber++;
-        	System.out.println("Iter num: " + iterationNumber);
+        	if((boolean) PlanningSettings.get("debug"))
+	        	System.out.println("Iter num: " + iterationNumber);
 
-        	if ( (boolean) PlanningSettings.get("useAdvice") )
+        	if ((boolean) PlanningSettings.get("useAdvice") )
         		updateAdvice();
+
         	transitions = sampleBatch(urrg);
         	if ( transitions == null ) 
         		continue;
@@ -213,8 +232,9 @@ public class Planning
         	if( computePath ) {
         		ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
         		if( path != null ) {
-        			System.out.println("\nPath found in the abstraction: ");
-            		productAutomaton.printPath(path);
+        			System.out.println("\nPath found :D :D :D");
+					if((boolean) PlanningSettings.get("debug"))
+	            		productAutomaton.printPath(path);
                 	finalPath = urrg.liftPath(path); 
             		break;
             	}
@@ -222,27 +242,46 @@ public class Planning
         	pathTime += System.nanoTime() - startTime;
         }
         printOutput();
-        System.out.print("Moving time (in ms):");
-        System.out.println(urrg.moveTime / 1000000);
-        Initialize.getFactory().done();
+		if((boolean) PlanningSettings.get("debug")) {
+			System.out.print("Moving time (in ms):");
+			System.out.println(urrg.moveTime / 1000000);
+		}
+
+//        Initialize.getFactory().done();
+//		Initialize.getFactory().reset();
+
+		Object[] data = new Object[] {
+				new Integer(iterationNumber),
+				new Integer(rrg.totalSampledPoints),
+				new Integer(rrg.totalPoints),
+				new Float(moveLength),
+				new Float(pathLength),
+				new Double(totalTime)
+		};
+		return data;
     }
 	
 	/**
 	 * Do exploration first, then do the planning
 	 * @throws Exception
 	 */
-	void firstExplThenPlan() throws Exception {
-		KnownGrid grid = new KnownGrid(env, (float) PlanningSettings.get("discretizationSize"));
+	public Object[] firstExplThenPlan() throws Exception {
+		KnownGrid grid = new KnownGrid(env, (float) PlanningSettings.get("gridSize"));
 		startTime = System.nanoTime();
+		System.out.print("Starting exploration ...");
 		moveLength = exploreDiscretization(grid);
+		System.out.println(" finished");
 		explTime = System.nanoTime() - startTime;
 		
 		BDD transitions = null;
         boolean computePath = true;
 
+		System.out.print("Starting planning ...");
 		while( true ){
 			iterationNumber++;
-        	System.out.println("Iter num: " + iterationNumber);
+
+			if((boolean) PlanningSettings.get("debug"))
+				System.out.println("Iter num: " + iterationNumber);
         	
         	if ( (boolean) PlanningSettings.get("useAdvice") )
             	updateAdvice();
@@ -258,19 +297,33 @@ public class Planning
         	if( computePath ) {
         		ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
         		if( path != null ) {
-        			System.out.println("\nPath found in the abstraction: ");
-            		productAutomaton.printPath(path);
+        			System.out.println("Path found :D");
+					if((boolean) PlanningSettings.get("debug"))
+						productAutomaton.printPath(path);
                 	finalPath = rrg.liftPath(path);
             		break;
             	}
         	}
         	pathTime += System.nanoTime() - startTime;
 		}
-        Initialize.getFactory().done();
+//        Initialize.getFactory().done();
+
 		KnownRRG krrg = (KnownRRG) rrg;
+		System.out.print("Plotting...");
 		Pair<Float, Float> length = krrg.plotGraph(finalPath, grid.getGraph());
+		System.out.println("done");
 		pathLength = length.getSecond();
 		printOutput();
+
+		Object[] data = new Object[] {
+				new Integer(iterationNumber),
+				new Integer(rrg.totalSampledPoints),
+				new Integer(rrg.totalPoints),
+				new Float(moveLength),
+				new Float(pathLength),
+				new Double(totalTime)
+		};
+		return data;
 	}
 
 	private float exploreDiscretization(KnownGrid grid) throws Exception {
