@@ -59,13 +59,15 @@ public class DefaultExperiment implements Experiments
 		}
 
 		if((boolean) PlanningSettings.get("useAdvice")) {
-			BDD nextTransition, fromState, toState;
-			BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
-			while(it.hasNext()) {
-				nextTransition = (BDD) it.next();
-				fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
-				toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
-				learnSimilarTransitions(fromState, toState);
+			if (!productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)))){
+				BDD nextTransition, fromState, toState;
+				BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
+				while (it.hasNext()) {
+					nextTransition = (BDD) it.next();
+					fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
+					toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
+					learnSimilarTransitions(fromState, toState);
+				}
 			}
 		}
 		

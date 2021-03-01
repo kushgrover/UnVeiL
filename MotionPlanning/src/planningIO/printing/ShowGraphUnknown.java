@@ -72,19 +72,19 @@ public class ShowGraphUnknown extends JFrame {
 		}
 		
 		// Final Path
-//		plot.setColor("pink");
-//		ite = finalPath.iterator();
-//		while(ite.hasNext())
-//		{
-//			nextEdge = ite.next();
-//			source = graphRRG.getEdgeSource(nextEdge);
-//			target = graphRRG.getEdgeTarget(nextEdge);
-//			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
-//		}
+		plot.setColor("pink");
+		ite = finalPath.iterator();
+		while(ite.hasNext())
+		{
+			nextEdge = ite.next();
+			source = graph.getEdgeSource(nextEdge);
+			target = graph.getEdgeTarget(nextEdge);
+			plot.add("line", new double[] {source.getPoint().getX(), target.getPoint().getX()}, new double[] {source.getPoint().getY(), target.getPoint().getY()});
+		}
 
 		//walls
 		plot.setColor("blue");
-		Iterator<Path2D> i = env.getWalls().iterator();
+		Iterator<Path2D> i = env.getObstacles().iterator();
 		while(i.hasNext())
 		{
 			Path2D rect = i.next();
@@ -109,7 +109,7 @@ public class ShowGraphUnknown extends JFrame {
 		
 		//Obstacles
 		plot.setColor("blue");
-		i = env.getObstacles().iterator();
+		i = env.getSeeThroughObstacles().iterator();
 		while(i.hasNext())
 		{
 			Path2D rect = i.next();

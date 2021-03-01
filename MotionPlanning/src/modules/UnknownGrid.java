@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Set;
 
+import abstraction.ProductAutomaton;
+import net.sf.javabdd.BDD;
 import org.jgrapht.Graph;
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
@@ -55,6 +57,30 @@ public class UnknownGrid extends Grid {
 		}
 		return new Pair<Point2D, Pair<Integer, Float>>(bestPoint, new Pair<Integer, Float>(bestIndex, bestIG));
 	}
+
+	/*
+	 * know the grid in the sensing radius
+	 */
+	public void knowDiscretization(Environment env,
+								   ProductAutomaton productAutomaton,
+								   Point2D currentPosition,
+								   float sensingRadius) throws Exception
+	{
+		for(int i = 0; i<numX; i++) {
+			for(int j=0; j<numY; j++) {
+				if(cellInsideSensingRadius(i, j, currentPosition, sensingRadius)) {
+					Point2D tempPoint = findCentre(i,j);
+					if(env.collisionFreeFromOpaqueObstacles(currentPosition, tempPoint) && env.obstacleFreeAll(tempPoint)) {
+						BDD label = Environment.getLabelling().getLabel(tempPoint);
+						updateDiscretization(tempPoint, 1, label);
+					}
+					else if(! env.obstacleFreeAll(tempPoint)) {
+						updateDiscretization(tempPoint, 3, null);
+					}
+				}
+			}
+		}
+	}
 	
 	
 	/*
@@ -101,6 +127,10 @@ public class UnknownGrid extends Grid {
 		int bestIndex = 0;
 		for(int i=0;i<frontiers.size();i++) {
 			tempPoint = findFrontierBestPoint(frontiers.get(i));
+//			if(tempPoint.equals(xRobot)) {
+//				printDiscretization();
+//				continue;
+//			}
 			currentIG = (float) frontiers.get(i).size() / computeDistance(graph, xRobot, tempPoint);
 //			if(distance(centers.get(i), xRobot) < distance(closest, xRobot)) {
 			if(currentIG > bestIG) {
@@ -119,7 +149,7 @@ public class UnknownGrid extends Grid {
 
 	float findIGInAdviceFrontier(Pair<Point2D, Integer> adviceFrontier, int bestRank, Point2D xRobot) {
 		int currentRank = adviceFrontier.getSecond(); 
-		float currentIG = 10 / ((float) Math.pow(currentRank + 1, 2) * size * computeDistance(graph, xRobot, adviceFrontier.getFirst()));
+		float currentIG = 5 / ((float) Math.pow(currentRank + 1, 2) * size * computeDistance(graph, xRobot, adviceFrontier.getFirst()));
 //		if(currentRank < bestRank && bestRank > -1) {
 //			currentIG = (currentRank - bestRank) / (size * distance(frontier.getFirst(), xRobot));
 //		}

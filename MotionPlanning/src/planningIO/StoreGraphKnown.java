@@ -13,6 +13,7 @@ import org.jgrapht.graph.DefaultEdge;
 
 import environment.Environment;
 import environment.Vertex;
+import settings.PlanningSettings;
 
 public class StoreGraphKnown {
 
@@ -40,7 +41,7 @@ public class StoreGraphKnown {
 	
 	
 	public void outputGraph(Graph<Vertex, DefaultEdge> graph, String fileName) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter("temp/"+fileName+".csv"));
+		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName + ".csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
 		
@@ -61,7 +62,7 @@ public class StoreGraphKnown {
 	}
 	
 	public void outputFinalPath(Graph<Vertex, DefaultEdge> graph, List<DefaultEdge> finalPath, String fileName) throws IOException {
-		BufferedWriter writer 		= new BufferedWriter(new FileWriter("temp/"+fileName+"-finalpath.csv"));
+		BufferedWriter writer 		= new BufferedWriter(new FileWriter(fileName+"-finalpath.csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
 		
@@ -85,7 +86,7 @@ public class StoreGraphKnown {
 		
 		if(graph == null) return;
 		
-		BufferedWriter writer 		= new BufferedWriter(new FileWriter("temp/" + fileName + "-movement.csv"));
+		BufferedWriter writer 		= new BufferedWriter(new FileWriter(fileName + "-movement.csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
 		
@@ -108,7 +109,8 @@ public class StoreGraphKnown {
 	}
 	
 	public void outputObstacles(Environment env) throws IOException {
-		BufferedWriter writer = new BufferedWriter(new FileWriter("temp/obstacles.csv"));
+		String outputDir = (String) PlanningSettings.get("outputDirectory");
+		BufferedWriter writer = new BufferedWriter(new FileWriter(outputDir + "obstacles.csv"));
 		writer.write("x1,y1,x2,y2\n");
 		writer.write("0.0,0.0,6.0,0.0\n");
 		writer.write("6.0,0.0,6.0,3.0\n");
@@ -116,7 +118,31 @@ public class StoreGraphKnown {
 		writer.write("0.0,3.0,0.0,0.0\n");
 		
 		//Obstacles
-		Iterator<Path2D> i = env.getObstacles().iterator();
+		Iterator<Path2D> i = env.getSeeThroughObstacles().iterator();
+		while(i.hasNext())
+		{
+			Path2D rect = i.next();
+			PathIterator it = rect.getPathIterator(null);
+			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			while(! it.isDone()) {
+				switch(it.currentSegment(coords)) {
+					case(PathIterator.SEG_MOVETO):
+						from = coords.clone();
+						break;
+					case(PathIterator.SEG_LINETO):
+						to = coords.clone();
+						writer.write(from[0] + "," + from[1] + "," + to[0] + "," + to[1] + "\n");
+//						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+						from = to.clone();
+						break;
+					default:
+						break;
+				}
+				it.next();
+			}
+		}
+
+		i = env.getObstacles().iterator();
 		while(i.hasNext())
 		{
 			Path2D rect = i.next();
@@ -143,7 +169,7 @@ public class StoreGraphKnown {
 		
 		
 		// Label
-		writer 		= new BufferedWriter(new FileWriter("/home/kush/Projects/robotmotionplanning/MotionPlanning/temp/labels.csv"));
+		writer 		= new BufferedWriter(new FileWriter(outputDir + "labels.csv"));
 		writer.write("x1,y1,x2,y2\n");
 		i = Environment.getLabelling().getAreas().iterator();
 		while(i.hasNext())

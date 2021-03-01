@@ -1,5 +1,6 @@
 package modules;
 
+import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 
@@ -141,75 +142,16 @@ public abstract class Grid
 		}
 	}
 	
-	/*
-	 * update grid for a line from p tp q with value
-	 */
-	public void updateDiscretization(Point2D p, Point2D q, int value) throws Exception 
-	{
-		float px = (float) p.getX();
-		float py = (float) p.getY();
-		float qx = (float) q.getX();
-		float qy = (float) q.getY();
-		int pi 	= (int) ((px - x1)/size);
-		if(pi == numX) {
-			pi--;
-		}
-		int pj 	= (int) ((py - y1)/size);
-		if(pj == numY) {
-			pj--;
-		}
-		int qi 	= (int) ((qx - x1)/size);
-		if(qi == numX) {
-			qi--;
-		}
-		int qj 	= (int) ((qy - y1)/size);
-		if(qj == numY) {
-			qj--;
-		}
-		float slope = (qy - py)/(qx - px);
-		
-		if(slope<1 && slope >-1) {
-			float m;
-			for(int n=pi+1; n<qi+1; n++) {
-				m = slope*(n*size - 0.00001f - px) + py;
-				updateDiscretization(new Point2D.Float(n*size - 0.00001f, m), value);
-				m = slope*(n*size + 0.00001f - px) + py;
-				updateDiscretization(new Point2D.Float(n*size + 0.00001f, m), value);
-			}
-		} else {
-			float n;
-			for(int m=pj+1; m<qj+1; m++) {
-				n = (m*size - 0.00001f - py)/slope + px;
-				updateDiscretization(new Point2D.Float(n, m*size-0.00001f), value);
-				n = (m*size + 0.00001f - py)/slope + px;
-				updateDiscretization(new Point2D.Float(n, m*size+0.00001f), value);
-			}
-		}
-	}
-	
+
 	/*
 	 * know the grid in the sensing radius
 	 */
-	public void knowDiscretization(Environment env, 
+	public abstract void knowDiscretization(Environment env,
 			ProductAutomaton productAutomaton, 
 			Point2D currentPosition, 
-			float sensingRadius) throws Exception 
-	{	
-		for(int i = 0; i<numX; i++) {
-			for(int j=0; j<numY; j++) {
-				if(cellInsideSensingRadius(i, j, currentPosition, sensingRadius)) {
-					Point2D tempPoint = findCentre(i,j);
-					if(env.collisionFreeFromOpaqueObstacles(currentPosition, tempPoint) && env.obstacleFreeAll(tempPoint)) {
-						BDD label = Environment.getLabelling().getLabel(tempPoint);
-						updateDiscretization(tempPoint, 1, label);
-					}
-					else if(! env.obstacleFreeAll(tempPoint)) {
-						updateDiscretization(tempPoint, 3, null);
-					}
-				}
-			}
-		}
-	}
+			float sensingRadius) throws Exception;
+
+
 	
 	protected int clampX(int i) {
 		if(i == numX)
@@ -436,6 +378,6 @@ public abstract class Grid
 	
 	abstract Pair<Point2D, Pair<Integer, Float>> findBestFrontier(ArrayList<ArrayList<int[]>> frontiers, Point2D xRobot);
 
-	public abstract float computeDistance(Graph<Vertex, DefaultEdge> graph, Point2D currentPoint, Point2D xRobot);
+//	public abstract float computeDistance(Graph<Vertex, DefaultEdge> graph, Point2D currentPoint, Point2D xRobot);
 
 }

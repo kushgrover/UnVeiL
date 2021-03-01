@@ -25,7 +25,6 @@ public class Initialize
 	static BDDFactory factory;
 	
 	
-	@SuppressWarnings("static-access")
 	public Initialize(BDDFactory factory) throws Exception
 	{
 		this.factory = factory;

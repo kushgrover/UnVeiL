@@ -20,14 +20,18 @@ import planningIO.printing.ShowGraphKnown;
 import settings.PlanningSettings;
 
 public class KnownRRG extends RRG {
-	
-	
-	
+
+
+	KnownGrid grid;
+
 	public KnownRRG(Environment env) {
 		super(env);
 	}
-	
-	
+
+	public void setGrid(KnownGrid grid){
+		this.grid = grid;
+	}
+
 	private Point2D sample() {
 		Point2D p;
 		while(true) {
@@ -68,14 +72,13 @@ public class KnownRRG extends RRG {
 					addSymbolicTransitions(xNearest2D, xNew2D);
 					addGraphEdge(xNearest2D, xNew2D);
 					
-//					plotting the first time it sees a bin
 					try {
 						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-							plotGraph(null, null);
+							StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "bin");
 							flagBin = true;
 						}
 						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-							plotGraph(null, null);
+							StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "room");
 							flagRoom = true;
 						}
 					} catch (Exception e1) {
@@ -127,19 +130,11 @@ public class KnownRRG extends RRG {
 	}
 
 	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath, Graph<Vertex, DefaultEdge> graphMovement) {
+		String output = ((String) PlanningSettings.get("outputDirectory"));
 		if(finalPath != null) {
 			if((boolean) PlanningSettings.get("generatePlot"))
 				new ShowGraphKnown(graph, graphMovement, env, movement, finalPath).setVisible(true);
-			StoreGraphKnown temp = new StoreGraphKnown(env, graph, graphMovement, finalPath, null, "end");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
-		} else if(! flagBin) {
-			StoreGraphKnown temp = new StoreGraphKnown(graph, graphMovement, movement, "bin");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
-		} else if(! flagRoom) {
-			StoreGraphKnown temp = new StoreGraphKnown(graph, graphMovement, movement, "room");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
-		} else if(! flagFirstMove) {
-			StoreGraphKnown temp = new StoreGraphKnown(graph, graphMovement, movement, "firstMove"); 
+			StoreGraphKnown temp = new StoreGraphKnown(env, graph, graphMovement, finalPath, null, output + "end");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		}
 		return new Pair<Float, Float>(0f,0f);

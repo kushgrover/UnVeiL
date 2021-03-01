@@ -10,9 +10,8 @@ public class PlanningSettings
 	public static final String INTEGER_TYPE = "i";
 	public static final String FLOAT_TYPE   = "f";
 	public static final String BOOLEAN_TYPE = "b";
-	public static final String COLOUR_TYPE  = "c";
-	
-	
+	public static final String DOUBLE_TYPE = "b";
+
 	public static final String BIAS_PROB					=	"biasProb";
 	public static final String BDD_FACTORY_CACHE_SIZE		=	"bddFactoryCacheSize";
 	public static final String USE_SPOT						= 	"useSpot";
@@ -30,6 +29,11 @@ public class PlanningSettings
 	public static final String ONLY_OPAQUE_OBSTACLES		=	"onlyOpaqueObstacles";
 	public static final String NUMBER_OF_RUNS				=	"numberOfRuns";
 	public static final String GENERATE_PLOT				=	"generatePlot";
+	public static final String PROPERTY_FILE				=	"propertyFile";
+	public static final String OUTPUT_DIRECTORY				=	"outputDirectory";
+	public static final String TIMEOUT						=	"timeout";
+	public static final String EXPORT_PLOT_DATA				=	"exportPlotData";
+
 
 	public static void outputParameters() {
 		System.out.println("Parameters values: ");
@@ -110,15 +114,30 @@ public class PlanningSettings
 			{ BOOLEAN_TYPE,		GENERATE_PLOT,							"Show a plot of output",				"1.0",			new Boolean(false),															"",
 																					"Generate plot showing the RRG graph and the trajectory"},
 
+			{ STRING_TYPE,		PROPERTY_FILE,							"Property file in HOA format",			"1.0",			new String(""),															"",
+																					"Specifying property as an automaton in HOA format"},
+
+			{ STRING_TYPE,		OUTPUT_DIRECTORY,						"Output directory",						"1.0",			new String("temp/"),															"",
+																					"Directory to store the output"},
+
+			{ DOUBLE_TYPE,		TIMEOUT,								"Timeout for the algorithm",			"1.0",			new Double(Double.MAX_VALUE),															"",
+																					"After this much time, stop the run and output the results"},
+
+			{ BOOLEAN_TYPE,		EXPORT_PLOT_DATA,						"Export the data for plotting",			"1.0",			new Boolean(false),															"",
+																					"Export data for plotting after some intervals"},
+
+
 		};
 																			
 	
 	@SuppressWarnings("deprecation")
 	public PlanningSettings(String[] args) throws Exception {
 		boolean inputFile = true;
+		boolean[] usingFlag = new boolean[args.length];
 		try {
 			if(! args[0].startsWith("--")) {
 				set(INPUT_FILE, args[0]);
+				usingFlag[0] = true;
 			}
 		}
 		catch(ArrayIndexOutOfBoundsException e) {
@@ -127,47 +146,61 @@ public class PlanningSettings
 		for(int i=0; i<args.length; i++) {
 			if(args[i].equals("--first-expl-then-plan")) {
 				set(FIRST_EXPL_THEN_PLAN, new Boolean(true));
+				usingFlag[i] = true;
 			}
 			if(args[i].equals("--debug")) {
 				set(DEBUG, new Boolean(true));
+				usingFlag[i] = true;
 			}
 			if(args[i].equals("--no-advice")) {
 				set(USE_ADVICE, new Boolean(false));
+				usingFlag[i] = true;
 			}
 			if(args[i].equals("--random-env")) {
 				set(RANDOM_ENV, new Boolean(true));
 				inputFile = true;
+				usingFlag[i] = true;
 			}
 			if(args[i].equals("--only-opaque-obstacles")) {
 				set(ONLY_OPAQUE_OBSTACLES, new Boolean(true));
+				usingFlag[i] = true;
 			}
 			if(args[i].equals("--plot")) {
 				set(GENERATE_PLOT, new Boolean(true));
+				usingFlag[i] = true;
 			}
-			if(args[i].equals("--set-grid-size")) {
+			if(args[i].equals("--grid-size")) {
 				try {
-					set(GRID_SIZE, new Float(args[i + 1]));
+					set(GRID_SIZE, new Float(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
 				} catch (ArrayIndexOutOfBoundsException e){
 					throw new Exception("Grid size not specified");
 				}
 			}
-			if(args[i].equals("--set-sensing-radius")) {
+			if(args[i].equals("--sensing-radius")) {
 				try {
 					set(SENSING_RADIUS, new Float(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
 				} catch (ArrayIndexOutOfBoundsException e){
 					throw new Exception("Sensing radius not specified");
 				}
 			}
-			if(args[i].equals("--set-batch-size")) {
+			if(args[i].equals("--batch-size")) {
 				try {
 					set(BATCH_SIZE, new Integer(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
 				} catch (ArrayIndexOutOfBoundsException e){
 					throw new Exception("Batch size not specified");
 				}
 			}
-			if(args[i].equals("--set-bias-prob")) {
+			if(args[i].equals("--bias-prob")) {
 				try {
 					set(BIAS_PROB, new Float(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
 				} catch (ArrayIndexOutOfBoundsException e){
 					throw new Exception("Biasing probability not specified");
 				}
@@ -175,15 +208,52 @@ public class PlanningSettings
 			if(args[i].equals("--num-of-runs")) {
 				try {
 					set(NUMBER_OF_RUNS, new Integer(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
 				} catch (ArrayIndexOutOfBoundsException e){
 					throw new Exception("Number of runs not specified");
 				}
 				if(new Integer(args[i+1]) > 1)
 					set(GENERATE_PLOT, new Boolean(false));
 			}
+			if(args[i].equals("--property-file")){
+				try {
+					set(PROPERTY_FILE, new String(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
+				} catch (ArrayIndexOutOfBoundsException e){
+					throw new Exception("Property file not specified");
+				}
+			}
+			if(args[i].equals("--output-directory")){
+				try {
+					set(OUTPUT_DIRECTORY, new String(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
+				} catch (ArrayIndexOutOfBoundsException e){
+					throw new Exception("Output directory not specified");
+				}
+			}
+			if(args[i].equals("--timeout")){
+				try {
+					set(TIMEOUT, new Double(args[i+1]));
+					usingFlag[i] = true;
+					usingFlag[i+1] = true;
+				} catch (ArrayIndexOutOfBoundsException e){
+					throw new Exception("Timeout not specified");
+				}
+			}
+			if(args[i].equals("--export-plot-data")){
+				set(EXPORT_PLOT_DATA, new Boolean(true));
+				usingFlag[i] = true;
+			}
 		}
 		if(! inputFile){
 			throw new Exception("No input files given");
+		}
+		for(int i=0; i < usingFlag.length; i++){
+			if(! usingFlag[i])
+				throw new Exception("Not a valid argument: " + args[i]);
 		}
 	}
 
@@ -242,6 +312,18 @@ public class PlanningSettings
 		else if (VARIABLE.equals(GENERATE_PLOT)) {
 			propertyData[16][4] = value;
 		}
+		else if (VARIABLE.equals(PROPERTY_FILE)) {
+			propertyData[17][4] = value;
+		}
+		else if (VARIABLE.equals(OUTPUT_DIRECTORY)) {
+			propertyData[18][4] = value;
+		}
+		else if (VARIABLE.equals(TIMEOUT)) {
+			propertyData[19][4] = value;
+		}
+		else if (VARIABLE.equals(EXPORT_PLOT_DATA)) {
+			propertyData[20][4] = value;
+		}
 	}
 	
 	public static Object get(String VARIABLE)
@@ -296,6 +378,18 @@ public class PlanningSettings
 		}
 		else if (VARIABLE.equals(GENERATE_PLOT)) {
 			return propertyData[16][4];
+		}
+		else if (VARIABLE.equals(PROPERTY_FILE)) {
+			return propertyData[17][4];
+		}
+		else if (VARIABLE.equals(OUTPUT_DIRECTORY)) {
+			return propertyData[18][4];
+		}
+		else if (VARIABLE.equals(TIMEOUT)) {
+			return propertyData[19][4];
+		}
+		else if (VARIABLE.equals(EXPORT_PLOT_DATA)) {
+			return propertyData[20][4];
 		}
 		return null;
 	}

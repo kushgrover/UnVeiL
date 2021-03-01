@@ -1,11 +1,6 @@
 package planningIO;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.ArrayList;
 
 import jhoafparser.parser.generated.ParseException;
@@ -18,6 +13,23 @@ public class PropertyReader
 	
 	public PropertyReader(ArrayList<String> apListSystem, String propertyFile) throws IOException 
 	{
+	    if(! ((String) PlanningSettings.get("propertyFile")).equals("")) {
+            propertyFile = (String) PlanningSettings.get("propertyFile");
+            InputStream inputStream1 = new FileInputStream(propertyFile);
+            InputStream inputStream2 = new FileInputStream(propertyFile);
+            try
+            {
+                propertyParser = new BuchiAutomataParser( inputStream1, inputStream2, apListSystem);
+                if((boolean) PlanningSettings.get("debug"))
+                    System.out.println("done!");
+            } catch (ParseException e)
+            {
+                e.printStackTrace();
+            }
+            return;
+        }
+
+
 		String propertyString;
 		if((boolean) PlanningSettings.get("randomEnv")) {
 			propertyString = "GF (r1 & b) & GF (r2 & b) & GF (r3 & b) & GF (r4 & b) & GF (r5 & b) & GF (r6 & b)";
@@ -58,7 +70,7 @@ public class PropertyReader
         
         BufferedReader r 		= new BufferedReader(new InputStreamReader(p3.getInputStream()));
         String line;
-        BufferedWriter writer 	= new BufferedWriter(new FileWriter("temp/propertyAutomata.hoa"));
+        BufferedWriter writer 	= new BufferedWriter(new FileWriter("temp/propertyAutomaton.hoa"));
         
         while (true) 
         {

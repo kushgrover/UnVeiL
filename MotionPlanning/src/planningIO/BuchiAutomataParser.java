@@ -60,8 +60,11 @@ public class BuchiAutomataParser
 					newEdge.andWith(bddDomain[2].ithVar(0));
 //					System.out.println("Added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {}");
 				}
-				newEdge.andWith(getBDDFromLabel(labelExpr));
-				
+				if (labelExpr.isTRUE()){
+				}
+				else if (! labelExpr.isFALSE()){
+					newEdge.andWith(getBDDFromLabel(labelExpr));
+				}
 				buchiBDD.orWith(newEdge);
 			}
 			
@@ -142,7 +145,7 @@ public class BuchiAutomataParser
 										numberOfStates, 
 										acceptingSets+1, 
 										(int) PlanningSettings.get("maxLevelTransition")});
-		
+
 		ProductAutomaton.factory.extVarNum(2 * apListSystem.size() + apListProperty.size());
 		numVars[0]					= bddDomain[0].varNum() + bddDomain[1].varNum() + bddDomain[2].varNum();
 		numVars[1]					= bddDomain[3].varNum();

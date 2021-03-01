@@ -11,7 +11,7 @@ import org.jgrapht.GraphPath;
 import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.graph.SimpleGraph;
+import org.jgrapht.graph.SimpleDirectedGraph;
 
 import com.infomatiq.jsi.Point;
 import com.infomatiq.jsi.Rectangle;
@@ -35,7 +35,7 @@ public abstract class RRG {
 	SpatialIndex tree = new RTree();
 	Graph<Vertex, DefaultEdge> graph;
 	ArrayList<Point> treePoints = new ArrayList<Point>();; // list of all the points in the Rtree/graphRRG
-	ArrayList<Pair<BDD, Vertex>> map = new ArrayList<Pair<BDD, Vertex>>(); // map between abstraction and rtree
+	ArrayList<Pair<Pair<BDD,BDD>, Vertex>> map = new ArrayList<Pair<Pair<BDD,BDD>, Vertex>>(); // map between abstraction and rtree
 	Vertex initVertex;  //initial vertex in the graphRRG
 
 	float rrgRadius;
@@ -68,7 +68,7 @@ public abstract class RRG {
 		this.maximumRRGStepSize = (float) PlanningSettings.get("eta");
 		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
 		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
-		this.graph 				= new SimpleGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
+		this.graph 				= new SimpleDirectedGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
 		this.forwardSampledTransitions = ProductAutomaton.factory.zero();
 		this.tree.init(null);
 	}
@@ -153,6 +153,7 @@ public abstract class RRG {
 			System.out.println("Found Point "+ center);
 			Vertex centerV = findTheVertex(center);
 			graph.addEdge(source, centerV);
+			graph.addEdge(centerV, source);
 		}
 		Vertex target = findTheVertex(newPosition);
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, source, target);
@@ -231,16 +232,16 @@ public abstract class RRG {
 	
 	/**
 	 * Find a vertex in the graphRRG where labelling is
-	 * @param label
+	 * @param
 	 * @return
 	 */
-	private Vertex findTheVertex(BDD label) 
+	private Vertex findTheVertex(BDD source, BDD target)
 	{
-		Iterator<Pair<BDD, Vertex>> it = map.iterator();
+		Iterator<Pair<Pair<BDD, BDD>, Vertex>> it = map.iterator();
 		while(it.hasNext())
 		{
-			Pair<BDD, Vertex> n = (Pair<BDD, Vertex>) it.next();
-			if(! n.getFirst().and(label).isZero())
+			Pair<Pair<BDD, BDD>, Vertex> n = (Pair<Pair<BDD, BDD>, Vertex>) it.next();
+			if(! n.getFirst().getFirst().and(source).isZero() && ! n.getFirst().getSecond().and(target).isZero())
 			{
 				return n.getSecond();
 			}
@@ -271,12 +272,14 @@ public abstract class RRG {
 	
 	/**
 	 * add a vertex to the map
-	 * @param v
+	 * @param
 	 */
-	protected void addToMap(Vertex v) {
+	protected void addToMap(Vertex sourceV, Vertex targetV) {
 		try {
-			BDD label = Environment.getLabelling().getLabel(v.getPoint());
-			if(findTheVertex(label) == null) 	map.add(new Pair<BDD, Vertex>(label, v));
+			BDD source = Environment.getLabelling().getLabel(sourceV.getPoint());
+			BDD target = Environment.getLabelling().getLabel(targetV.getPoint());
+			if(! source.equals(target) && findTheVertex(source, target) == null)
+				map.add(new Pair<Pair<BDD, BDD>, Vertex>(new Pair<BDD, BDD>(source, target), targetV));
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -335,10 +338,13 @@ public abstract class RRG {
 		}
 		try {
 			DefaultEdge edge = graph.addEdge(source, target);
+			DefaultEdge edge_r = graph.addEdge(target, source);
 			if(edge != null) {
 				graph.setEdgeWeight(edge, distance(start, end));
+				graph.setEdgeWeight(edge_r, distance(start, end));
 			}
-			addToMap(target);
+			addToMap(source, target);
+			addToMap(target, source);
 		} catch (Exception IllegalArgumentException) {}		
 	}
 	
@@ -366,31 +372,31 @@ public abstract class RRG {
 	 * @return 
 	 */
 	public List<DefaultEdge> liftPath(ArrayList<BDD> path) {
-		Vertex source 		= initVertex;
-		Vertex dest;
-		Iterator<BDD> it 	= path.iterator();
+		Vertex source = findTheVertex(currentRobotPosition);
+		Vertex target;
+		List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
+		Iterator<BDD> it = path.iterator();
+		BDD currentState = it.next(); // first point is already there
 		BDD nextState;
-		List<DefaultEdge> finalPath;
-		
-		//initialize finalPath
-		nextState 			= it.next(); // first point is already there
-		nextState 			= it.next();
-		
-		dest = findTheVertex(nextState);
-		GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, dest);
-		finalPath 			= nextPath.getEdgeList();
-		
+
 		while(it.hasNext())
 		{
-			source 			= dest;
-			nextState 		= it.next();
-			dest 			= findTheVertex(nextState);
+			nextState = it.next();
+			if(nextState.equals(currentState)) {
+				continue;
+			}
+			target = findTheVertex(currentState, nextState);
 			try {
-				nextPath 		= DijkstraShortestPath.findPathBetween(graph, source, dest);
+				GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, target);
+				finalPath.addAll(nextPath.getEdgeList());
+				source = target;
+				currentState = nextState;
 			} catch(Exception e) {
+				System.out.println(source.getPoint().toString() + " , " + source.getLabel());
+				System.out.println(nextState);
+//				System.out.println(target.getPoint().toString() + " , " + target.getLabel());
 				e.printStackTrace();
 			}
-			finalPath.addAll(nextPath.getEdgeList());
 		}
 		return finalPath;
 	}   

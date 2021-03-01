@@ -13,6 +13,7 @@ import modules.learnAskExperiments.DefaultExperiment;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 
 import org.jgrapht.alg.util.Pair;
@@ -113,6 +114,7 @@ public class Planning
 			System.out.println("RRG size = " + rrg.totalPoints);
 			System.out.println("\nMovement Length = " + length.getFirst());
 			System.out.println("Remaining path Length = " + length.getSecond());
+			System.out.println("Total path Length = " + (length.getFirst()+length.getSecond()));
 			System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled) + " (" + adviceSamples + ")");
 			System.out.print("\nTotal time taken (in ms):");
 			System.out.println(totalTime / 1000000);
@@ -142,9 +144,10 @@ public class Planning
 	 * @return
 	 * @throws PlanningException
 	 */
-	boolean needLearning(BDD transitions) throws PlanningException {
-		return transitions.and(productAutomaton.sampledTransitions).isZero() && ! productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)));
-	}
+//	boolean needLearning(BDD transitions) throws PlanningException {
+//		return transitions.and(productAutomaton.sampledTransitions).isZero();
+//		&& ! productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)));
+//	}
 	
 	/**
 	 * update advice if required
@@ -182,11 +185,11 @@ public class Planning
     	while( ite.hasNext() ) 
     	{
     		transitions = (BDD) ite.next();
-    		if( needLearning(transitions) ) {
+//    		if( needLearning(transitions) ) {
     			exper.learn(transitions);
         		currentStates = currentStates.or(productAutomaton.getSecondStateSystem(transitions));
         		needNewAdvice = true;
-        	}
+//        	}
     	}
     	learnTime += System.nanoTime() - startTime;
 	}
@@ -196,18 +199,18 @@ public class Planning
 	 * @throws Exception
 	 */
 	public Object[] explAndPlanTogether() throws Exception
-	{    
+	{
     	BDD transitions 					= null;
         boolean computePath 				= false;
         boolean debug 						= (boolean) PlanningSettings.get("debug");
 
-		System.out.println("Starting planning ...");
+		System.out.println("Starting planning ... ");
 		UnknownRRG urrg = (UnknownRRG) rrg;
         urrg.grid.knowDiscretization(env, productAutomaton, env.getInit(), (float) PlanningSettings.get("sensingRadius"));
         while( true )
         {
         	if( debug ) {
-	        	if( iterationNumber == 100 ) {
+	        	if( iterationNumber == 1 ) {
 //	        		urrg.grid.printDiscretization();
 //	        		urrg.grid.printFrontiers();
 	        		break;
@@ -227,15 +230,31 @@ public class Planning
         	if( productAutomaton.isAcceptingTransition(transitions) )
         		computePath = true;
         	learn(transitions);
-        	
-        	startTime = System.nanoTime(); 
+        	startTime = System.nanoTime();
         	if( computePath ) {
-        		ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
-        		if( path != null ) {
+				ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
+				if( path != null ) {
+					ArrayList<BDD> remainingPath = urrg.findRemainingPath();
         			System.out.println("\nPath found :D :D :D");
-					if((boolean) PlanningSettings.get("debug"))
-	            		productAutomaton.printPath(path);
-                	finalPath = urrg.liftPath(path); 
+					if((boolean) PlanningSettings.get("debug")) {
+						productAutomaton.printPath(path);
+						System.out.println("Concrete movement: ");
+						Iterator<DefaultEdge> it_move = urrg.movement.iterator();
+						DefaultEdge e = it_move.next();
+						Point2D e_p = urrg.getGraph().getEdgeSource(e).getPoint();
+						System.out.println("(" + e_p.getX() + ", " + e_p.getY() + ") \t" + Environment.getLabelling().getLabel(e_p));
+						while (it_move.hasNext()){
+							e_p = urrg.getGraph().getEdgeSource(e).getPoint();
+							System.out.println("(" + e_p.getX() + ", " + e_p.getY() + ") \t" + Environment.getLabelling().getLabel(e_p));
+							e = it_move.next();
+						}
+						System.out.println("\nMovement: ");
+						productAutomaton.printPath(urrg.movementBDD);
+						System.out.println("\nRemaining path: ");
+						productAutomaton.printPath(remainingPath);
+					}
+					if(remainingPath !=null)
+                		finalPath = urrg.liftPath(remainingPath);
             		break;
             	}
         	}
@@ -247,15 +266,13 @@ public class Planning
 			System.out.println(urrg.moveTime / 1000000);
 		}
 
-//        Initialize.getFactory().done();
-//		Initialize.getFactory().reset();
-
 		Object[] data = new Object[] {
 				new Integer(iterationNumber),
 				new Integer(rrg.totalSampledPoints),
 				new Integer(rrg.totalPoints),
 				new Float(moveLength),
 				new Float(pathLength),
+				new Float(moveLength + pathLength),
 				new Double(totalTime)
 		};
 		return data;
@@ -272,11 +289,17 @@ public class Planning
 		moveLength = exploreDiscretization(grid);
 		System.out.println(" finished");
 		explTime = System.nanoTime() - startTime;
-		
+
+		KnownRRG krrg = (KnownRRG) rrg;
+		krrg.setGrid(grid);
+		krrg.setStartingPoint(krrg.currentRobotPosition);
+		ArrayList<BDD> movementBDD = new ArrayList<BDD>();
+		movementBDD.add(Environment.getLabelling().getLabel(krrg.currentRobotPosition));
+
 		BDD transitions = null;
         boolean computePath = true;
 
-		System.out.print("Starting planning ...");
+		System.out.print("Starting planning ... ");
 		while( true ){
 			iterationNumber++;
 
@@ -295,7 +318,7 @@ public class Planning
         	
         	startTime = System.nanoTime();
         	if( computePath ) {
-        		ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
+        		ArrayList<BDD> path	= productAutomaton.findAcceptingPath(movementBDD);
         		if( path != null ) {
         			System.out.println("Path found :D");
 					if((boolean) PlanningSettings.get("debug"))
@@ -306,9 +329,7 @@ public class Planning
         	}
         	pathTime += System.nanoTime() - startTime;
 		}
-//        Initialize.getFactory().done();
 
-		KnownRRG krrg = (KnownRRG) rrg;
 		System.out.print("Plotting...");
 		Pair<Float, Float> length = krrg.plotGraph(finalPath, grid.getGraph());
 		System.out.println("done");
@@ -321,6 +342,7 @@ public class Planning
 				new Integer(rrg.totalPoints),
 				new Float(moveLength),
 				new Float(pathLength),
+				new Float(moveLength + pathLength),
 				new Double(totalTime)
 		};
 		return data;
@@ -334,13 +356,18 @@ public class Planning
 		grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		grid.updateInitPoint(currentPosition);
 		while(! grid.exploredCompletely()) {
-			newPosition = grid.findAMove(currentPosition).getFirst();
+			Pair<Point2D, Integer> newMove = grid.findAMove(currentPosition);
+			if(newMove == null) {
+				break;
+			}
+			newPosition = newMove.getFirst();
 			grid.updateMovement(currentPosition, newPosition);
 			length += grid.findAPath(currentPosition, newPosition);
 			currentPosition = newPosition;
 			grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		}
 		rrg.setMovement(grid.getMovement());
+		rrg.currentRobotPosition = currentPosition;
 		return length;
 	}
 }

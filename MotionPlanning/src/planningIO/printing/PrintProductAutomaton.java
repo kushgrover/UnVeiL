@@ -7,6 +7,7 @@ import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDD.BDDIterator;
 import settings.PlanningException;
+import settings.PlanningSettings;
 
 public class PrintProductAutomaton
 {
@@ -16,7 +17,7 @@ public class PrintProductAutomaton
 	public PrintProductAutomaton(ProductAutomaton productAutomaton, int num) throws Exception
 	{
 		visited 				= new boolean[ProductAutomaton.getNumStates()];
-		writer 					= new BufferedWriter(new FileWriter("temp/productAutomaton"+num+".dot"));
+		writer 					= new BufferedWriter(new FileWriter(((String) PlanningSettings.get("outputDictory")) + "productAutomaton.dot"));
 		
 		this.productAutomaton	= productAutomaton;
 		BDD productAutomatonBDD = productAutomaton.getBDD();
@@ -60,12 +61,12 @@ public class PrintProductAutomaton
 		
 		if(level == 3)
 			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=green, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
-		if(level == 2)
-			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=blue, label=\""  + labelString + " (" + acceptingSet + ")\"];\n");
-		if(level == 1)
-			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=red, label=\""   + labelString + " (" + acceptingSet + ")\"];\n");;
-		if(level == 0)
-			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=black, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
+//		if(level == 2)
+//			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=blue, label=\""  + labelString + " (" + acceptingSet + ")\"];\n");
+//		if(level == 1)
+//			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=red, label=\""   + labelString + " (" + acceptingSet + ")\"];\n");;
+//		if(level == 0)
+//			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=black, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
 	}
 	
 	private String getTransitionLabelString(BDD transition) throws Exception

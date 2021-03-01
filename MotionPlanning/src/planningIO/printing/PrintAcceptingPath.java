@@ -10,6 +10,9 @@ public class PrintAcceptingPath
 {
 	public PrintAcceptingPath(ArrayList<BDD> path) throws PlanningException 
 	{
+		if(path == null){
+			return;
+		}
 		BDD next;
 		for(int i=0; i<path.size(); i++) 
 		{

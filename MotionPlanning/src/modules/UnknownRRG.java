@@ -7,6 +7,7 @@ import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
 import planningIO.StoreGraphUnknown;
 import planningIO.printing.ShowGraphUnknown;
+import settings.PlanningException;
 import settings.PlanningSettings;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class UnknownRRG extends RRG
 	
 	boolean explorationComplete = false;
 	
-	ArrayList<BDD> movementBDD;
+	public ArrayList<BDD> movementBDD;
 	
 	
 	/**
@@ -74,13 +75,6 @@ public class UnknownRRG extends RRG
 	@Override
 	public void updateMovement(Point2D newPosition) throws Exception {
 		Vertex source = findTheVertex(currentRobotPosition);
-		if(source == null) {
-			source = new Vertex(currentRobotPosition);
-			graph.addVertex(source);
-			Point2D center = findCellCenter(currentRobotPosition);
-			Vertex centerV = findTheVertex(center);
-			graph.addEdge(source, centerV);
-		}
 		Vertex target = findTheVertex(newPosition);
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, source, target);
 		ArrayList<DefaultEdge> edges = new ArrayList<DefaultEdge>();
@@ -90,7 +84,7 @@ public class UnknownRRG extends RRG
 		Iterator<DefaultEdge> it = edges.iterator();
 		BDD lastMovement = null;
 		if(! movementBDD.isEmpty())
-			lastMovement = movementBDD.get(movementBDD.size()-1);
+			lastMovement = movementBDD.get(movementBDD.size() - 1);
 		
 		while(it.hasNext()) {
 			DefaultEdge nextEdge = it.next();
@@ -100,7 +94,7 @@ public class UnknownRRG extends RRG
 				lastMovement = sourceBDD;
 			}
 			BDD targetBDD = Environment.getLabelling().getLabel(graph.getEdgeTarget(nextEdge).getPoint());
-			if(lastMovement.and(targetBDD.not()).isZero()) {
+			if(! lastMovement.equals(targetBDD)) {
 				movementBDD.add(targetBDD);
 				lastMovement = targetBDD;
 			}
@@ -145,11 +139,11 @@ public class UnknownRRG extends RRG
 //					plotting the first time it sees a bin
 					try {
 						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-							plotGraph(null);
+							StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "bin");
 							flagBin = true;
 						}
 						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-							plotGraph(null);
+							StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "room");
 							flagRoom = true;
 						}
 					} catch (Exception e1) {
@@ -165,8 +159,7 @@ public class UnknownRRG extends RRG
 									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
 									
 									if(neighbour2D.equals(xNew2D)) return true;
-//									if(! env.collisionFreeFromOpaqueObstacles(neighbour2D, currentRobotPosition)) return true;
-									
+
 									if(distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFreeAll(xNew2D, neighbour2D)){
 										addSymbolicTransitions(neighbour2D, xNew2D);
 										addGraphEdge(neighbour2D, xNew2D);
@@ -232,7 +225,6 @@ public class UnknownRRG extends RRG
 	@Override 
 	boolean checkValidity(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition) {
 		if(! env.collisionFreeAll(xNearest2D, xNew2D)) return false; // new edge is obstacle free
-//		if(! env.collisionFreeFromOpaqueObstacles(xNew2D, currentRobotPosition)) return false; // new edge is visible
 		if(! forwardSampledTransitions.and(transition).isZero()) return false; // transition already sampled
 		if(advice != null) {
 			int rank = findRank(advice, xNearest2D, xNew2D, transition);
@@ -277,13 +269,16 @@ public class UnknownRRG extends RRG
 		else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) { // batch is finished
 			
 			if(! flagFirstMove) { // plotting before the first time it moves
-				plotGraph(null);
+				StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "firstMove");
 				flagFirstMove = true;
 			}
 			if(explorationComplete) {
 				return;
 			}
 			Pair<Point2D, Integer> foundMove = grid.findAMove(currentRobotPosition);
+			if(foundMove == null){
+				foundMove = new Pair<Point2D, Integer>(currentRobotPosition, -1);
+			}
 			Point2D p = foundMove.getFirst();
 			if(p != null) {
 				alreadyFound = false;
@@ -365,7 +360,11 @@ public class UnknownRRG extends RRG
 			}
 		}
 		return finalPath;
-	}   
+	}
+
+	public ArrayList<BDD> findRemainingPath() throws PlanningException {
+		return productAutomaton.findAcceptingPath(movementBDD);
+	}
 		
 	/**
 	 * Plot the graphRRG
@@ -377,16 +376,7 @@ public class UnknownRRG extends RRG
 		if(finalPath != null) {
 			if((boolean) PlanningSettings.get("generatePlot"))
 				new ShowGraphUnknown(graph, env, movement, finalPath).setVisible(true);
-			StoreGraphUnknown temp = new StoreGraphUnknown(env, graph, finalPath, movement, "end");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
-		} else if(! flagFirstMove) {
-			StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, "firstMove");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
-		} else if(! flagBin) {
-			StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, "bin");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
-		} else if(! flagRoom) {
-			StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, "room");
+			StoreGraphUnknown temp = new StoreGraphUnknown(env, graph, finalPath, movement, (String) PlanningSettings.get("outputDirectory") + "end");
 			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
 		}
 		return new Pair<Float, Float>(0f,0f);

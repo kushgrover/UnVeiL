@@ -10,6 +10,7 @@ import planningIO.printing.PrintProductAutomaton;
 import settings.PlanningException;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import modules.emptinessCheck.EmptinessCheck;
 
@@ -94,7 +95,7 @@ public class ProductAutomaton
 	private void initializeCounter()
 	{
 		counter		= new int[(int) numStatesSystem];
-		for(int i=0; i<counter.length; i++) 
+		for(int i=0; i<counter.length; i++)
 		{
 			counter[i]	= 0;
 		}
@@ -190,7 +191,7 @@ public class ProductAutomaton
 	 */
 	public void setInitState(BDD initStates) 
 	{
-		this.initStates		= initStates;
+		this.initStates = initStates;
 	}
 	
 	/**
@@ -244,7 +245,7 @@ public class ProductAutomaton
 	 */
 	public BDD getSampledProductTransitions() 
 	{
-		return sampledProductTransitions;
+		return productAutomatonBDD.and(transitionLevelDomain().ithVar(3));
 	}
 	
 	/**
@@ -810,7 +811,7 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	public BDD preImage(BDD states) throws PlanningException, PlanningException 
+	public BDD preImageConcrete(BDD states) throws PlanningException, PlanningException
 	{
 		if(! hasOnlyPreVars(states)) 
 		{
@@ -818,7 +819,7 @@ public class ProductAutomaton
 		}
 		BDD temp	= factory.zero();
 		temp		= temp.or(changePreVarsToPostVars(states));
-		return removeAllExceptPreVars(productAutomatonBDD.and(temp));
+		return removeAllExceptPreVars(productAutomatonBDD.and(transitionLevelDomain().ithVar(3)).and(temp));
 	}
 	
 	public BDD preImageSystem(BDD states) throws PlanningException, PlanningException 
@@ -838,13 +839,13 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	public BDD postImage(BDD states) throws PlanningException, PlanningException 
+	public BDD postImageConcrete(BDD states) throws PlanningException, PlanningException
 	{
 		if(! hasOnlyPreVars(states)) 
 		{
 			throw new PlanningException("BDD has extra vars");
 		}
-		return changePostVarsToPreVars(removeAllExceptPostVars(productAutomatonBDD.and(states)));
+		return changePostVarsToPreVars(removeAllExceptPostVars(productAutomatonBDD.and(transitionLevelDomain().ithVar(3)).and(states)));
 	}
 	
 	public BDD postImageSystem(BDD states) throws PlanningException, PlanningException 
@@ -1055,7 +1056,7 @@ public class ProductAutomaton
 	
 	/**
 	 * <p>Remove a set of transitions from the productAutomaton</p>
-	 * @param transition
+	 * @param transitions
 	 */
 	public void removeTransitions(BDD transitions) 
 	{
@@ -1149,8 +1150,6 @@ public class ProductAutomaton
 	
 	/**
 	 * <p>Add a transition in the product automaton</p>
-	 * @param fromState
-	 * @param toState
 	 * @param level
 	 * @return 
 	 * @throws PlanningException 
@@ -1164,8 +1163,6 @@ public class ProductAutomaton
 	
 	/**
 	 * Remove all transitions from "fromState" to "toState"
-	 * @param fromState
-	 * @param toState
 	 * @throws PlanningException
 	 */
 	public void removeTransition(BDD transitions) throws PlanningException 
@@ -1175,13 +1172,12 @@ public class ProductAutomaton
 	
 	/**
 	 * <p>Returns the set of transitions in the product automaton from a state in 'fromState' to a state in 'toState'</p>
-	 * @param fromState 
-	 * @param toState
+	 * @param fromStates
+	 * @param toStates
 	 * @return BDD representing the transition from fromState to toState
 	 * @throws PlanningException 
-	 * @throws PlanningException 
 	 */
-	public BDD getTransitions(BDD fromStates, BDD toStates) throws PlanningException, PlanningException 
+	public BDD getTransitions(BDD fromStates, BDD toStates) throws PlanningException
 	{
 		if(! hasOnlyPreVars(fromStates) 	||	 ! hasOnlyPreVars(toStates)) 
 		{
@@ -1195,11 +1191,8 @@ public class ProductAutomaton
 
 	/**
 	 * <p>Add a set of transitions to the product automaton</p>
-	 * @param fromStates from set of states
-	 * @param toStates to set of states
-	 * @param level level of all transitions
-	 * @param filters 
-	 * @throws PlanningException 
+	 * @param transitions
+	 * @throws PlanningException
 	 */
 	public void addTransitions(BDD transitions) throws PlanningException
 	{
@@ -1327,7 +1320,7 @@ public class ProductAutomaton
 			throw new PlanningException("More than one state");
 		} else if(fromState.satCount(allPreSystemVars())==0) 
 		{
-			throw new PlanningException("State desn't exist");
+			throw new PlanningException("State doesn't exist");
 		}
 		int stateID		= 0;
 		for(int i=0; i<numAPSystem; i++) 
@@ -1362,9 +1355,6 @@ public class ProductAutomaton
 			{
 				stateID	+= (int)Math.pow(2, i+propertyDomainPre().varNum());
 			}
-		}
-		if(stateID==519) {
-			System.out.println("jadjagdakjshdjakdkjahjhdkja");
 		}
 		return stateID;
 	}
@@ -1426,11 +1416,33 @@ public class ProductAutomaton
 	public ArrayList<BDD> findAcceptingPath() throws PlanningException 
 	{
 		EmptinessCheck newCheck	= new EmptinessCheck(this);
-		return newCheck.findAcceptingPath();
+		return newCheck.findAcceptingPath(getInitStates());
 	}
 
-	
-	
+	public ArrayList<BDD> findAcceptingPath(ArrayList<BDD> movementBDD) throws PlanningException {
+		EmptinessCheck newCheck = new EmptinessCheck(this);
+		BDD st = findCurrentState(movementBDD);
+		if(st.isZero()){
+			return null;
+		}
+		return newCheck.findAcceptingPath(st);
+	}
+
+	private BDD findCurrentState(ArrayList<BDD> movementBDD) throws PlanningException {
+		Iterator<BDD> it = movementBDD.iterator();
+		BDD currentState = it.next().and(propertyDomainPre().ithVar(0));
+		movementBDD.set(0, currentState);
+		BDD nextState;
+		int i = 1;
+		while(it.hasNext()) {
+			nextState = it.next();
+			currentState = postImageConcrete(currentState).and(nextState);
+			movementBDD.set(i, currentState);
+			i++;
+		}
+		return currentState;
+	}
+
 
 //-------------------------------------------------------------------------------------------------------------------
 
@@ -1483,7 +1495,7 @@ public class ProductAutomaton
 	{
 		if(transition == null)
 			return false;
-		
+		BDD test = productAutomatonBDD.and(acceptingSetDomain().ithVar(0).not());
 		if(productAutomatonBDD.and(propertyBDD.and(getLabelEquivalence()).and(transition).and(transitionLevelDomain().ithVar(3)).and(acceptingSetDomain().ithVar(0).not())).isZero())
 		{
 			return false;
@@ -1502,11 +1514,6 @@ public class ProductAutomaton
 
 
 
-
-
-	
-	
-	
 //-------------------------------------------------------------------------------------------------------------------
 
 	

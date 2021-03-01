@@ -257,7 +257,7 @@ public class GenerateRandomEnv {
 		float l = 0.5f;
 		float w = 0.3f;
 		float x = randomNumber(0, 1.95f-l);
-		float y = randomNumber(0, 0.95f-w);
+		float y = randomNumber(0, 0.55f-w);
 		rect = new Path2D.Float();
 		rect.moveTo(x, 		y);
 		rect.lineTo(x + l,	y);
@@ -295,7 +295,7 @@ public class GenerateRandomEnv {
 		l = 0.5f;
 		w = 0.3f;
 		x = randomNumber(0, 1.95f-l);
-		y = randomNumber(2.05f, 3f-w);
+		y = randomNumber(2.45f, 3f-w);
 		rect = new Path2D.Float();
 		rect.moveTo(x, 		y);
 		rect.lineTo(x + l, 	y);
@@ -332,7 +332,7 @@ public class GenerateRandomEnv {
 		l = 0.5f;
 		w = 0.3f;
 		x = randomNumber(2.05f, 3.95f-l);
-		y = randomNumber(0f, 0.95f-w);
+		y = randomNumber(0f, 0.55f-w);
 		rect = new Path2D.Float();
 		rect.moveTo(x, y);
 		rect.lineTo(x+l, y);
@@ -370,7 +370,7 @@ public class GenerateRandomEnv {
 		l = 0.5f;
 		w = 0.3f;
 		x = randomNumber(2.05f, 3.95f-l);
-		y = randomNumber(2.05f, 3f-w);
+		y = randomNumber(2.45f, 3f-w);
 		rect = new Path2D.Float();
 		rect.moveTo(x, y);
 		rect.lineTo(x+l, y);
@@ -407,7 +407,7 @@ public class GenerateRandomEnv {
 		l = 0.5f;
 		w = 0.3f;
 		x = randomNumber(4.05f, 6f-l);
-		y = randomNumber(0, 0.95f-w);
+		y = randomNumber(0, 0.45f-w);
 		rect = new Path2D.Float();
 		rect.moveTo(x, y);
 		rect.lineTo(x+l, y);
@@ -444,7 +444,7 @@ public class GenerateRandomEnv {
 		l = 0.5f;
 		w = 0.3f;
 		x = randomNumber(4.05f, 6f-l);
-		y = randomNumber(2.05f, 3f-w);
+		y = randomNumber(2.45f, 3f-w);
 		rect = new Path2D.Float();
 		rect.moveTo(x, y);
 		rect.lineTo(x+l, y);

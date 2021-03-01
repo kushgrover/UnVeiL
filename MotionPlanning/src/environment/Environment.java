@@ -20,8 +20,8 @@ public class Environment {
 
 	private float[] boundsY;
 	
+	ArrayList<Path2D> seeThroughObstacles;
 	ArrayList<Path2D> obstacles;
-	ArrayList<Path2D> walls;
 	Area allObs;
 	int numOfObs;
 	int numOfWalls;
@@ -29,15 +29,15 @@ public class Environment {
 	static Label labelling;
 	Grid discretization;
 	
-	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> obstacles, ArrayList<Path2D> walls, Point2D init, Label labelling) 
+	public Environment(float[] boundsX, float[] boundsY, ArrayList<Path2D> seeThroughObstacles, ArrayList<Path2D> obstacles, Point2D init, Label labelling)
 	{
 		this.bounds				= new Rectangle2D.Float(boundsX[0],boundsY[0],boundsX[1]-boundsX[0],boundsY[1]-boundsY[0]);
 		this.setBoundsX(boundsX);
 		this.setBoundsY(boundsY);
-		this.numOfObs			= obstacles.size();
-		this.obstacles 			= obstacles;
-		this.numOfWalls			= walls.size();
-		this.walls 				= walls;
+		this.numOfObs			= seeThroughObstacles.size();
+		this.seeThroughObstacles = seeThroughObstacles;
+		this.numOfWalls			= obstacles.size();
+		this.obstacles = obstacles;
 
 		Environment.init		= init;
 		Environment.labelling	= labelling;
@@ -60,7 +60,7 @@ public class Environment {
 	
 	public Boolean obstacleFreeAll(Point2D x) 
 	{
-		Iterator<Path2D> i = obstacles.iterator();
+		Iterator<Path2D> i = seeThroughObstacles.iterator();
 		while(i.hasNext())
 		{
 			Path2D next = i.next();
@@ -69,11 +69,34 @@ public class Environment {
 				return false;
 			}
 		}
-		i = walls.iterator();
+		i = obstacles.iterator();
 		while(i.hasNext())
 		{
 			Path2D next = i.next();
 			if(next.contains(x))
+			{
+				return false;
+			}
+		}
+		return true;
+	}
+
+	public Boolean obstacleFreeAll(Rectangle2D x)
+	{
+		Iterator<Path2D> i = seeThroughObstacles.iterator();
+		while(i.hasNext())
+		{
+			Path2D next = i.next();
+			if(next.intersects(x))
+			{
+				return false;
+			}
+		}
+		i = obstacles.iterator();
+		while(i.hasNext())
+		{
+			Path2D next = i.next();
+			if(next.intersects(x))
 			{
 				return false;
 			}
@@ -110,7 +133,7 @@ public class Environment {
 		
 		for(int i=0; i<numOfWalls; i++) 
 		{
-			PathIterator ite	= getWalls().get(i).getPathIterator(new AffineTransform());
+			PathIterator ite	= getObstacles().get(i).getPathIterator(new AffineTransform());
 			segmentType			= ite.currentSegment(coords1);
 			assert(segmentType == PathIterator.SEG_MOVETO);
 			
@@ -139,7 +162,7 @@ public class Environment {
 		
 		for(int i=0; i<numOfWalls; i++) 
 		{
-			PathIterator ite	= getWalls().get(i).getPathIterator(new AffineTransform());
+			PathIterator ite	= getObstacles().get(i).getPathIterator(new AffineTransform());
 			segmentType			= ite.currentSegment(coords1);
 			assert(segmentType == PathIterator.SEG_MOVETO);
 			
@@ -159,7 +182,7 @@ public class Environment {
 		}
 		for(int i=0; i<numOfObs; i++) 
 		{
-			PathIterator ite	= getObstacles().get(i).getPathIterator(new AffineTransform());
+			PathIterator ite	= getSeeThroughObstacles().get(i).getPathIterator(new AffineTransform());
 			segmentType			= ite.currentSegment(coords1);
 			assert(segmentType == PathIterator.SEG_MOVETO);
 			
@@ -210,12 +233,12 @@ public class Environment {
 		this.boundsY = boundsY;
 	}
 
-	public ArrayList<Path2D> getObstacles() {
-		return obstacles;
+	public ArrayList<Path2D> getSeeThroughObstacles() {
+		return seeThroughObstacles;
 	}
 
-	public ArrayList<Path2D> getWalls() {
-		return walls;
+	public ArrayList<Path2D> getObstacles() {
+		return obstacles;
 	}
 }
 

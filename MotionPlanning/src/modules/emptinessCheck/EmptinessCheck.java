@@ -4,6 +4,7 @@
 package modules.emptinessCheck;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
@@ -25,26 +26,23 @@ public class EmptinessCheck {
 	int totalAcceptingSets;
 	int[] rank;
 	BDD statesSCC;
-	
-	
-	public EmptinessCheck(ProductAutomaton productAutomaton)
-	{
+
+	public EmptinessCheck(ProductAutomaton productAutomaton) {
 		this.productAutomaton	= productAutomaton;
 		factory					= ProductAutomaton.factory;
 		todo					= new stackTODO();
 		SCC						= new stackSCC();
 		totalAcceptingSets		= 1;
 		rank					= new int[ProductAutomaton.getNumStates()];
-		for(int i=0; i<ProductAutomaton.getNumStates(); i++) 
+		for(int i=0; i<ProductAutomaton.getNumStates(); i++)
 		{
 			rank[i]				=- 1;
 		}
 	}
-	
-//	public boolean findAcceptingPath() throws Exception{
-	public ArrayList<BDD> findAcceptingPath() throws PlanningException
+
+	public ArrayList<BDD> findAcceptingPath(BDD initState) throws PlanningException
 	{
-		push(null, productAutomaton.getInitStates());
+		push(null, initState);
 		while(! todo.isEmpty()) 
 		{	
 			if(todo.getTop().getTransitions().isZero())
@@ -55,11 +53,24 @@ public class EmptinessCheck {
 			{
 				BDD transition	= todo.getOneSuccFromTop();
 				BDD toState		= productAutomaton.getSecondState(transition);
+//				BDD h	= ProductAutomaton.ithVarSystemPre(0).not();
+//				BDD r1	= ProductAutomaton.ithVarSystemPre(1).not();
+//				BDD r2	= ProductAutomaton.ithVarSystemPre(2).not();
+//				BDD r3	= ProductAutomaton.ithVarSystemPre(3).not();
+//				BDD r4	= ProductAutomaton.ithVarSystemPre(4).not();
+//				BDD r5	= ProductAutomaton.ithVarSystemPre(5).not();
+//				BDD r6	= ProductAutomaton.ithVarSystemPre(6).not();
+//				BDD b	= ProductAutomaton.ithVarSystemPre(7);
+//				BDD t	= ProductAutomaton.ithVarSystemPre(8).not();
+//				BDD onlyBin = h.and(r1).and(r2).and(r3).and(r4).and(r5).and(r6).and(b).and(t);
+//				if(! toState.and(onlyBin).isZero()){
+//					System.out.print(" ");
+//				}
 				if(toState.isZero()) 
 				{
 					throw new PlanningException("State does not exist");
 				}
-				ArrayList<Integer> accSet	= productAutomaton.findAcceptingSets(transition);
+				ArrayList<Integer> accSet = productAutomaton.findAcceptingSets(transition);
 				if(getRank(toState) == -1) 
 				{
 					push(accSet,toState);
@@ -68,7 +79,7 @@ public class EmptinessCheck {
 				{
 					if(containAllAcc(merge(accSet,getRank(toState)))) 
 					{
-						return findPath();
+						return findPath(initState);
 					}
 				}
 			}
@@ -76,20 +87,23 @@ public class EmptinessCheck {
 		return null;		
 	}
 	
-	private ArrayList<BDD> findPath() throws PlanningException 
+	private ArrayList<BDD> findPath(BDD initState) throws PlanningException
 	{
 		BDD statesSCC				= initializeStatesSCC();
 		ArrayList<BDD> path			= new ArrayList<BDD>();
-		ArrayList<BDD> milestones	= new ArrayList<BDD>();
-		int[] visitedAcceptingSets	= new int[totalAcceptingSets+1];
+		int[] visitedAcceptingSets	= new int[totalAcceptingSets + 1];
 		
-		milestones.add(statesSCC.satOne(ProductAutomaton.allPreVars(),false));
-		bfs(productAutomaton.getInitStates(), milestones.get(0),path);
-		for(int i=0; i<totalAcceptingSets; i++) 
-		{
- 			milestones.add(bfs(milestones.get(i),visitedAcceptingSets,path));
+
+		if(initState.and(statesSCC).isZero()) {
+			bfs(initState, statesSCC, path, visitedAcceptingSets);
 		}
-		bfs(milestones.get(totalAcceptingSets),milestones.get(0),path);
+		else{
+			path.add(initState);
+		}
+		for(int i=0; i<totalAcceptingSets; i++)
+		{
+ 			bfs(path.get(path.size() - 1), visitedAcceptingSets, path);
+		}
 		return path;
 	}
 
@@ -120,19 +134,20 @@ public class EmptinessCheck {
 				accTransitions		= accTransitions.or(productAutomaton.getAcceptingTransitions(j));
 			}
 		}
+		if(accTransitions.isZero()){
+			return fromState;
+		}
 		while(accTransitions.and(setStates.get(i)).and(productAutomaton.changePreVarsToPostVars(statesSCC)).isZero()) 
 		{
-			setStates.add(productAutomaton.postImage(setStates.get(i)).and(statesSCC));
+			setStates.add(productAutomaton.postImageConcrete(setStates.get(i)).and(statesSCC));
 			i++;
 		}
-//		productAutomaton.postImage(setStates.get(0)).and(statesSCC).printDot();
-//		System.out.println(productAutomaton.getStateID(productAutomaton.postImage(setStates.get(0)).and(statesSCC)));
 		BDD usefulTransitions	= accTransitions.and(setStates.get(i)).and(productAutomaton.changePreVarsToPostVars(statesSCC));
 		setStates.set(i, productAutomaton.getFirstState(usefulTransitions));
 		i--;
 		while(i > 0) 
 		{
-			setStates.set(i, setStates.get(i).and(productAutomaton.preImage(setStates.get(i+1))));
+			setStates.set(i, setStates.get(i).and(productAutomaton.preImageConcrete(setStates.get(i+1))));
 			i--;
 		}
 		for(i=1; i<setStates.size(); i++) 
@@ -140,12 +155,9 @@ public class EmptinessCheck {
 			setStates.set(i,setStates.get(i).satOne(ProductAutomaton.allPreVars(),false));
 			if(i < setStates.size()-1) 
 			{
-				setStates.set(i+1, productAutomaton.postImage(setStates.get(i)).and(setStates.get(i+1)));
+				setStates.set(i+1, productAutomaton.postImageConcrete(setStates.get(i)).and(setStates.get(i+1)));
 			}
 		}
-//		setStates.get(0).printDot();
-//		setStates.get(1).and(productAutomaton.changePreVarsToPostVars(setStates.get(2))).and(productAutomaton.getSampledProductTransitions()).printDot();
-//		setStates.get(2).printDot();
 		path.addAll(setStates);
 		BDD transition					= (setStates.get(i-1).and(accTransitions));
 		BDD toState						= productAutomaton.getSecondState(transition);
@@ -154,28 +166,40 @@ public class EmptinessCheck {
 		return toState;
 	}
 
-	private void bfs(BDD fromState, BDD toState, ArrayList<BDD> path) throws PlanningException
+	private void bfs(BDD fromState, BDD toState, ArrayList<BDD> path, int[] visitedAcceptingSets) throws PlanningException
 	{		
 		ArrayList<BDD> setStates		= new ArrayList<BDD>();
 		setStates.add(fromState);
 		int i							= 0;
 		while(setStates.get(i).and(toState).isZero()) 
 		{
-			setStates.add(productAutomaton.postImage(setStates.get(i)));
+			setStates.add(productAutomaton.postImageConcrete(setStates.get(i)));
 			i++;
 		}
-		setStates.set(i, toState);
+		setStates.set(i, setStates.get(i).and(toState));
 		i--;
 		while(i > 0) 
 		{
-			setStates.set(i, setStates.get(i).and(productAutomaton.preImage(setStates.get(i+1))));
+			setStates.set(i, setStates.get(i).and(productAutomaton.preImageConcrete(setStates.get(i+1))));
 			i--;
 		}
 		for(i=0; i<setStates.size(); i++) 
 		{
 			setStates.set(i,setStates.get(i).satOne(ProductAutomaton.allPreVars(),false));
 			if(i < setStates.size()-1) {
-				setStates.set(i+1, productAutomaton.postImage(setStates.get(i)));
+				setStates.set(i+1, productAutomaton.postImageConcrete(setStates.get(i)).and(setStates.get(i+1)));
+				BDD transition = setStates.get(i).and(productAutomaton.changePreVarsToPostVars(setStates.get(i+1)));
+				transition = transition.and(productAutomaton.getBDD()).and(ProductAutomaton.transitionLevelDomain().ithVar(3));
+				ArrayList<Integer> k = productAutomaton.findAcceptingSets(transition);
+				Iterator<Integer> k_it = k.iterator();
+				while(k_it.hasNext()){
+					int k_n = k_it.next();
+					if(k_n > 0) {
+						visitedAcceptingSets[k_n] = 1;
+						path.add(setStates.get(i));
+						return;
+					}
+				}
 			}
 			path.add(setStates.get(i));
 		}

@@ -85,7 +85,7 @@ public class ShowGraphKnown extends JFrame {
 
 		//walls
 		plot.setColor("blue");
-		Iterator<Path2D> i = env.getWalls().iterator();
+		Iterator<Path2D> i = env.getObstacles().iterator();
 		while(i.hasNext())
 		{
 			Path2D rect = i.next();
@@ -110,7 +110,7 @@ public class ShowGraphKnown extends JFrame {
 		
 		//Obstacles
 		plot.setColor("blue");
-		i = env.getObstacles().iterator();
+		i = env.getSeeThroughObstacles().iterator();
 		while(i.hasNext())
 		{
 			Path2D rect = i.next();
