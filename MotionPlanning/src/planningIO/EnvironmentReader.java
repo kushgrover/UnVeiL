@@ -103,7 +103,7 @@ public class EnvironmentReader
 		// For see through obstacles
 		p = Pattern.compile(rectangle);
 		i = 0;
-		if((boolean) PlanningSettings.get("debug"))
+		if((boolean) PlanningSettings.get("debug") && ! (boolean) PlanningSettings.get("onlyOpaqueObstacles"))
         	System.out.println("\nSee through Obstacles: ");
 
 		while(line != null)
@@ -124,8 +124,12 @@ public class EnvironmentReader
 			rect.lineTo(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
 			rect.lineTo(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
 			rect.closePath();
-			seeThroughObstacles.add(rect);
-			
+			if((boolean) PlanningSettings.get("onlyOpaqueObstacles")) {
+				obstacles.add(rect);
+			}
+			else {
+				seeThroughObstacles.add(rect);
+			}
 			if((boolean) PlanningSettings.get("debug"))
             	System.out.println(line);
 

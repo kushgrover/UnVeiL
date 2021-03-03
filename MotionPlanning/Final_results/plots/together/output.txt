@@ -1,0 +1,32 @@
+Movement: 
+[h,0]  [r1,0]  [r1,t,0]  [r1,b,t,12]  [r1,b,12]  [r1,12]  [r1,t,12]  [r1,12]  [h,12]  [r2,12]  [r2,t,12]  [r2,12]  [r2,b,22]  [r2,b,t,22]  [r2,b,22]  [r2,22]  [r2,t,22]  [r2,b,t,22]  [r2,22]  [h,22]  [r4,22]  [r4,t,22]  [r4,22]  [h,22]  [r3,22]  [r3,t,22]  [r3,22]  [h,22]  [r4,22]  [r4,b,19]  [r4,b,t,19]  [r4,t,19]  [r4,19]  [h,19]  [r6,19]  [r6,t,19]  [r6,19]  [h,19]  [r5,19]  [r5,t,19]  [r5,19]  [r5,t,19]  [r5,19]  [h,19]  [r6,19]  [r6,t,19]  [r6,19]  [r6,t,19]  [r6,b,61]  [r6,b,t,61]  [r6,b,61]  [r6,61]  [h,61]  [r5,61]  
+
+
+Remaining path: 
+[r5,61]  [r5,b,48]  [r5,48]  [h,48]  [r3,48]  [r3,b,t,63]  
+
+Exporting product automaton ... Resizing node table from 600011 to 1200007
+Garbage collection #1: 600011 nodes / 41638 free / 0.014s / 0.014s total
+done
+Storing output ... done
+
+Number of iterations = 51
+Total sampled points = 26672
+RRG size = 2551
+
+Movement Length = 40.886036
+Remaining path Length = 4.978325
+Total path Length = 45.86436
+
+Advice samples: [15, 9, 6, 1, 0, 0, 0, 0, 0, 0] (31)
+
+Total time taken (in ms):15163.420548
+
+Initialization time (in ms):454.572937
+Sampling time (in ms):10899.355908
+Advice time (in ms):21.489521
+Path checking time (in ms):1130.629131
+Learning time (in ms):426.713875
+Exploration time (in ms):0.0
+Time taken other than these things (in ms):2230.659176
+Moving time (in ms):603.9798

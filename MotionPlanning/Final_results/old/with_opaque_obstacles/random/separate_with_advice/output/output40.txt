@@ -1,0 +1,24 @@
+Starting initialization ... 
+Generating random environment ... done!
+Initialization complete
+
+
+Starting exploration ... finished
+Starting planning ... Resizing node table from 600011 to 1200007
+Path found :D
+Plotting...done
+
+Number of iterations = 11
+Total sampled points = 6740
+RRG size = 551
+
+Movement Length = 51.599987
+Remaining path Length = 24.81188
+Total path Length = 76.411865
+
+Advice samples: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] (0)
+
+Total time taken (in ms):4470.97956
+
+
+

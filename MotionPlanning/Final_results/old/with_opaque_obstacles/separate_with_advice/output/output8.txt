@@ -1,0 +1,23 @@
+Starting initialization ... 
+Initialization complete
+
+
+Starting exploration ... finished
+Starting planning ... Resizing node table from 600011 to 1200007
+Path found :D
+Plotting...done
+
+Number of iterations = 29
+Total sampled points = 17283
+RRG size = 1451
+
+Movement Length = 57.249985
+Remaining path Length = 28.759151
+Total path Length = 86.00914
+
+Advice samples: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] (0)
+
+Total time taken (in ms):5950.024401
+
+
+

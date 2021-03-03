@@ -26,7 +26,7 @@ public class mainCL {
 		};
 
 		for(int i=0; i < numOfRuns; i++) {
-			BDDFactory factory = BuDDyFactory.init(600000, (int) PlanningSettings.get("bddFactoryCacheSize"));
+			BDDFactory factory = BuDDyFactory.init(1000000, (int) PlanningSettings.get("bddFactoryCacheSize"));
 			System.out.println("Starting initialization ... ");
 			Planning plan = new Planning(factory);
 			System.out.println("Initialization complete\n\n");
@@ -51,6 +51,9 @@ public class mainCL {
 					sum[j] = new Float((Float) sum[j] + (Float) data[j]);
 				}
 				else if(j<7) {
+					BufferedWriter w = new BufferedWriter(new FileWriter("temp/timeout.txt"));
+					w.write((int) (((Double) data[j])/1000000) + "");
+					w.close();
 					writer.write(((Double) data[j])/1000000 + ",");
 					sum[j] = new Double((Double) sum[j] + (Double) data[j]);
 				}

@@ -1,0 +1,24 @@
+Starting initialization ... 
+Initialization complete
+
+
+Starting planning ... 
+Exploration complete
+
+Path found :D :D :D
+Storing output ... done
+
+Number of iterations = 40
+Total sampled points = 2265
+RRG size = 2001
+
+Movement Length = 40.093246
+Remaining path Length = 25.195807
+Total path Length = 65.289055
+
+Advice samples: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] (0)
+
+Total time taken (in ms):6987.768921
+
+
+

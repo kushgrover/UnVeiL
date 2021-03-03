@@ -36,8 +36,11 @@ f_env.write("[(3.95,0), (4.05,0), (4.05,0.95), (3.95,0.95)]\n")
 f_env.write("[(3.95,2.05), (4.05,2.05), (4.05,3), (3.95,3)]\n")
 
 # Tables
-if(sys.argv[2] == "--see-through"):
-    f_env.write("see through obstacles\n")
+try:
+    if(sys.argv[2] == "--see-through"):
+        f_env.write("see through obstacles\n")
+except IndexError:
+    pass
 
 l_bin = 0.2
 w_bin = 0.2

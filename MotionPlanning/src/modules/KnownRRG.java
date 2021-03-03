@@ -71,18 +71,20 @@ public class KnownRRG extends RRG {
 					updateRrgRadius(); 
 					addSymbolicTransitions(xNearest2D, xNew2D);
 					addGraphEdge(xNearest2D, xNew2D);
-					
-					try {
-						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-							StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "bin");
-							flagBin = true;
+
+					if((boolean) PlanningSettings.get("exportPlotData")) {
+						try {
+							if (!flagBin && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 7)).isZero()) {
+								StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "bin");
+								flagBin = true;
+							}
+							if (!flagRoom && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 4)).isZero()) {
+								StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "room");
+								flagRoom = true;
+							}
+						} catch (Exception e1) {
+							e1.printStackTrace();
 						}
-						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-							StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "room");
-							flagRoom = true;
-						}
-					} catch (Exception e1) {
-						e1.printStackTrace();
 					}
 				
 					tree.nearestN(xNew, 

@@ -1,0 +1,159 @@
+Parameters values: 
+Environment: results/environments/env79/temp
+Use Advice: No
+Sensing radius: 1.0
+Batch size: 50
+Discretization cell size: 0.05
+Bias prob: 0.1
+
+Starting initialization ... 
+
+Environment boundaries: Point2D.Float[0.0, 0.0], Point2D.Float[6.0, 0.0], Point2D.Float[6.0, 3.0], Point2D.Float[0.0, 3.0]
+Initial Point: Point2D.Float[0.1, 1.5]
+
+Obstacles: 
+[(0,0.95), (0.8,0.95), (0.8,1.05), (0,1.05)]
+[(1.2,0.95), (2,0.95), (2,1.05), (1.2,1.05)]
+[(0,1.95), (0.8,1.95), (0.8,2.05), (0,2.05)]
+[(1.2,1.95), (2,1.95), (2,2.05), (1.2,2.05)]
+[(2,0.95), (2.8,0.95), (2.8,1.05), (2,1.05)]
+[(3.2,0.95), (4,0.95), (4,1.05), (3.2,1.05)]
+[(2,1.95), (2.8,1.95), (2.8,2.05), (2,2.05)]
+[(3.2,1.95), (4,1.95), (4,2.05), (3.2,2.05)]
+[(4,0.95), (4.8,0.95), (4.8,1.05), (4,1.05)]
+[(5.2,0.95), (6,0.95), (6,1.05), (5.2,1.05)]
+[(4,1.95), (4.8,1.95), (4.8,2.05), (4,2.05)]
+[(5.2,1.95), (6,1.95), (6,2.05), (5.2,2.05)]
+[(1.95,0), (2.05,0), (2.05,0.95), (1.95,0.95)]
+[(1.95,2.05), (2.05,2.05), (2.05,3), (1.95,3)]
+[(3.95,0), (4.05,0), (4.05,0.95), (3.95,0.95)]
+[(3.95,2.05), (4.05,2.05), (4.05,3), (3.95,3)]
+[(0.6086009575508129,0.02881871762459516), (0.9086009575508129,0.02881871762459516), (0.9086009575508129,0.5288187176245952), (0.6086009575508129,0.5288187176245952)]
+[(0.21734809000453026,2.5256780412359703), (0.7173480900045303,2.5256780412359703), (0.7173480900045303,2.82567804123597), (0.21734809000453026,2.82567804123597)]
+[(3.379307870723509,0.01190117346163259), (3.679307870723509,0.01190117346163259), (3.679307870723509,0.5119011734616326), (3.379307870723509,0.5119011734616326)]
+[(2.3186549369691623,2.5429531219355357), (2.8186549369691623,2.5429531219355357), (2.8186549369691623,2.8429531219355355), (2.3186549369691623,2.8429531219355355)]
+[(5.225469642419682,0.015953722084262326), (5.525469642419682,0.015953722084262326), (5.525469642419682,0.5159537220842624), (5.225469642419682,0.5159537220842624)]
+[(4.876226635177574,2.4806371360301926), (5.176226635177573,2.4806371360301926), (5.176226635177573,2.9806371360301926), (4.876226635177574,2.9806371360301926)]
+
+
+Labelling: 
+h: java.awt.geom.Rectangle2D$Float[x=0.0,y=1.0,w=6.0,h=1.0]  
+r1: java.awt.geom.Rectangle2D$Float[x=0.0,y=0.0,w=2.0,h=1.0]  
+r2: java.awt.geom.Rectangle2D$Float[x=0.0,y=2.0,w=2.0,h=1.0]  
+r3: java.awt.geom.Rectangle2D$Float[x=2.0,y=0.0,w=2.0,h=1.0]  
+r4: java.awt.geom.Rectangle2D$Float[x=2.0,y=2.0,w=2.0,h=1.0]  
+r5: java.awt.geom.Rectangle2D$Float[x=4.0,y=0.0,w=2.0,h=1.0]  
+r6: java.awt.geom.Rectangle2D$Float[x=4.0,y=2.0,w=2.0,h=1.0]  
+b: java.awt.geom.Rectangle2D$Float[x=0.40286738,y=0.018056996,w=0.19999999,h=0.19999999]  java.awt.geom.Rectangle2D$Float[x=0.40286738,y=0.018056996,w=1.023979,h=2.6926224]  java.awt.geom.Rectangle2D$Float[x=0.40286738,y=0.003696773,w=2.2615063,h=2.7069829]  java.awt.geom.Rectangle2D$Float[x=0.40286738,y=0.003696773,w=2.8427413,h=2.8266053]  java.awt.geom.Rectangle2D$Float[x=0.40286738,y=0.003696773,w=4.449662,h=2.8266053]  java.awt.geom.Rectangle2D$Float[x=0.40286738,y=0.003696773,w=4.449662,h=2.8266053]  
+t: java.awt.geom.Rectangle2D$Float[x=0.50860095,y=0.0,w=0.5,h=0.6288187]  java.awt.geom.Rectangle2D$Float[x=0.11734809,y=0.0,w=0.8912529,h=2.925678]  java.awt.geom.Rectangle2D$Float[x=0.11734809,y=0.0,w=3.6619596,h=2.925678]  java.awt.geom.Rectangle2D$Float[x=0.11734809,y=0.0,w=3.6619596,h=2.942953]  java.awt.geom.Rectangle2D$Float[x=0.11734809,y=0.0,w=5.5081215,h=2.942953]  java.awt.geom.Rectangle2D$Float[x=0.11734809,y=0.0,w=5.5081215,h=3.0806372]  
+
+Constructing automaton for property: F (r1 & b) & F (r2 & b) & F (r3 & b) & F (r4 & b) & F (r5 & b) & F (r6 & b) ... done!
+Initialization complete
+
+
+Starting exploration ...Used frontier: Point2D.Float[1.025, 1.475] with IG = 33.684204
+Used frontier: Point2D.Float[0.875, 2.375] with IG = 31.42857
+Used frontier: Point2D.Float[1.775, 2.525] with IG = 22.857141
+Used frontier: Point2D.Float[1.975, 1.475] with IG = 8.979596
+Used frontier: Point2D.Float[2.925, 1.475] with IG = 25.263153
+Used frontier: Point2D.Float[3.075, 0.575] with IG = 30.476189
+Used frontier: Point2D.Float[2.175, 0.375] with IG = 20.90909
+Used frontier: Point2D.Float[3.075, 2.375] with IG = 10.344833
+Used frontier: Point2D.Float[2.125, 2.325] with IG = 13.999998
+Used frontier: Point2D.Float[3.875, 1.475] with IG = 8.461543
+Used frontier: Point2D.Float[4.8250003, 1.475] with IG = 24.210522
+Used frontier: Point2D.Float[5.025, 0.575] with IG = 25.454544
+Used frontier: Point2D.Float[5.025, 2.375] with IG = 15.555561
+Used frontier: Point2D.Float[5.5750003, 2.675] with IG = 36.47058
+Used frontier: Point2D.Float[4.425, 2.7250001] with IG = 18.2353
+Used frontier: Point2D.Float[5.775, 1.475] with IG = 8.461543
+Used frontier: Point2D.Float[4.175, 0.175] with IG = 4.482761
+Used frontier: Point2D.Float[5.775, 0.52500004] with IG = 4.878051
+Used frontier: Point2D.Float[1.1750001, 0.575] with IG = 2.8318567
+Used frontier: Point2D.Float[0.32500002, 0.52500004] with IG = 19.999996
+Used frontier: Point2D.Float[0.725, 2.925] with IG = 1.3333341
+Used frontier: Point2D.Float[0.075, 2.825] with IG = 5.3333325
+Used frontier: Point2D.Float[2.775, 2.925] with IG = 0.8333333
+Used frontier: Point2D.Float[3.825, 2.875] with IG = 3.6363635
+Used frontier: Point2D.Float[3.775, 0.52500004] with IG = 1.0810817
+ finished
+Starting planning ... Iter num: 1
+Iter num: 2
+Iter num: 3
+Iter num: 4
+Iter num: 5
+Iter num: 6
+Iter num: 7
+Iter num: 8
+Iter num: 9
+Iter num: 10
+Iter num: 11
+Iter num: 12
+Iter num: 13
+Iter num: 14
+Iter num: 15
+Iter num: 16
+Iter num: 17
+Iter num: 18
+Iter num: 19
+Iter num: 20
+Iter num: 21
+Iter num: 22
+Iter num: 23
+Iter num: 24
+Iter num: 25
+Iter num: 26
+Iter num: 27
+Iter num: 28
+Iter num: 29
+Iter num: 30
+Iter num: 31
+Iter num: 32
+Iter num: 33
+Iter num: 34
+Iter num: 35
+Iter num: 36
+Iter num: 37
+Iter num: 38
+Iter num: 39
+Iter num: 40
+Iter num: 41
+Iter num: 42
+Iter num: 43
+Iter num: 44
+Iter num: 45
+Iter num: 46
+Iter num: 47
+Iter num: 48
+Iter num: 49
+Iter num: 50
+Iter num: 51
+Iter num: 52
+Path found :D
+[r3,t,0]  [r3,b,13]  [r3,13]  [h,13]  [r2,b,32]  [h,32]  [r6,32]  [r6,b,50]  [r6,50]  [h,50]  [r5,50]  [r5,b,24]  [r5,24]  [h,24]  [r4,b,33]  [h,33]  [r1,33]  [r1,b,63]  
+
+Plotting...done
+Exporting product automaton ... done
+
+Number of iterations = 52
+Total sampled points = 2970
+RRG size = 2602
+
+Movement Length = 48.89999
+Remaining path Length = 22.833282
+Total path Length = 71.73328
+
+Advice samples: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] (0)
+
+Total time taken (in ms):9976.992021
+
+Initialization time (in ms):624.757763
+Sampling time (in ms):5804.192517
+Advice time (in ms):0.0
+Path checking time (in ms):123.270305
+Learning time (in ms):64.756485
+Exploration time (in ms):2992.678177
+Time taken other than these things (in ms):3360.014951
+
+
+

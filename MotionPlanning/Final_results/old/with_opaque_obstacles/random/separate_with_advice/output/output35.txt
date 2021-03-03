@@ -1,0 +1,23 @@
+Starting initialization ... 
+Generating random environment ... done!
+Initialization complete
+
+
+Starting exploration ... finished
+Starting planning ... Path found :D
+Plotting...done
+
+Number of iterations = 2
+Total sampled points = 1211
+RRG size = 101
+
+Movement Length = 63.65001
+Remaining path Length = 25.935577
+Total path Length = 89.58559
+
+Advice samples: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] (0)
+
+Total time taken (in ms):3605.358006
+
+
+

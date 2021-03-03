@@ -84,11 +84,8 @@ public class Planning
 	 */
 	void printOutput() throws Exception 
 	{
-		if((boolean) PlanningSettings.get("debug")){
-			System.out.print("Exporting product automaton ... ");
-	    	productAutomaton.createDot(iterationNumber);
-			System.out.println("done");
-		}
+
+
 		Pair<Float, Float> length = new Pair<Float, Float>(0f, 0f);
 		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
 			length.setFirst(moveLength);
@@ -103,8 +100,14 @@ public class Planning
 			pathLength = length.getSecond();
 		}
 		totalTime = System.nanoTime() - beginTime;
-        
-        int adviceSamples = 0;
+
+		if((boolean) PlanningSettings.get("debug")){
+			System.out.print("Exporting product automaton ... ");
+			productAutomaton.createDot(iterationNumber);
+			System.out.println("done");
+		}
+
+		int adviceSamples = 0;
 		for( int k=0; k<10; k++ )
 			adviceSamples += rrg.adviceSampled[k];
 
@@ -210,7 +213,7 @@ public class Planning
         while( true )
         {
         	if( debug ) {
-	        	if( iterationNumber == 1 ) {
+	        	if( iterationNumber == 100 ) {
 //	        		urrg.grid.printDiscretization();
 //	        		urrg.grid.printFrontiers();
 	        		break;
@@ -300,7 +303,10 @@ public class Planning
         boolean computePath = true;
 
 		System.out.print("Starting planning ... ");
-		while( true ){
+		double timeout = (double) PlanningSettings.get("timeout");
+		double currentTime = System.nanoTime()/1000000;
+
+		while( currentTime - (beginTime/1000000) < timeout ){
 			iterationNumber++;
 
 			if((boolean) PlanningSettings.get("debug"))
@@ -316,20 +322,37 @@ public class Planning
         		computePath = true;
         	learn(transitions);
         	
-        	startTime = System.nanoTime();
-        	if( computePath ) {
-        		ArrayList<BDD> path	= productAutomaton.findAcceptingPath(movementBDD);
-        		if( path != null ) {
-        			System.out.println("Path found :D");
-					if((boolean) PlanningSettings.get("debug"))
-						productAutomaton.printPath(path);
-                	finalPath = rrg.liftPath(path);
-            		break;
-            	}
-        	}
-        	pathTime += System.nanoTime() - startTime;
+        	if(((double) PlanningSettings.get("timeout")) == Double.MAX_VALUE ) {
+				startTime = System.nanoTime();
+				if (computePath) {
+					ArrayList<BDD> path = productAutomaton.findAcceptingPath(movementBDD);
+					if (path != null) {
+						System.out.println("Path found :D");
+						if ((boolean) PlanningSettings.get("debug"))
+							productAutomaton.printPath(path);
+						finalPath = rrg.liftPath(path);
+						break;
+					}
+				}
+				pathTime += System.nanoTime() - startTime;
+			}
+			currentTime = System.nanoTime()/1000000;
 		}
 
+		if(((double) PlanningSettings.get("timeout")) < Double.MAX_VALUE ) {
+			startTime = System.nanoTime();
+			ArrayList<BDD> path = productAutomaton.findAcceptingPath(movementBDD);
+			if (path != null) {
+				System.out.println("Path found :D");
+				if ((boolean) PlanningSettings.get("debug"))
+					productAutomaton.printPath(path);
+				finalPath = rrg.liftPath(path);
+			}
+			else {
+				System.out.println("No path found :(");
+			}
+			pathTime += System.nanoTime() - startTime;
+		}
 		System.out.print("Plotting...");
 		Pair<Float, Float> length = krrg.plotGraph(finalPath, grid.getGraph());
 		System.out.println("done");

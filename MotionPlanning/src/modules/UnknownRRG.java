@@ -136,20 +136,20 @@ public class UnknownRRG extends RRG
 					addSymbolicTransitions(xNearest2D, xNew2D);
 					addGraphEdge(xNearest2D, xNew2D);
 										
-//					plotting the first time it sees a bin
-					try {
-						if(! flagBin && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+7)).isZero()) {
-							StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "bin");
-							flagBin = true;
+					if((boolean) PlanningSettings.get("exportPlotData")) {
+						try {
+							if (!flagBin && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 7)).isZero()) {
+								StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "bin");
+								flagBin = true;
+							}
+							if (!flagRoom && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 4)).isZero()) {
+								StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "room");
+								flagRoom = true;
+							}
+						} catch (Exception e1) {
+							e1.printStackTrace();
 						}
-						if(! flagRoom && ! Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars+4)).isZero()) {
-							StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "room");
-							flagRoom = true;
-						}
-					} catch (Exception e1) {
-						e1.printStackTrace();
 					}
-					
 					tree.nearestN(xNew, 
 							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
 							{
@@ -267,10 +267,12 @@ public class UnknownRRG extends RRG
 		if(rank != -1 && productAutomaton.sampledTransitions.and(transition).isZero()) // if sampled from advice and have not sampled it before
 			grid.addAdviceFrontier(xNew2D, currentRobotPosition, rank);
 		else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) { // batch is finished
-			
-			if(! flagFirstMove) { // plotting before the first time it moves
-				StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "firstMove");
-				flagFirstMove = true;
+
+			if ((boolean) PlanningSettings.get("exportPlotData")) {
+				if (!flagFirstMove) { // plotting before the first time it moves
+					StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "firstMove");
+					flagFirstMove = true;
+				}
 			}
 			if(explorationComplete) {
 				return;

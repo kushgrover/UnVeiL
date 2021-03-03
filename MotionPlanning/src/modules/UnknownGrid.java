@@ -127,10 +127,10 @@ public class UnknownGrid extends Grid {
 		int bestIndex = 0;
 		for(int i=0;i<frontiers.size();i++) {
 			tempPoint = findFrontierBestPoint(frontiers.get(i));
-//			if(tempPoint.equals(xRobot)) {
+			if(tempPoint.equals(xRobot)) {
 //				printDiscretization();
-//				continue;
-//			}
+				continue;
+			}
 			currentIG = (float) frontiers.get(i).size() / computeDistance(graph, xRobot, tempPoint);
 //			if(distance(centers.get(i), xRobot) < distance(closest, xRobot)) {
 			if(currentIG > bestIG) {
