@@ -1,0 +1,245 @@
+\section{Solution}\label{sec:sol}
+Our solution to Problem \ref{problem_main} is an algorithm that learns interesting semantic dependencies and relations in the form of a \emph{semantic abstraction} and utilizes this knowledge to bias the growth of a motion graph towards faster satisfaction of the desired LTL specification.
+
+\subsection{Semantic abstraction-guided RRG} 
+
+The overall Semantic abstraction-guided RRG (SAG-RRG) procedure is overviewed in Alg.~\ref{alg:SAGRRG}.
+Similarly to RRG, the procedure builds a graph $G=(V,E)$ whose vertices $v \in V$ lay within the obstacle-free space $\freespace$, and edges $e \in E$ connect two vertices if a collision-free trajectory exists. 
+An iteration of the algorithm starts by updating the map of the environment with information of what is within the sensing radius $r_s$ of the robot (line \ref{sagrrg:storemap}). 
+After that, it computes the guidance according to the \emph{Bias} function (line \ref{sagrrg:getbias}), which is described in more detail in Alg.~\ref{alg:bias} and Sec. \ref{sec:bias}.
+Then, each iteration of the internal \emph{while} loop (lines \ref{sagrrg:while_begin}-\ref{sagrrg:while_end}) attempts to add one new vertex to $G$, in a similar way to the RRG algorithm. It samples a point from the known-space of the environment and finds its closest neighbour in the current graph (line \ref{sagrrg:sample}).
+If the path connecting these two points is collision-free, the sample is considered for being added to the graph.
+If the symbolic counterpart of the sampled transition is in bias, the sampled point is stored as a ``bias frontier";
+%\todo{J:this whole sentence is cryptic, needs a bit more explanation; it's our contribution, the rest around is standard RRG; K: Changed a bit but not sure if helpful}
+otherwise it rejects this sample with some probability $p$ (lines 11-14). This probability depends on how much you want to bias the sampling.
+The algorithm then follows the usual RRG procedure: it adds the new vertex and edge to the graph (line \ref{sagrrg:addedge1}) and attempts to connect such vertex to its closest neighbours (lines \ref{sagrrg:for_begin}-\ref{sagrrg:while_end}), with slight modifications  for checking for bias frontiers, and for keeping track of the symbolic transitions $t_\mathrm{symb}$ (lines 16 and 22) and states seen $\mathrm{seen\_st}$ (line 17).
+After sampling a batch, it updates the semantic abstraction through the \emph{Learn} procedure (line \ref{sagrrg:learn}), which is detailed in Alg.~\ref{alg:learn} and in Sec. \ref{sec:learn}.
+The algorithm then calls the \emph{Move} procedure (Alg.~\ref{alg:move} and Sec.~\ref{sec:move}), which finds the best frontier to move to, and moves the robot to the point in $G$ closest to it.
+Finally, the procedure checks if a plan that satisfies the LTL formula has been found. 
+
+\begin{remark}
+    In Alg.~\ref{alg:SAGRRG} an edge $e \in E$ is defined in a way to ensure the labels along it change only once. Formally, given an edge $e = (v_a, v_b) \in E$, there exists a state $x \in \sigma_{v_a}^{v_b}$ such that i) $\labelling(x') = \labelling(v_a)$, $\forall x' \in \sigma_{v_a}^{x}$, and ii) $\labelling(x'') = \labelling(v_b)$, $\forall x'' \in \sigma_{x+\epsilon}^{v_b}$, where $x+\epsilon$ represents a state in the neighbourhood of $x$.
+    %the labels of $v_a$, i.e. $\labelling(v_a)$, holds true for every state between $v_a$ and $x$ (inclusive), and that $\labelling(v_b)$ hold true from $x$ (exclusive) until $v_b$.
+\end{remark}
+
+\begin{algorithm}[t]
+    \small
+    \DontPrintSemicolon
+    \SetKwComment{Comment}{//}{}
+    \SetKwFunction{Learn}{Learn}
+    \SetKwFunction{Bias}{Bias}
+    \SetKwFunction{Move}{Move}
+    \SetKwFunction{Sample}{Sample}
+    \SetKwFunction{Nearest}{Nearest}
+    \SetKwFunction{Near}{Near}
+    \SetKwFunction{SampleAndExtend}{SampleAndExtend}
+    \SetKwFunction{CollisionFree}{CollisionFree}
+    \SetKwFunction{UpdateMap}{UpdateMap}
+    \SetKwFunction{AcceptingPath}{AcceptingPath}
+    \KwIn{$\environment, \initpoint, \spec$}
+    \KwOut{A collision free trajectory in $\environment$ which satisfies $\spec$}
+    Initialize semantic abstraction\;
+    $\; V \gets \initpoint$; $\; E \gets \emptyset$\;
+    $\mathrm{curr\_pos} \gets \initpoint$; $\; \mathrm{seen\_st} \gets s(\initpoint)$\;
+	\While{$\neg$\AcceptingPath{}}{
+	    \UpdateMap{$\mathrm{curr\_pos}, r_s$} \label{sagrrg:storemap}\;
+		$\bias \gets$ \Bias{$\mathrm{seen\_st}$} \label{sagrrg:getbias}\;
+		$t_\mathrm{symb} \gets \emptyset$; $\; i\gets 0$\;
+		\While{$i < \mathrm{batch\_size}$}{\label{sagrrg:while_begin}
+		    $[\sampledpoint, \neighbour] \gets$ \SampleAndExtend{$\freespace, V$} \label{sagrrg:sample}\;
+		    \If{\CollisionFree{$\neighbour, \sampledpoint$}}{
+		        \If{$(s(\neighbour), s(\sampledpoint)) \in \bias$}{
+		            add $\sampledpoint$ to bias frontiers \label{sagrrg:biasfront1}\;
+		        }
+		        \Else{
+		            \textbf{continue} to next iteration with prob $p$ \label{sagrrg:continue}\;
+		        }
+		        $E\gets E \cup (\neighbour, \sampledpoint)$; $V \gets V \cup \sampledpoint$ \label{sagrrg:addedge1}\;
+		        $t_\mathrm{symb} \gets t_\mathrm{symb} \cup (s(\neighbour), s(\sampledpoint))$\;
+		        $\mathrm{seen\_st} \gets \mathrm{seen\_st} \cup s(x_s)$\;
+		        $i\gets i+1$\;
+		    }
+		    \For{$x \in$ \Near{$\sampledpoint$}}{\label{sagrrg:for_begin}
+		        \If{\CollisionFree{$x, \sampledpoint$}}{
+		            $E\gets E \cup (x, \sampledpoint)$; $V \gets V \cup x$ \label{sarrg:addedge}\;
+		            $t_\mathrm{symb} \gets t_\mathrm{symb} \cup (s(x), s(\sampledpoint))$\;
+    		        \If{$(s(x), s(\sampledpoint)) \in \bias$}{
+    		            add $\sampledpoint$ to bias frontiers \label{sagrrg:biasfront2}\;
+		            }
+		        }
+		    }
+		}\label{sagrrg:while_end}
+		\Learn{$t_\mathrm{symb}$} \label{sagrrg:learn}\;
+		$\mathrm{curr\_pos} \gets $ \Move{} \label{sagrrg:move}\;
+	}
+	\Return{accepting\_path}
+    \caption{SAG-RRG}
+    \label{alg:SAGRRG}
+\end{algorithm}
+
+
+\subsection{Learn}
+\label{sec:learn}
+This section describes in detail the proposed approach to learning the semantic abstraction of the environment. Intuitively, we try to find transitions that are similar to the sampled ones and add them as special, potential transitions in the abstraction.
+Next part describes how we can accommodate these special transitions in the abstraction.
+
+\subsubsection{Semantic Abstraction}
+
+To formalize the semantic abstraction, we propose extending the state-labelled TS to a ``multi-modal'' transition system, our extension of modal transition systems \cite{LT88}:
+
+\begin{definition}[Multi-Modal Transition System]
+A tuple $(S,s_0,\Delta,L,\modes,\modemap)$ is called a multi-modal transition system (MM-TS), where $(S,s_0,\Delta, L)$ is a state-labelled transition system (Def. \ref{def:ts}), $\modes$ is a finite ordered set of modes, and $\modemap: \Delta \rightarrow \modes$ is a modal marking. 
+\end{definition}
+
+A semantic abstraction of an RRG graph is an MM-TS, where a discrete state $s \in S$ represents a set of points $x \in \mathcal X$ with the same labeling. 
+With a slight abuse of notation, we use $x \in s$ to say that $L(x) = L(s)$ and $s(x)$ to denote $s \in S$, such that $x \in s$.
+
+Intuitively, $\modemap$ assigns to each transition in the abstraction a ``degree'' of confidence that a corresponding transitions is present in the corresponding concrete points.
+We use two modes\footnote{Although we choose to use two modes in this paper for the sake of simplicity of the exposition, the approach presented throughout the paper is generic enough to use any number of modes. Besides \emph{must} and \emph{may}, one could also use \emph{may not} and \emph{must not}, for instance.} in our MM-TS: \emph{must} and \emph{may}. The former is used for transitions that are known to exist based on samples taken from the environment while the graph is constructed; the latter is an extrapolation to which transitions might exist based on the \emph{must} transitions.
+When a new edge $(x, x_{\mathit{new}})$ is added to the SAG-RRG graph $G$, a transition $(s(x),s(x_{\mathit{new}}))$ is added to the MM-TS as a \emph{must} transition, and similar transitions (see Def.~\ref{def:similar}) are added as \emph{may} transitions.
+%Loosely speaking, it is added as \emph{may} if it is similar to some \emph{must} transition that is already in the MM-TS.
+% and it is marked as \emph{might} if it has been marked as \emph{may} for some time without turning into \emph{must}. Finally, all other transitions are marked as \emph{unknown}.
+%\todo{write that we can add more modes as well, like `may not' and work with them}
+%
+Let us now formalize when we deem two transitions of a MM-TS \emph{similar}.
+
+\begin{definition}[Domain of Change] 
+The domain of change for a transition $(s, s') \in \Delta$ is $\DOC(s,s') = L(s) \oplus L(s')$.
+\end{definition}
+
+The \emph{domain of change} is essentially the set of all atomic propositions which changed their valuation during the corresponding transition in the MM-TS. For example, given a transition $(s, s')$ where $L(s)=\{a,b\}$ and $L(s')=\{b,c\}$, its $\DOC(s, s')$ is $\{a,c\}$. 
+
+\begin{definition}[Similar Transitions] \label{def:similar}
+ Two transitions $(s, s'), (\bar s, \bar s') \in \Delta$ are \emph{similar} if and only if $\DOC(s,s')=\DOC(\bar s, \bar s')$, and $\forall a\in \DOC(s, s')$, $a \in L(s) \iff a \in L(\bar s)$ and $a \in L(s') \iff a \in L(\bar s')$.
+\end{definition}
+
+Intuitively, similar transitions behave the same on their \emph{domain of changes}. For example, a transition $(s,s')$, where $L(s)=\{a,b\}$ and $L(s')=\{b,c\}$, is similar to $(\bar s, \bar s')$ where $L(\bar s)=\{a,d\}$ and $L(\bar s')=\{d,c\}$.
+The idea is that after experiencing the transition $(s,s')$ which leaves $b$ untouched, we may hypothesize $b$ is irrelevant and that the same behaviour is present also in the situation when $b$ does not hold and when some other irrelevant proposition, e.g.~$d$, holds.
+However, $b$ still may be a precondition for the transition, hence we introduce the new transition $(\bar s, \bar s')$ only with a low ``confidence''.
+
+\medskip
+
+The formal definition of similarity allows us to clearly identify when transitions in the MM-TS, i.e. the semantic abstraction of an RRG graph, should be marked as \emph{may}.
+
+\medskip
+
+\subsubsection{Multi-modal product}
+
+The semantic abstraction captures existing and possible dependencies and relationships between labels in the environment regardless of the desired specification. We extend the definition of product (Def. \ref{def:product}) to incorporate the knowledge of the specification and thus enable biasing of SAG-RRG sampling to achieve faster specification satisfaction. In short, a multi-modal product (MM-P) is a product as in Def.~\ref{def:product} but with a MM-TS instead of a TS.
+
+\begin{definition}[Multi-modal Product]
+    Given a MM-TS $(S,s_0,\Delta,L,\modes,\modemap)$ and a DFA $\ba=(\alphabet,Q,q_0,\delta,F)$, their product (MM-P) is a tuple $(S\times Q,\hat{s_0},\hat{\Delta},\hat F, \modes, \hat \modemap)$, where the first four components are defined as in Def. \ref{def:product} and the remaining two are the modes $\modes$ and a model marking $\hat \modemap: \hat \Delta \rightarrow \hat \modes$, such that $\hat \modemap((s,q),(s',q')) = \modemap(s, s')$.
+\end{definition}
+
+Similarly to the multi-modal transition system, the product can be constructed iteratively, along with the construction of the SAG-RRG graph. 
+
+\subsubsection{Learn procedure}
+\label{sec:learnproc}
+
+\begin{algorithm}[t]
+    \small
+    % \KwIn{set of symbolic transitions $t_{symb}$}
+    %\KwOut{updated MM-TS and MM-P}
+    \DontPrintSemicolon
+    \SetKwComment{Comment}{//}{}
+    \SetKwProg{Fn}{Function}{:}{}
+    \SetKwFunction{Learn}{Learn}
+    \SetKwFunction{Add}{AddToProduct}
+    \SetKwFunction{Find}{FindSimilar}
+    \Fn{\Learn{$t_\mathrm{symb}$}}
+    {
+        \Add{$t_\mathrm{symb},$ \emph{must}} \label{learn:addmust}\;
+        $\similar \gets$ \Find{$t_\mathrm{symb}$} \label{learn:similar}\;
+        \Add{$t_{sim},$ \emph{may}}\;
+    }
+            \label{alg:learn}
+            \caption{Learn}
+\end{algorithm}
+
+The procedure Learn is summarized in Alg. \ref{alg:learn}.
+Given a set of transitions $t_{symb}$, this procedure adds them to the MM-TS as \emph{must} transitions, since we know that these transitions are already there. After that, for each $t\in t_{symb}$, it computes the transitions similar to $t$ and add them as \emph{may} transitions in the MM-TS.
+
+% Given a new edge $e = (x,x_\mathit{new})$ in the SAG-RRG graph $G$, we add to our MM-TS a \emph{must} transition $(s(x),s(x_\mathit{new}))$ (line~\ref{learn:add}). We correspondingly add to our MM-P all states $(s(x_\mathit{new}),q')$ with the property that $q'$ is computed from $\delta(q,L(x_\mathit{new}))$, where $(s(x),q)$ is already a state of the MM-P, and we add the corresponding transitions, too. These transitions are also marked as \emph{must} (line~\ref{learn: must}). The procedure then proceeds to find the set of \emph{similar} transitions to all newly added ones according to Def.~\ref{def:similar} (line~{learn: similar}). These are added to MM-P as \emph{may} transitions (line~\ref{learn:may}). 
+% \todo{Lastly, the procedure deals with changing some \emph{may} transitions into \emph{might} (lines~\ref{learn: counter}-\ref{learn: addTran1}). To this end, for each state $s$, we keep track of how many samples have been drawn from $x$, $s=s(x)$; if a transition to $s'$ has been marked as \emph{may}, but we have not witnessed a transition from $x \in s$ to a transition $x' \in s'$ for more than ... steps, we change the marking to \emph{might}, indicating that our marking might have been too optimistic.
+
+% The algorithm keeps track of the number of times a state $(s,q)$ has been added the source of a \emph{must} transitions after a certain threshold $\learnthreshold$, it moves all Level 0 transitions sourced at $s_1$ to the set of Level 1 transitions.}
+%Line 10 increases the counter for the source of the transition, which stores how many times has this state has been the source of a sampled transition. If the source has been visited more than the threshold $\learnthreshold$, it converts all possible outgoing transitions from that state which have not been sampled till now to level 1 transitions (lines 11-13).
+
+%Instead of dealing with the abstraction and taking its product with the property automaton every time, we do all the computations on the product automaton itself.
+
+
+%Our algorithm \emph{learns} possible new transitions (level 2) in the abstraction based on previously sampled transitions (level 3), and uses them to generate \emph{bias} on where new samples should be taken from. Given a sampled transition $t$, the \emph{learn} function adds transitions similar to $t$ (according to Def.~\ref{def:similar}) into the product automaton. 
+
+
+\subsection{Bias}
+\label{sec:bias}
+
+\begin{algorithm}[t]
+    \small
+    \SetKwFunction{Bias}{Bias}
+    \DontPrintSemicolon
+    \SetKwProg{Fn}{Function}{:}{}
+    \SetKwFunction{PreImg}{PreImg}
+    \SetKwFunction{PostImg}{PostImg}
+    \Fn{\Bias{seen\_st}}{
+        $\bias[0] \gets$ transitions ending in accepting states $\mathrm{acc\_st}$\;
+        $\mathrm{reached}[0] \gets \mathrm{acc\_st}$\;
+        $\mathrm{reached}[1] \gets$ \PreImg{$\mathrm{acc\_st}$}\;
+        $\mathrm{all\_reached} \gets \mathrm{reached}[0] \cup \mathrm{reached}[1]$\;
+        $i\gets 1$ \;
+        \While{\PreImg{$\mathrm{reached}[i]$}$ \nsubseteq \mathrm{all\_reached}$}{
+            $\mathrm{useful\_pre} \gets$ \PreImg{$\mathrm{reached}[i]$}$ \cap \,\mathrm{seen\_st}$\;
+            $\mathrm{useful\_post} \gets$ \PostImg{$\mathrm{useful\_pre}$}$ \cap \,\mathrm{reached}[i]$\;
+            $\bias[i] \gets (\mathrm{useful\_pre}, \mathrm{useful\_post})$\;
+            $\mathrm{reached}[i+1] \gets$ \PreImg{$\mathrm{reached}[i]$}\;
+            $\mathrm{all\_reached} \gets \mathrm{all\_reached} \cup \mathrm{reached}[i+1]$\;
+            $i \gets i + 1$\;
+        }
+        \Return{$\bias$}
+    }
+    \caption{Bias}
+    \label{alg:bias}
+\end{algorithm}
+
+
+
+
+The \emph{bias} procedure computes which transitions would more quickly bring the system to an accepting state of the LDBA. It returns a hierarchical list of transitions according to how far they are from an accepting state in MM-P; the closer a transition is to an accepting state, the better. These transitions can then be used to bias the construction of the motion graph for faster convergence.
+
+The procedure, described in Alg. \ref{alg:bias}, starts by initializing the variables $\bias$ and $\mathrm{reached}$, which store transitions and states, respectively. The first element of $\bias$ is the set of all transitions ending in accepting states of the MM-P (line 2). As for $\mathrm{reached}$, it keeps track of all backwards-reachable states from the accepting states; hence its first element is the set of accepting states (line 3), and the second element is the pre-image of the accepting states (line 4).
+Then, until all the backward-reachable sets have been considered, $\bias$ is constructed iteratively based of the set of sampled states $\mathrm{seen\_st}$ (lines 7-13). In the end, $i$th element of $\bias$ will be the set of states that can reach an accepting state after exactly $i$ steps in the MM-P. 
+%\todo{J: again, this paragraph is cryptic, needs more explanation or example - it's the new stuff; K:better? Explaining it line by line will make it even more cryptic}
+
+Learn and Bias functions work in unison and help each other improve. The more \emph{may} transitions are learned, the better is the bias received. The better the bias, the more new transitions are learned and the faster it converges.
+
+
+\subsection{Move procedure} \label{sec:move}
+
+\begin{algorithm}[t]
+    \small
+    \SetKwFunction{Move}{Move}
+    \DontPrintSemicolon
+    \SetKwProg{Fn}{Function}{:}{}
+    \SetKwFunction{Map}{FindBestMapFrontier}
+    \SetKwFunction{Bias}{FindBestBiasFrontier}
+    \SetKwFunction{Best}{Best}
+    \Fn{\Move}{
+        $p_1 \gets$ \Map{}\;
+        $p_2 \gets$ \Bias{}\;
+        \Return{\Best{$p_1, p_2$}}
+    }
+    \caption{Move}
+    \label{alg:move}
+\end{algorithm}
+
+The idea behind the Move procedure, described in Alg.~\ref{alg:move}, is to decide where to move next: should we go towards a place that will provide more information about the map, or should we move according to the advice that has been given by Bias? In order to compare both options, we employ the concept of \emph{information gain} (IG). Given a map frontier, its information gain is defined as $\mathrm{IG_{map}} = \mathrm{size} \times f(d)$, where $\mathrm{size}$ is the size of the frontier and $f(d)$ is a strictly decreasing function (for $d > 0$) of the distance from the robot to the center of the frontier.
+
+%Move procedure (described in Alg. \ref{alg:move}) maintains a grid-like discretization of the environment, which stores if each cell is \emph{free}, contains \emph{obstacle}, or \emph{unknown} yet. 
+%We assume that as soon as the robot moves to a new location, it can update the discretization for each visible (path joining the robot and the cell is obstacle free) cell in the sensing radius. 
+%A cell is called a \emph{frontier cell} if it is marked \emph{free} and has a neighbouring cell which is marked \emph{unknown}. A (usual) \emph{frontier} is a connected group of frontier cells and its size is the number of cells it has. 
+%We define \emph{information gain} (IG) of these frontiers as $\frac{size}{d}$, where $d$ is the distance robot has to travel to reach a point in $G$ closest to the center of the frontier.
+
+In a similar fashion, we define the information gain of a \emph{bias} frontier. Note that \emph{bias} frontiers were introduced in Alg.~\ref{alg:SAGRRG} (lines \ref{sagrrg:biasfront1} and \ref{sagrrg:biasfront2}) as a means to keep track of the vertices in $V$ that correspond to advices given by Alg.~\ref{alg:bias}. Since $\bias$ is a list of transitions, we can associate a \emph{rank} $r$ with each transition from $\bias$ equal to $\mathrm{index}+1$, where $\mathrm{index}$ is the index of the sampled transition. We define IG of these frontiers as $\mathrm{IG_{bias}} = g(r,d)$, where $g$ is some function such that both $g(r, \cdot)$ and $g(\cdot, d)$ are strictly decreasing, where $d$ is again the distance from the robot to the frontier.
+
+The intuition behind the IG of the \emph{map} frontiers is to have a larger value the larger the frontier is, but penalise it according to its distance to the robot, so as to motivate exploration of smaller frontiers that are nearby. Similarly, with the IG of the \emph{bias} frontiers, we want to motivate movement towards low-rank frontiers, since these are closer to satisfying the formula.
+

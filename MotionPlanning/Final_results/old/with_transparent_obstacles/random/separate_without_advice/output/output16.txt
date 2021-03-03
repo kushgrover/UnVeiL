@@ -1,6 +1,0 @@
-Starting initialization ... 
-Generating random environment ... done!
-Initialization complete
-
-
-Starting exploration ...

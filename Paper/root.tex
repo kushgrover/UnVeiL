@@ -1,0 +1,112 @@
+%%%%%%%%%%%%%% IROS %%%%%%%%%%%%%%%%%%
+%\documentclass[letter, 10pt, conference]{ieeeconf}      % Use this line for a4 paper
+%
+%\IEEEoverridecommandlockouts                              % This command is only needed if 
+%                                                          % you want to use the \thanks command
+%
+%\overrideIEEEmargins                                      % Needed to meet printer requirements.
+
+%%%%%%%%%%%%% RSS %%%%%%%%%%%%%%%%%%%%
+\documentclass[conference]{IEEEtran}
+\usepackage{times}
+\usepackage[numbers]{natbib}
+\usepackage{multicol}
+\usepackage[bookmarks=true]{hyperref}
+
+\input{macros}
+\input{packages}
+
+
+% RSS: remove \LARGE \bf
+\title{
+Semantic Abstraction-Guided Motion Planning \\ for scLTL Missions in Unknown Environments
+%LTL Motion Planning Guided by Semantic Abstractions
+}
+
+% RSS: 
+\author{Author Names Omitted for Anonymous Review.}
+% IROS:
+%\author{Kush Grover$^{1}$ \and Fernando S. Barbosa$^{2}$ \and Jana Tumova$^2$ \and Jan K\v ret\'insk\'y$^1$% <-this % stops a space
+% \thanks{*This work was not supported by any organization}% <-this % stops a space
+%\thanks{$^{1}$ Technical University of Munich, Germany. 
+%        {\tt\small \{grover, jan.kretinsky\}@in.tum.de}}%
+%\thanks{$^{2}$KTH Royal Institute of Technology, Stockholm, Sweden.
+%        {\tt\small \{fdsb, tumova\}@kth.se}}%
+%}
+
+\begin{document}
+
+
+% \theoremstyle{theorem}
+% \theoremstyle{definition}
+% \theoremstyle{problem}
+
+
+\maketitle
+
+% RSS: remove the following 2 lines
+%\thispagestyle{empty}
+%\pagestyle{empty}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{abstract}
+Complex mission specifications can be often specified through temporal logics, such as Linear Temporal Logic and its syntactically co-safe fragment, scLTL. Finding trajectories that satisfy such specifications becomes hard if the robot is to fulfil the mission in an initially unknown environment, where neither locations of  regions or objects of interest in the environment nor the obstacle space are known a priori. We propose an algorithm that, while exploring the environment, learns important semantic dependencies in the form of a semantic abstraction, and uses it to bias the growth of an RRG graph towards faster mission completion. Our approach leads to finding trajectories that are much shorter than those found by the sequential approach, which first explores and then plans. Simulations comparing our solution to the sequential approach, carried out in 100 randomized office-like environments, show more than 50\% reduction in the trajectory length.
+\end{abstract}
+
+% RSS:
+\IEEEpeerreviewmaketitle
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{1_Introduction}
+\input{2_Prelims}
+\input{3_ProblemFormulation}
+\input{4_Solution}
+\input{5_Analysis}
+\input{6_Implementation}
+
+
+
+
+
+
+
+\section{CONCLUSIONS AND FUTURE WORK}\label{sec:conclusion}
+We presented an online sampling-based algorithm capable of finding a trajectory in an \emph{a priori} unknown environment that satisfies an scLTL specification. We enrich the RRG algorithm with functions that attempt to learn possible relations between labels of the environment and use such relations for biasing the search for a satisfying trajectory. The resulting paths are significantly shorter than in straightforward sequential exploration followed by planning in a known space.
+
+A few topics to be considered for future work include extending the approach to consider probabilistic relationships in the semantic abstraction of the system, as well as the extension to multi-agent systems.
+
+
+%\addtolength{\textheight}{-12cm}   % This command serves to balance the column lengths
+                                  % on the last page of the document manually. It shortens
+                                  % the textheight of the last page by a suitable amount.
+                                  % This command does not take effect until the next page
+                                  % so it should come on the page before the last. Make
+                                  % sure that you do not shorten the textheight too much.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\section*{APPENDIX}
+
+%\section*{ACKNOWLEDGMENT}
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% IROS:
+%\bibliographystyle{IEEEtran}
+% RSS:
+\bibliographystyle{plainnat}
+
+\bibliography{literature}
+
+\end{document}

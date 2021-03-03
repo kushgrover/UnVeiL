@@ -1,7 +1,0 @@
-Starting initialization ... 
-Generating random environment ... done!
-Initialization complete
-
-
-Starting planning ... 
-Resizing node table from 600011 to 1200007

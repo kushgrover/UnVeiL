@@ -1,0 +1,18 @@
+\section{Problem Formulation}\label{sec:prob}
+% {\color{blue} In this first paragraph we should say that: i) the obstacle space is not known to the robot a priori; ii) regions of the workspace are labeled with atomic propositions, but that the labeling function is also not known a priori; iii) robot has a sensing radius within which it can identify obstacles and labels.}
+
+% Consider a robot which moves in an unknown \emph{workspace} $\environment \subset \reals^n$ and let $\initpoint \in \environment$ be its starting point. Let $\{\obstacle_1, \obstacle_2, \dots \obstacle_k\}$ be the set of obstacles such that $\obstacle_i\subseteq \environment$ for all $i \in [1,k]$. and $\freespace = \environment \setminus \bigcup_{i=1}^{k} \obstacle_i$, denotes the obstacle-free space. 
+
+%Regions of the workspace $\environment$ are labelled with atomic propositions $\ap$ according to a labelling function $\labelling : \environment \rightarrow 2^{\ap}$, which maps each state in the state-space to a set of atomic propositions that hold true there.
+Consider a robot  deployed in an \emph{a priori} unknown environment. We assume that the set of atomic propositions $\Sigma$ (semantic labels, such as $\mathit{living\_room}$ or $\mathit{wastebin}$) is known beforehand, but not where they hold. In other words, the $\labelling$ function, as well as the obstacle-space, are unknown. Furthermore, we also assume that the robot is equipped with adequate sensors and perception modules that can identify labels and obstacles within a sensing radius $\sensingradius$ around its current position.
+% the labelling function $\labelling_x : \environment_x \rightarrow 2^{\ap}$ and obstacles are known to the robot. Here, $\environment_x$ denotes an $n$-sphere around $x$.
+
+\begin{problem}
+\label{problem_main}
+Given an initial state $\initpoint\in \environment$ {in an a priori unknown environment $\environment$,} and an scLTL specification $\spec$ over the set of atomic propositions $\ap$, find a collision-free trajectory $\traj$ in $\environment_\mathit{free}$ which satisfies $\spec$.
+\end{problem}
+
+Since neither obstacles nor the labeling function are known a priori, one cannot use traditional offline approaches described in Sec.~\ref{sec:related} to solve Problem~\ref{problem_main}. The solution must be an online algorithm that learns the obstacle space and the labeling function as it moves in the environment. A straightforward way to solve this problem would be to explore the whole environment and assign labels to features in the environment first, and then use planning approaches. We propose to integrate exploration and planning. As a result, the robot attempts to make progress towards satisfying the specification while exploring, resulting in a possibly shorter travelled distance.
+
+
+

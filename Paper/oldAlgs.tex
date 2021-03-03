@@ -1,0 +1,131 @@
+\begin{algorithm}
+    \small
+	\caption{MAIN}\label{alg:main}
+	\begin{algorithmic}[1]
+		\State build trivial product automaton
+		\State $\robotposition \gets \initpoint$
+		\State $\explored \gets \initstate$
+		\While{true}
+			\State $\advice \gets \Call{advice}{\robotposition, \explored}$ 
+% 			\State \Comment{array of states backward reachable from final states}
+			\State $i\gets 1$
+			\While{$i< length(\advice)$}
+				\State $\advicesource \gets \explored \cap \advice[i]$
+				\State $\advicedest \gets \advice [i-1]$
+				\State $t \gets \Call{A-RRG}{\advicesource, \advicedest}$ \Comment{advice RRG}
+				\If{$t\ != null$}
+				    \State $\robotposition \gets move(t)$
+					\State break
+				\EndIf 
+				\State $i++$
+			\EndWhile
+		\If{$t=null$}
+		    \State $t\gets \Call{A-RRG}{\explored, any}$
+		    \If{didn't move in last 50 samples}
+		        \State $x_R \gets move(randomly)$
+		    \EndIf
+		\EndIf
+		\State $\explored\ \gets \explored \cup dest(t)$
+		\State $\Call{learn}{t}$
+		\If{accepting path is found}
+		\State \Return{$path$}
+		\EndIf
+		\EndWhile
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}
+    \small
+	\caption{LEARN AND ADVICE}\label{alg:learnandadvice}
+	\begin{algorithmic}[1]
+	    \Procedure{learn}{$t$}
+		\State $\sampled\gets \sampled \cup t$
+% 		\State $removeTransitions(t)$\Comment{remove transition of smaller level}
+		\State $addTransitions(t, 3)$
+		\State $s_1 \gets source(t)$
+		\State $s_2 \gets dest(t)$
+		\State $DOC \gets \{a\in \ap \mid s_1(a)\oplus s_2(a)\}$
+		\State $R\gets restrict(s_1,DOC)$\Comment{states smilar to $s_1$}
+		\State $\similar \gets R \wedge \neg R' \bigwedge\limits_{a\in DOC^c} a\leftrightarrow a'$
+		\State\Comment{$\neg R':= \bigwedge\limits_{a \text{ in } R} \neg a'$}
+		\State $\similar \gets \similar \setminus \sampled$
+		\State $addTransitions(\similar, 2)$
+		\State $counter(s_1)++$
+		\If {$counter(s_1) > \learnthreshold$}
+		\For{$s\in \states: (s_1,s) \cap \sampled = \emptyset$}
+			\State $addTransitions((s_1,s),1)$
+		\EndFor
+		\EndIf
+		\EndProcedure
+		
+		
+		\Procedure{advice}{}
+% 		\State $\final \gets getFinals()$
+		\State $\advice[0] \gets getFinals()$
+		\State $\advice[1] \gets getPreFinals()$
+		\State $i\gets 1$
+		\State $\reachable \gets advice[1]$
+		\While{$preI(\advice[i]) \nsubseteq \reachable$}
+			\State $\advice[i+1] \gets \advice[i]\cup preI(\advice[i])$
+			\State $\reachable \gets \reachable \cup \advice[i+1]$
+			\State $i++$
+		\EndWhile
+		\State \Return{$\advice$}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm} 
+
+\begin{algorithm}
+    \small
+	\caption{A-RRG}\label{alg:arrg}
+	\begin{algorithmic}[1]
+		\Procedure{a-rrg}{$\advicesource, \advicedest$}
+	    \State $i \gets 0$
+	    \While{$i<\samplingthreshold$} \Comment{$\samplingthreshold$: sampling threshold}
+    	    \State $\pointrand \gets random()$
+	        \State $\pointclosest \gets nearest(\pointrand)$
+	        \If{$\pointclosest \in \advicesource$}
+	            \State $\pointnew \gets steer(\pointclosest, \pointrand)$
+	            \If{$\pointnew \in \advicedest \ \& \ colfree(\pointclosest, \pointnew)$}
+                    \State $t \gets (\pointclosest, \pointnew)$ 
+                    \For{$x_p$ in radius $\radius$ of $\pointnew$}
+                        \If{$colfree(\pointnew, x_p)$}
+                            \State $t \gets t \cup (\pointnew, x_p)$
+                        \EndIf
+                    \EndFor
+	            \EndIf
+	        \EndIf
+	    \EndWhile
+		\State \Return{$t$}
+		\EndProcedure
+	\end{algorithmic}
+\end{algorithm}
+
+
+
+
+
+% \begin{algorithm}
+% 	\caption{LEARN}\label{alg:learn}
+% 	\begin{algorithmic}[1]
+% 		\Procedure{learn}{$t$}
+% 		\State $\sampled\gets \sampled \cup t$
+% % 		\State $removeTransitions(t)$\Comment{remove transition of smaller level}
+% 		\State $addTransitions(t, 3)$
+% 		\State $s_1 \gets source(t)$
+% 		\State $s_2 \gets dest(t)$
+% 		\State $DOC \gets \{a\in \ap \mid s_1(a)\oplus s_2(a)\}$
+% 		\State $R\gets restrict(s_1,DOC)$\Comment{states smilar to $s_1$}
+% 		\State $\similar \gets R \wedge \neg R' \bigwedge\limits_{a\in DOC^c} a\leftrightarrow a'$
+% 		\State\Comment{$\neg R':= \bigwedge\limits_{a \text{ in } R} \neg a'$}
+% 		\State $\similar \gets \similar \setminus \sampled$
+% 		\State $addTransitions(\similar, 2)$
+% 		\State $counter(s_1)++$
+% 		\If {$counter(s_1) > \learnthreshold$}
+% 		\For{$s\in \states: (s_1,s) \cap \sampled = \emptyset$}
+% 			\State $addTransitions((s_1,s),1)$
+% 		\EndFor
+% 		\EndIf
+% 		\EndProcedure
+% 	\end{algorithmic}
+% \end{algorithm}

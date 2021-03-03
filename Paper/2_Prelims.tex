@@ -1,0 +1,84 @@
+\section{Preliminaries}\label{sec:prel}
+
+Let $\reals$ denote the set of real numbers and $\reals^n$ the $n$-dimensional Euclidean space. 
+We use $\ap$  for the finite set of atomic propositions.
+For a set $X$, $2^X$ denotes its power set.
+%and $X^\omega$ denotes its countably infinite product $(X\times X\times X\dots)$, also called the set of infinite words over $X$. 
+A word over an alphabet $Y$ is a sequence of elements of $Y$.
+The exclusive-or operation is denoted by $\oplus$, and the disjoint union of sets by $\uplus$.
+
+Consider a robot deployed in an \emph{environment} $\environment \subset \reals^n$ and let $\initpoint \in \environment$ be its initial state. Let $\{\obstacle_1, \obstacle_2, \dots \obstacle_k\}$ be the set of obstacles such that $\obstacle_i\subset \environment$ for all $i \in [1,k]$, and $\freespace = \environment \setminus \bigcup_{i=1}^{k} \obstacle_i$ denotes the obstacle-free space.
+A trajectory in the environment $\environment$ is defined by a continuous function $\traj:~[0,1] \to \environment$. 
+A trajectory is collision-free if $\traj(t) \in \freespace$, $\forall t \in [0,1]$. 
+Regions of the environment $\environment$ are labelled with atomic propositions $\ap$ according to a labelling function $\labelling : \environment \rightarrow 2^{\ap}$, which maps each state in the state-space to a set of atomic propositions that hold true there.
+
+A map of the environment $\environment$ is a partitioning into a finite number of cells of equal size with a predefined precision, which can be labeled as \emph{free}, meaning that the cell lies in $\freespace$, \emph{occupied}, if any point within the cell lies inside the obstacle space (corresponding to an over-approximation of the obstacle set), or \emph{unmapped}, that highlights the cell has not been seen by the robot so far. Every cell is initialised as \emph{unmapped}, and is updated whenever it lies in the line-of-sight of the robot. A cell is called a \emph{frontier} cell if it is marked as \emph{free} and has a neighbouring cell marked as \emph{unmapped}. A \emph{map frontier} is a connected group of frontier cells, and its size is its cardinality.
+This is a common approach among the 3D-exploration community, so we refer to papers such as \cite{yamauchi1997frontier,bircher2016receding} for more details.
+
+\subsection{RRG} 
+The Rapidly-exploring Random Graph \cite{karaman2011sampling} is an anytime\footnote{An anytime algorithm returns a valid solution even if it is interrupted before termination; moreover, the longer it runs, the more its solution is improved.} sampling-based motion planning algorithm that builds a connected roadmap. 
+It incrementally builds a graph $G = (V,E)$ such that $v \in \freespace$, $\forall v \in V$, and an edge $e \in E$ connects two nodes $v_a, v_b \in V$ if there exists a collision-free trajectory $\traj_{v_a}^{v_b}$ between them, with $\traj_{v_a}^{v_b}(0) = v_a$ and $\traj_{v_a}^{v_b}(1) = v_b$.
+A path over $G$ is a sequence of nodes $p = v_0, v_1, v_2, \dots$ such that $v_i \in V$ and $(v_i, v_{i+1}) \in E$, for all $i \ge 0$.
+
+\subsection{Syntactically co-safe LTL and DFA}
+\begin{definition}[(Syntactically co-safe) Linear Temporal Logic \cite{ltl,KV99}]
+    A formula of \emph{LTL} is given by the syntax:
+    \begin{equation*}
+        \varphi := a \mid \neg a \mid \varphi_1\wedge\varphi_2 \mid \varphi_1\vee\varphi_2 \mid \X\varphi \mid \varphi_1 \U \varphi_2 \mid \G\varphi
+    \end{equation*}
+    % 
+    where, $a\in \ap$ is an atomic proposition, $\neg, \wedge,\vee$ are the Boolean operators `negation', `conjunction', and `disjunction', respectively. $\X$, $\U$, $\G$ denote the LTL operators `next', `until', and `globally' respectively.
+    The \emph{syntactically co-safe fragment of LTL (scLTL)} is given by the same syntax, but prohibiting the operator $\G$.
+\end{definition}
+
+The semantics of LTL formulas is defined on words over $\alphabet$. 
+The Boolean operators have usual semantics. Intuitively, $\X\varphi$ means that $\varphi$ is true in the next time step and $\varphi_1 \U \varphi_2$ asserts that $\varphi_1$ will be true until $\varphi_2$ becomes true.
+$\F$ is known as the `finally' or `eventually' operator whose semantics asserts that the property $\varphi$ becomes true at some point in the future. 
+As such, it can be defined in terms of $\U$ as $\F\ \varphi \equiv \true\ \U\ \varphi$
+$\G$ is known as the `globally' or `always' operator with the semantics that $\varphi$ is always satisfied.
+Since the robot moves in continuous time and $\X$ operator is usually defined for discrete time steps, we consider for simplicity properties without $\X$.
+However, our approach is applicable for the whole of LTL.
+
+
+Let $\lang(\varphi)$ denote the set of words that satisfies the LTL formula $\varphi$.
+
+\begin{definition}[Deterministic Finite Automaton]\label{def:buchi}
+    A \emph{deterministic finite automaton (DFA)} is a tuple $(\alphabet,Q,q_0,\delta,F)$ where $\alphabet$ is the alphabet, $Q$ is a finite set of states, $q_0$ is an initial state, $\delta : Q \times \alphabet \rightarrow Q$ is a transition function and $F\subseteq Q$ is the set of accepting states.
+\end{definition}
+
+
+A run over a word $w_1,\ldots,w_n$ is a sequence of states $q_0,q_1,\ldots,q_n$ such that $q_{i} = \delta(q_{i-1},w_i)$ for all $i$. 
+A word is accepted by the automaton if the run over the word end in $F$. 
+We define the language accepted by an DFA $\ba$ as $\lang(\ba)~=~\{w\in (\alphabet)^\omega \mid\ w$ is accepted by $\ba\}$.
+It is a standard result that for every scLTL formula $\varphi$, there exists a DFA $\ba$ such that $\lang(\varphi)~=~\lang(\ba)$ and it is effectively constructible.
+Consequently, DFA can be used as a precise representation of an scLTL property.
+(Our approach can be extended in a straightforward way to so-called B\"uchi automata, which can express the whole of LTL.)
+
+
+
+\begin{definition}[State-labelled transition system]
+A (state-labelled) transition system (TS) is a tuple $(S,s_0,\Delta,L)$ where $S$ is a finite set of states, $s_0$ is an initial state, $\Delta: S \to 2^S$ is a transition relation, and $L:S \to \alphabet$ is the labelling function.
+\label{def:ts}
+\end{definition}
+
+A transition system (representing the real system or its abstraction) can be combined with an automaton (representing the property) into a \emph{product}, see Fig.~\ref{fig:guide}.
+Runs of the product are thus runs of the transition system monitored by the automaton.
+The automaton always reads the atomic propositions true in the current state and, on the whole, determines whether the run satisfies the property or not.
+This standard construction is often used in model checking \cite{BK08} and we use it to improve RRG by  \emph{mutual} exchange of information between the two parts.
+
+\begin{definition}[Product]\label{def:product}
+    Given a TS $\lts=(S,s_0,\Delta,L)$ and DFA $\ba=(\alphabet,Q,q_0,\delta,F)$, the product $\lts\times\ba$ is the tuple $(S\times Q,\hat{s_0},\hat{\Delta},\hat F)$ where
+    \begin{itemize}
+        \item $\hat{s_0}=(s_0,\delta(q_0,s_0))$,
+        \item $\hat{\Delta}((s,q))=\{(s',\delta(q,s'))\mid s'\in\Delta(s)\}$,
+        \item $\hat F=\{(s,q)\mid q\in F\}$ .
+    \end{itemize}
+\end{definition}
+
+%\todo{J:this seems reverted to the inconsistent state with BA with transition-acceptance (really needed?) but here both BA and product state-acceptance \\ K: Yeah, we agreed on having state-acceptance in the paper since it is easy to understand and in the implementation section, say that we use transition acceptance and they are equivalent}
+
+
+% \begin{remark}
+% As opposed to non-deterministic B\"uchi automata, they can be used also for model checking probabilistic systems\footnote{Not all LDBA are apt for LTL model checking of Markov decision processes, but those produced by the translation of \cite{ltlandldba} can.} but without complications of other types of acceptance conditions\footnote{For instance, Rabin automata and other types of deterministic automata capable of representing the whole LTL while being usable for model checking probabilistic systems all require to avoid some states eventually.}, constraining the accepting paths only by repeated reachability.
+% Consequently, our method is applicable also to systems with stochastic noise and featuring probabilistic behaviour. 
+% \end{remark}
