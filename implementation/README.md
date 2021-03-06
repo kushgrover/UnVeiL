@@ -37,18 +37,18 @@ java -jar planning.jar Examples/6rooms/example --output-dir output/
 
 
 There are several other command line switches available:
-*. --debug : For verbose output
-*. --no-advice : For no biasing during sampling
-*. --first-expl-then-plan : First explore the whole environment, then plan in a completely known environment
-*. --see-through-obstacles : Add tables as see through obstacles if used with --random-env
-*. --plot : Output the plot showing the path traversed and the final path
+..*. --debug : For verbose output
+..*. --no-advice : For no biasing during sampling
+..*. --first-expl-then-plan : First explore the whole environment, then plan in a completely known environment
+..*. --see-through-obstacles : Add tables as see through obstacles if used with --random-env
+..*. --plot : Output the plot showing the path traversed and the final path
 
 Apart from these, you can modify several other parameters used in the algorithm as well:
-*. --sensing-radius <value> : Sensing readius of the robot
-*. --cell-size <value> : Size of each cell used in discretization 
-*. --batch-size <value> : Sizeof each batch
-*. --bias-prob <value> : Extent with how much biasing should be done
-*. --property-file <file_name>.hoa : Auotomaton representing the property in HOA format. If specified, .pr file will be ignored
+..*. --sensing-radius <value> : Sensing readius of the robot
+..*. --cell-size <value> : Size of each cell used in discretization 
+..*. --batch-size <value> : Sizeof each batch
+..*. --bias-prob <value> : Extent with how much biasing should be done
+..*. --property-file <file_name>.hoa : Auotomaton representing the property in HOA format. If specified, .pr file will be ignored
 
 
 For producing results in the directory Final_results, run:
