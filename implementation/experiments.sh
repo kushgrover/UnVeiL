@@ -58,25 +58,25 @@ do
    do
       echo "    Repetition $j"
       echo "        Together without advice (see through)"
-      /usr/bin/time java -jar planning.jar $dir --debug --no-advice --output-directory results/see_through/together_without_advice/ > results/see_through/together_without_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --no-advice --output-directory results/see_through/together_without_advice/ > results/see_through/together_without_advice/output/output_$i-$j.txt
       echo "        Together with advice (see through)"
-      /usr/bin/time  -jar planning.jar $dir --debug --output-directory results/see_through/together_with_advice/ > results/see_through/together_with_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --output-directory results/see_through/together_with_advice/ > results/see_through/together_with_advice/output/output_$i-$j.txt
       timeout=$(<temp/timeout.txt)
       echo "        Separate without advice (see through)"
-      /usr/bin/time java -jar planning.jar $dir --debug --first-expl-then-plan --timeout $timeout --no-advice --output-directory results/see_through/separate_without_advice/ > results/see_through/separate_without_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --first-expl-then-plan --timeout $timeout --no-advice --output-directory results/see_through/separate_without_advice/ > results/see_through/separate_without_advice/output/output_$i-$j.txt
       echo "        Separate with advice (see through)"
-      /usr/bin/time java -jar planning.jar $dir --debug --first-expl-then-plan --timeout $timeout --output-directory results/see_through/separate_with_advice/ > results/see_through/separate_with_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --first-expl-then-plan --timeout $timeout --output-directory results/see_through/separate_with_advice/ > results/see_through/separate_with_advice/output/output_$i-$j.txt
 
 
       echo "        Together without advice (opaque)"
-      /usr/bin/time java -jar planning.jar $dir --debug --no-advice --only-opaque-obstacles --output-directory results/opaque/together_without_advice/ > results/opaque/together_without_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --no-advice --only-opaque-obstacles --output-directory results/opaque/together_without_advice/ > results/opaque/together_without_advice/output/output_$i-$j.txt
       echo "        Together with advice (opaque)"
-      /usr/bin/time java -jar planning.jar $dir --debug --only-opaque-obstacles --output-directory results/opaque/together_with_advice/ > results/opaque/together_with_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --only-opaque-obstacles --output-directory results/opaque/together_with_advice/ > results/opaque/together_with_advice/output/output_$i-$j.txt
       timeout=$(<temp/timeout.txt)
       echo "        Separate without advice (opaque)"
-      /usr/bin/time java -jar planning.jar $dir --debug --first-expl-then-plan --only-opaque-obstacles --timeout $timeout --no-advice --output-directory results/opaque/separate_without_advice/ > results/opaque/separate_without_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --first-expl-then-plan --only-opaque-obstacles --timeout $timeout --no-advice --output-directory results/opaque/separate_without_advice/ > results/opaque/separate_without_advice/output/output_$i-$j.txt
       echo "        Separate with advice (opaque)"
-      /usr/bin/time java -jar planning.jar $dir --debug --first-expl-then-plan --only-opaque-obstacles --timeout $timeout --output-directory results/opaque/separate_with_advice/ > results/opaque/separate_with_advice/output/output_$i-$j.txt
+      java -jar planning.jar $dir --debug --first-expl-then-plan --only-opaque-obstacles --timeout $timeout --output-directory results/opaque/separate_with_advice/ > results/opaque/separate_with_advice/output/output_$i-$j.txt
    done
 done   
 
