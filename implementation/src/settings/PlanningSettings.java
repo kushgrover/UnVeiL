@@ -105,7 +105,7 @@ public class PlanningSettings
 			{ STRING_TYPE,		INPUT_FILE,								"Input file name",						"1.0",			new String("temp/Env/random"),												"",
 																					"Name of the input files without the extension"},
 
-			{ BOOLEAN_TYPE,		ONLY_OPAQUE_OBSTACLES,					"Consider only Opaque obstacle",		"1.0",			new Boolean(false),															"",
+			{ BOOLEAN_TYPE,		ONLY_OPAQUE_OBSTACLES,					"Consider only Opaque obstacle",		"1.0",			new Boolean(true),															"",
 																					"Flag for not having see through obstacles"},
 
 			{ INTEGER_TYPE,		NUMBER_OF_RUNS,							"number of runs to take average",		"1.0",			new Integer(1),															"",
@@ -161,15 +161,15 @@ public class PlanningSettings
 				inputFile = true;
 				usingFlag[i] = true;
 			}
-			if(args[i].equals("--only-opaque-obstacles")) {
-				set(ONLY_OPAQUE_OBSTACLES, new Boolean(true));
+			if(args[i].equals("--see-through-obstacles")) {
+				set(ONLY_OPAQUE_OBSTACLES, new Boolean(false));
 				usingFlag[i] = true;
 			}
 			if(args[i].equals("--plot")) {
 				set(GENERATE_PLOT, new Boolean(true));
 				usingFlag[i] = true;
 			}
-			if(args[i].equals("--grid-size")) {
+			if(args[i].equals("--cell-size")) {
 				try {
 					set(GRID_SIZE, new Float(args[i+1]));
 					usingFlag[i] = true;
@@ -225,7 +225,7 @@ public class PlanningSettings
 					throw new Exception("Property file not specified");
 				}
 			}
-			if(args[i].equals("--output-directory")){
+			if(args[i].equals("--output-dir")){
 				try {
 					set(OUTPUT_DIRECTORY, new String(args[i+1]));
 					usingFlag[i] = true;

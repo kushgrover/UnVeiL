@@ -1,5 +1,3 @@
-import numpy as np
-import networkx as nx
 import sys
 import pandas as pd
 import matplotlib
