@@ -33,6 +33,7 @@ public class PlanningSettings
 	public static final String OUTPUT_DIRECTORY				=	"outputDirectory";
 	public static final String TIMEOUT						=	"timeout";
 	public static final String EXPORT_PLOT_DATA				=	"exportPlotData";
+	public static final String EXPORT_VIDEO_DATA				=	"exportVideoData";
 
 
 	public static void outputParameters() {
@@ -126,6 +127,8 @@ public class PlanningSettings
 			{ BOOLEAN_TYPE,		EXPORT_PLOT_DATA,						"Export the data for plotting",			"1.0",			new Boolean(false),															"",
 																					"Export data for plotting after some intervals"},
 
+			{ BOOLEAN_TYPE,		EXPORT_PLOT_DATA,						"Export the data for plotting",			"1.0",			new Boolean(false),															"",
+																					"Export data after each batch"},
 
 		};
 																			
@@ -247,6 +250,10 @@ public class PlanningSettings
 				set(EXPORT_PLOT_DATA, new Boolean(true));
 				usingFlag[i] = true;
 			}
+			if(args[i].equals("--export-video-data")){
+				set(EXPORT_VIDEO_DATA, new Boolean(true));
+				usingFlag[i] = true;
+			}
 		}
 		if(! inputFile){
 			throw new Exception("No input files given");
@@ -324,6 +331,9 @@ public class PlanningSettings
 		else if (VARIABLE.equals(EXPORT_PLOT_DATA)) {
 			propertyData[20][4] = value;
 		}
+		else if (VARIABLE.equals(EXPORT_VIDEO_DATA)) {
+			propertyData[21][4] = value;
+		}
 	}
 	
 	public static Object get(String VARIABLE)
@@ -390,6 +400,9 @@ public class PlanningSettings
 		}
 		else if (VARIABLE.equals(EXPORT_PLOT_DATA)) {
 			return propertyData[20][4];
+		}
+		else if (VARIABLE.equals(EXPORT_VIDEO_DATA)) {
+			return propertyData[21][4];
 		}
 		return null;
 	}

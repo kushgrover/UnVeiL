@@ -5,6 +5,7 @@ import java.awt.geom.Point2D;
 import java.io.IOException;
 import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
+import planningIO.StoreGraphKnown;
 import planningIO.StoreGraphUnknown;
 import planningIO.printing.ShowGraphUnknown;
 import settings.PlanningException;
@@ -201,7 +202,7 @@ public class UnknownRRG extends RRG
 	 * @return
 	 * @throws Exception
 	 */
-	public BDD sampleBatch(ArrayList<BDD> advice) throws Exception {
+	public BDD sampleBatch(ArrayList<BDD> advice, int iterNum) throws Exception {
 		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
 		currentBatchSize = 0;
 		endBatch = false;
@@ -211,6 +212,15 @@ public class UnknownRRG extends RRG
 			p = sampleInExploredArea();
 			buildGraph(advice, p);
 		}
+
+		if((boolean) PlanningSettings.get("exportVideoData")) {
+			try {
+				StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "video/together/" + iterNum);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+
 		return symbolicTransitionsInCurrentBatch;
 	}
 

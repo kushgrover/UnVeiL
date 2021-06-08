@@ -86,7 +86,7 @@ public class KnownRRG extends RRG {
 							e1.printStackTrace();
 						}
 					}
-				
+
 					tree.nearestN(xNew, 
 							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
 							{
@@ -119,7 +119,7 @@ public class KnownRRG extends RRG {
 	}
 
 	@Override
-	public BDD sampleBatch(ArrayList<BDD> advice) throws Exception {
+	public BDD sampleBatch(ArrayList<BDD> advice, int iterNum) throws Exception {
 		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
 		Point2D p;
 		currentBatchSize = 0;
@@ -128,6 +128,15 @@ public class KnownRRG extends RRG {
 			p = sample();
 			buildGraph(advice, p);
 		}
+
+		if((boolean) PlanningSettings.get("exportVideoData")) {
+			try {
+				StoreGraphKnown temp = new StoreGraphKnown(graph, grid.getGraph(), grid.getMovement(), (String) PlanningSettings.get("outputDirectory") + "video/separate/" + iterNum);
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+		}
+
 		return symbolicTransitionsInCurrentBatch;
 	}
 

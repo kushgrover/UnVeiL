@@ -172,7 +172,7 @@ public class Planning
 	 */
 	BDD sampleBatch(RRG rrg) throws Exception {
 		startTime = System.nanoTime(); 
-    	BDD transitions = rrg.sampleBatch(advice);
+    	BDD transitions = rrg.sampleBatch(advice, iterationNumber);
     	samplingTime += System.nanoTime() - startTime;
     	return transitions;
 	}

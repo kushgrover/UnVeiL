@@ -459,6 +459,6 @@ public abstract class RRG {
 	 * @return
 	 * @throws Exception
 	 */
-	public abstract BDD sampleBatch(ArrayList<BDD> advice) throws Exception;
+	public abstract BDD sampleBatch(ArrayList<BDD> advice, int iterNum) throws Exception;
 
 }
