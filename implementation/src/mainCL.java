@@ -5,24 +5,27 @@ import settings.PlanningSettings;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 
-public class mainCL {
+public final class mainCL {
+
+	private mainCL() {
+	}
 
 	public static void main(String[] args) throws Exception {
 		new PlanningSettings(args); // set parameters
-		if((boolean) PlanningSettings.get("debug"))
+		if((boolean) PlanningSettings.get("debug")) {
 			PlanningSettings.outputParameters();
+		}
 
 		int numOfRuns = (Integer) PlanningSettings.get("numberOfRuns");
 		Object[][] output = new Object[numOfRuns][7];
-		Object[] data = new Object[7];
-		Object[] sum = new Object[]{
-				new Integer(0), // num of iterations
-				new Integer(0), // Total sampled points
-				new Integer(0), // RRG size
-				new Float(0), // movement length
-				new Float(0), // path length
-				new Float(0), // total length
-				new Double(0), // total time
+		Object[] sum = {
+				0, // num of iterations
+				0, // Total sampled points
+				0, // RRG size
+				(float) 0, // movement length
+				(float) 0, // path length
+				(float) 0, // total length
+				(double) 0, // total time
 		};
 
 		for(int i=0; i < numOfRuns; i++) {
@@ -30,6 +33,7 @@ public class mainCL {
 			System.out.println("Starting initialization ... ");
 			Planning plan = new Planning(factory);
 			System.out.println("Initialization complete\n\n");
+			Object[] data;
 			if ((boolean) PlanningSettings.get("firstExplThenPlan")) {
 				data = plan.firstExplThenPlan();
 			} else {
@@ -43,19 +47,19 @@ public class mainCL {
 			for(int j=0; j<7; j++){
 				output[i][j] = data[j];
 				if(j<3) {
-					writer.write(((Integer) data[j]) + ",");
-					sum[j] = new Integer((Integer) sum[j] + (Integer) data[j]);
+					writer.write(data[j] + ",");
+					sum[j] = (Integer) sum[j] + (Integer) data[j];
 				}
 				else if(j<6) {
-					writer.write((Float) data[j] + ",");
-					sum[j] = new Float((Float) sum[j] + (Float) data[j]);
+					writer.write(data[j] + ",");
+					sum[j] = (Float) sum[j] + (Float) data[j];
 				}
-				else if(j<7) {
+				else {
 					BufferedWriter w = new BufferedWriter(new FileWriter("temp/timeout.txt"));
-					w.write((int) (((Double) data[j])/1000000) + "");
+					w.write(String.valueOf((int) (((Double) data[j]) / 1000000)));
 					w.close();
 					writer.write(((Double) data[j])/1000000 + ",");
-					sum[j] = new Double((Double) sum[j] + (Double) data[j]);
+					sum[j] = (Double) sum[j] + (Double) data[j];
 				}
 			}
 			writer.newLine();

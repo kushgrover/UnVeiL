@@ -1,27 +1,24 @@
-import net.sf.javabdd.BDD;
-import net.sf.javabdd.BDD.BDDIterator;
-import net.sf.javabdd.BDDFactory;
-import settings.Initialize;
-import settings.PlanningException;
-import settings.PlanningSettings;
+import abstraction.ProductAutomaton;
+import environment.Environment;
+import environment.Label;
 import modules.KnownGrid;
 import modules.KnownRRG;
 import modules.RRG;
 import modules.UnknownRRG;
 import modules.learnAskExperiments.DefaultExperiment;
+import net.sf.javabdd.BDD;
+import net.sf.javabdd.BDD.BDDIterator;
+import net.sf.javabdd.BDDFactory;
+import org.jgrapht.alg.util.Pair;
+import org.jgrapht.graph.DefaultEdge;
+import settings.Initialize;
+import settings.PlanningSettings;
 
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-
-import org.jgrapht.alg.util.Pair;
-import org.jgrapht.graph.DefaultEdge;
-
-import abstraction.ProductAutomaton;
-import environment.Environment;
-import environment.Label;
 
 
 /**
@@ -38,8 +35,8 @@ public class Planning
 	BDD currentStates;
 	
 	int iterationNumber 	= 0;
-	double initTime 		= 0;
-	double beginTime 		= 0;
+	double initTime;
+	double beginTime;
 	double startTime 		= 0;
 	double samplingTime 	= 0;
 	double pathTime 		= 0;
@@ -49,8 +46,9 @@ public class Planning
 	double totalTime		= 0;
     boolean needNewAdvice 	= true;
     ArrayList<BDD> advice 	= null;
-    float moveLength, pathLength;
-    List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
+    float moveLength = 0.0F;
+	float pathLength = 0.0F;
+    List<DefaultEdge> finalPath = new ArrayList<>();
 
     /**
      * initialize everything
@@ -69,12 +67,13 @@ public class Planning
         
         Label label				= Environment.getLabelling();
         BDD initStateSystem		= label.getLabel(env.getInit());
-        currentStates			= initStateSystem.id(); //stores the set of states in the abstraction we have seen till now
-        
+
+		//stores the set of states in the abstraction we have seen till now
+        currentStates			= initStateSystem.id();
         rrg.setStartingPoint(env.getInit());
 
-        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem)); // and for initial state in the product automaton
-        
+		// and for initial state in the product automaton
+        productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem));
         initTime 				= System.nanoTime() - beginTime;
 	}
 	
@@ -86,7 +85,7 @@ public class Planning
 	{
 
 
-		Pair<Float, Float> length = new Pair<Float, Float>(0f, 0f);
+		Pair<Float, Float> length = new Pair<>(0.0f, 0.0f);
 		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
 			length.setFirst(moveLength);
 			length.setSecond(pathLength);
@@ -108,8 +107,9 @@ public class Planning
 		}
 
 		int adviceSamples = 0;
-		for( int k=0; k<10; k++ )
+		for( int k=0; k<10; k++ ) {
 			adviceSamples += rrg.adviceSampled[k];
+		}
 
 		if((Integer) PlanningSettings.get("numberOfRuns") == 1 || (boolean) PlanningSettings.get("debug")) {
 			System.out.println("\nNumber of iterations = " + iterationNumber);
@@ -118,7 +118,7 @@ public class Planning
 			System.out.println("\nMovement Length = " + length.getFirst());
 			System.out.println("Remaining path Length = " + length.getSecond());
 			System.out.println("Total path Length = " + (length.getFirst()+length.getSecond()));
-			System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled) + " (" + adviceSamples + ")");
+			System.out.println("\nAdvice samples: " + Arrays.toString(rrg.adviceSampled) + " (" + adviceSamples + ')');
 			System.out.print("\nTotal time taken (in ms):");
 			System.out.println(totalTime / 1000000);
 		}
@@ -141,12 +141,12 @@ public class Planning
 		}
 	}
 	
-	/**
-	 * check if learning is required for the set of transitions
-	 * @param transitions
-	 * @return
-	 * @throws PlanningException
-	 */
+//	/**
+//	 * check if learning is required for the set of transitions
+//	 * @param transitions
+//	 * @return
+//	 * @throws PlanningException
+//	 */
 //	boolean needLearning(BDD transitions) throws PlanningException {
 //		return transitions.and(productAutomaton.sampledTransitions).isZero();
 //		&& ! productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)));
@@ -183,14 +183,15 @@ public class Planning
 	 * @throws Exception
 	 */
 	void learn(BDD transitions) throws Exception {
+		BDD bdd = transitions;
 		startTime = System.nanoTime(); 
-    	BDDIterator ite = transitions.iterator(ProductAutomaton.allSystemVars());
+    	BDDIterator ite = bdd.iterator(ProductAutomaton.allSystemVars());
     	while( ite.hasNext() ) 
     	{
-    		transitions = (BDD) ite.next();
+    		bdd = (BDD) ite.next();
 //    		if( needLearning(transitions) ) {
-    			exper.learn(transitions);
-        		currentStates = currentStates.or(productAutomaton.getSecondStateSystem(transitions));
+    			exper.learn(bdd);
+        		currentStates = currentStates.or(productAutomaton.getSecondStateSystem(bdd));
         		needNewAdvice = true;
 //        	}
     	}
@@ -203,14 +204,15 @@ public class Planning
 	 */
 	public Object[] explAndPlanTogether() throws Exception
 	{
-    	BDD transitions 					= null;
-        boolean computePath 				= false;
-        boolean debug 						= (boolean) PlanningSettings.get("debug");
-
+		boolean debug 						= (boolean) PlanningSettings.get("debug");
 		System.out.println("Starting planning ... ");
 		UnknownRRG urrg = (UnknownRRG) rrg;
-        urrg.grid.knowDiscretization(env, productAutomaton, env.getInit(), (float) PlanningSettings.get("sensingRadius"));
-        while( true )
+		urrg.grid.knowDiscretization(env,
+				productAutomaton,
+				env.getInit(),
+				(float) PlanningSettings.get("sensingRadius"));
+		boolean computePath = false;
+		while( true )
         {
         	if( debug ) {
 	        	if( iterationNumber == 100 ) {
@@ -221,17 +223,21 @@ public class Planning
         	}
         	
         	iterationNumber++;
-        	if((boolean) PlanningSettings.get("debug"))
-	        	System.out.println("Iter num: " + iterationNumber);
+        	if((boolean) PlanningSettings.get("debug")) {
+				System.out.println("Iter num: " + iterationNumber);
+			}
 
-        	if ((boolean) PlanningSettings.get("useAdvice") )
-        		updateAdvice();
+        	if ((boolean) PlanningSettings.get("useAdvice") ) {
+				updateAdvice();
+			}
 
-        	transitions = sampleBatch(urrg);
-        	if ( transitions == null ) 
-        		continue;
-        	if( productAutomaton.isAcceptingTransition(transitions) )
-        		computePath = true;
+			BDD transitions = sampleBatch(urrg);
+			if ( transitions == null ) {
+				continue;
+			}
+        	if( productAutomaton.isAcceptingTransition(transitions) ) {
+				computePath = true;
+			}
         	learn(transitions);
         	startTime = System.nanoTime();
         	if( computePath ) {
@@ -256,8 +262,9 @@ public class Planning
 						System.out.println("\nRemaining path: ");
 						productAutomaton.printPath(remainingPath);
 					}
-					if(remainingPath !=null)
-                		finalPath = urrg.liftPath(remainingPath);
+					if(remainingPath !=null) {
+						finalPath = urrg.liftPath(remainingPath);
+					}
             		break;
             	}
         	}
@@ -269,16 +276,15 @@ public class Planning
 			System.out.println(urrg.moveTime / 1000000);
 		}
 
-		Object[] data = new Object[] {
-				new Integer(iterationNumber),
-				new Integer(rrg.totalSampledPoints),
-				new Integer(rrg.totalPoints),
-				new Float(moveLength),
-				new Float(pathLength),
-				new Float(moveLength + pathLength),
-				new Double(totalTime)
+		return new Object[] {
+				iterationNumber,
+				rrg.totalSampledPoints,
+				rrg.totalPoints,
+				moveLength,
+				pathLength,
+				moveLength + pathLength,
+				totalTime
 		};
-		return data;
     }
 	
 	/**
@@ -296,30 +302,32 @@ public class Planning
 		KnownRRG krrg = (KnownRRG) rrg;
 		krrg.setGrid(grid);
 		krrg.setStartingPoint(krrg.currentRobotPosition);
-		ArrayList<BDD> movementBDD = new ArrayList<BDD>();
+		ArrayList<BDD> movementBDD = new ArrayList<>();
 		movementBDD.add(Environment.getLabelling().getLabel(krrg.currentRobotPosition));
-
-		BDD transitions = null;
-        boolean computePath = true;
 
 		System.out.print("Starting planning ... ");
 		double timeout = (double) PlanningSettings.get("timeout");
-		double currentTime = System.nanoTime()/1000000;
+		double currentTime = System.nanoTime()/1000000.0F;
 
+		boolean computePath = true;
 		while( currentTime - (beginTime/1000000) < timeout ){
 			iterationNumber++;
 
-			if((boolean) PlanningSettings.get("debug"))
+			if((boolean) PlanningSettings.get("debug")) {
 				System.out.println("Iter num: " + iterationNumber);
+			}
         	
-        	if ( (boolean) PlanningSettings.get("useAdvice") )
-            	updateAdvice();
+        	if ( (boolean) PlanningSettings.get("useAdvice") ) {
+				updateAdvice();
+			}
 
-        	transitions = sampleBatch(rrg);
-        	if ( transitions == null )
-        		continue;
-        	if( productAutomaton.isAcceptingTransition(transitions) )
-        		computePath = true;
+			BDD transitions = sampleBatch(rrg);
+			if ( transitions == null ) {
+				continue;
+			}
+        	if( productAutomaton.isAcceptingTransition(transitions) ) {
+				computePath = true;
+			}
         	learn(transitions);
         	
         	if(((double) PlanningSettings.get("timeout")) == Double.MAX_VALUE ) {
@@ -328,15 +336,16 @@ public class Planning
 					ArrayList<BDD> path = productAutomaton.findAcceptingPath(movementBDD);
 					if (path != null) {
 						System.out.println("Path found :D");
-						if ((boolean) PlanningSettings.get("debug"))
+						if ((boolean) PlanningSettings.get("debug")) {
 							productAutomaton.printPath(path);
+						}
 						finalPath = rrg.liftPath(path);
 						break;
 					}
 				}
 				pathTime += System.nanoTime() - startTime;
 			}
-			currentTime = System.nanoTime()/1000000;
+			currentTime = System.nanoTime()/1000000.0F;
 		}
 
 		if(((double) PlanningSettings.get("timeout")) < Double.MAX_VALUE ) {
@@ -344,8 +353,9 @@ public class Planning
 			ArrayList<BDD> path = productAutomaton.findAcceptingPath(movementBDD);
 			if (path != null) {
 				System.out.println("Path found :D");
-				if ((boolean) PlanningSettings.get("debug"))
+				if ((boolean) PlanningSettings.get("debug")) {
 					productAutomaton.printPath(path);
+				}
 				finalPath = rrg.liftPath(path);
 			}
 			else {
@@ -359,31 +369,29 @@ public class Planning
 		pathLength = length.getSecond();
 		printOutput();
 
-		Object[] data = new Object[] {
-				new Integer(iterationNumber),
-				new Integer(rrg.totalSampledPoints),
-				new Integer(rrg.totalPoints),
-				new Float(moveLength),
-				new Float(pathLength),
-				new Float(moveLength + pathLength),
-				new Double(totalTime)
+		return new Object[] {
+				iterationNumber,
+				rrg.totalSampledPoints,
+				rrg.totalPoints,
+				moveLength,
+				pathLength,
+				moveLength + pathLength,
+				totalTime
 		};
-		return data;
 	}
 
 	private float exploreDiscretization(KnownGrid grid) throws Exception {
-		float length = 0;
 		Point2D currentPosition = env.getInit();
-		Point2D newPosition;
 		grid.initializeGraph();
 		grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		grid.updateInitPoint(currentPosition);
+		float length = 0;
 		while(! grid.exploredCompletely()) {
 			Pair<Point2D, Integer> newMove = grid.findAMove(currentPosition);
 			if(newMove == null) {
 				break;
 			}
-			newPosition = newMove.getFirst();
+			Point2D newPosition = newMove.getFirst();
 			grid.updateMovement(currentPosition, newPosition);
 			length += grid.findAPath(currentPosition, newPosition);
 			currentPosition = newPosition;

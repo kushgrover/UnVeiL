@@ -54,6 +54,7 @@ do
    dir=results/environments/env$i/temp
    echo "Generating random environment: $i"
    python3 ran_env_gen.py $dir --see-through
+   echo "Starting planning on input file: $dir"
    for (( j=1; j <= $arg2; j++))
    do
       echo "    Repetition $j"
