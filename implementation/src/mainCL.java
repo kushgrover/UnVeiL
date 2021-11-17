@@ -11,11 +11,14 @@ public final class mainCL {
 	}
 
 	public static void main(String[] args) throws Exception {
-		new PlanningSettings(args); // set parameters
+		// set parameters
+		new PlanningSettings(args);
 		if((boolean) PlanningSettings.get("debug")) {
+			// output parameters if debug mode
 			PlanningSettings.outputParameters();
 		}
 
+		// default:1 (might not work for value >1)
 		int numOfRuns = (Integer) PlanningSettings.get("numberOfRuns");
 		Object[][] output = new Object[numOfRuns][7];
 		Object[] sum = {

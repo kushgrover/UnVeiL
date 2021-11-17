@@ -246,7 +246,7 @@ public class Planning
 					ArrayList<BDD> remainingPath = urrg.findRemainingPath();
         			System.out.println("\nPath found :D :D :D");
 					if((boolean) PlanningSettings.get("debug")) {
-						productAutomaton.printPath(path);
+						ProductAutomaton.printPath(path);
 						System.out.println("Concrete movement: ");
 						Iterator<DefaultEdge> it_move = urrg.movement.iterator();
 						DefaultEdge e = it_move.next();
@@ -258,9 +258,9 @@ public class Planning
 							e = it_move.next();
 						}
 						System.out.println("\nMovement: ");
-						productAutomaton.printPath(urrg.movementBDD);
+						ProductAutomaton.printPath(urrg.movementBDD);
 						System.out.println("\nRemaining path: ");
-						productAutomaton.printPath(remainingPath);
+						ProductAutomaton.printPath(remainingPath);
 					}
 					if(remainingPath !=null) {
 						finalPath = urrg.liftPath(remainingPath);
@@ -337,7 +337,7 @@ public class Planning
 					if (path != null) {
 						System.out.println("Path found :D");
 						if ((boolean) PlanningSettings.get("debug")) {
-							productAutomaton.printPath(path);
+							ProductAutomaton.printPath(path);
 						}
 						finalPath = rrg.liftPath(path);
 						break;
@@ -354,7 +354,7 @@ public class Planning
 			if (path != null) {
 				System.out.println("Path found :D");
 				if ((boolean) PlanningSettings.get("debug")) {
-					productAutomaton.printPath(path);
+					ProductAutomaton.printPath(path);
 				}
 				finalPath = rrg.liftPath(path);
 			}

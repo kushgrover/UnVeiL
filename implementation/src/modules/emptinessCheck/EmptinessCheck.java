@@ -67,7 +67,7 @@ public class EmptinessCheck {
 				{
 					throw new PlanningException("State does not exist");
 				}
-				ArrayList<Integer> accSet = productAutomaton.findAcceptingSets(transition);
+				ArrayList<Integer> accSet = ProductAutomaton.findAcceptingSets(transition);
 				if(getRank(toState) == -1) 
 				{
 					push(accSet,toState);
@@ -112,7 +112,7 @@ public class EmptinessCheck {
 		{
 			if(rank[i] >= topRank) 
 			{
-				statesSCC	= statesSCC.or(productAutomaton.getStateFromID(i));
+				statesSCC	= statesSCC.or(ProductAutomaton.getStateFromID(i));
 			}
 		}
 		return statesSCC;
@@ -186,7 +186,7 @@ public class EmptinessCheck {
 				setStates.set(i+1, productAutomaton.postImageConcrete(setStates.get(i)).and(setStates.get(i+1)));
 				BDD transition = setStates.get(i).and(productAutomaton.changePreVarsToPostVars(setStates.get(i+1)));
 				transition = transition.and(productAutomaton.getBDD()).and(ProductAutomaton.transitionLevelDomain().ithVar(3));
-				List<Integer> k = productAutomaton.findAcceptingSets(transition);
+				List<Integer> k = ProductAutomaton.findAcceptingSets(transition);
 				for (int k_n : k) {
 					if (k_n > 0) {
 						visitedAcceptingSets[k_n] = 1;
@@ -226,13 +226,13 @@ public class EmptinessCheck {
 
 	private int getRank(BDD state) throws PlanningException 
 	{
-		int id		= productAutomaton.getStateID(state);
+		int id		= ProductAutomaton.getStateID(state);
 		return rank[id];
 	}
 	
 	private void setRank(BDD state, int num) throws PlanningException 
 	{
-		int id		= productAutomaton.getStateID(state);
+		int id		= ProductAutomaton.getStateID(state);
 		rank[id]	= num;
 	}
 

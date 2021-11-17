@@ -57,7 +57,7 @@ public class DefaultExperiment implements Experiments
 		}
 
 		if((boolean) PlanningSettings.get("useAdvice")) {
-			if (!productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)))){
+			if (!ProductAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(ProductAutomaton.removeAllExceptPostSystemVars(transitions)))){
 				BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
 				while (it.hasNext()) {
 					BDD nextTransition = (BDD) it.next();
@@ -161,7 +161,7 @@ public class DefaultExperiment implements Experiments
 		int i = 1;
 		while(! productAutomaton.incomingTransitions(source).and(totalTransitions.not()).isZero()) {
 			advice.add(productAutomaton.incomingTransitions(source));
-			source = productAutomaton.removeAllExceptPreSystemVars(advice.get(i));
+			source = ProductAutomaton.removeAllExceptPreSystemVars(advice.get(i));
 			totalTransitions = totalTransitions.or(advice.get(i));
 			i++;
 		}

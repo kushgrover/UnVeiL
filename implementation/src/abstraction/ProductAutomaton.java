@@ -12,11 +12,12 @@ import settings.PlanningException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 
 import modules.emptinessCheck.EmptinessCheck;
 
 /**
- * <p> Stores the product automaton and does all the operations on it</p>
+ * <p> This file stores and manipulate the product automaton.</p>
  * @author Kush Grover
  *
  */
@@ -59,7 +60,7 @@ public class ProductAutomaton
 	/**
 	 * <p>Initializes Product Automaton to an empty automaton</p>
 	 * @param propertyBDD BDD for the property automaton
-	 * @throws PlanningException 
+	 * @throws PlanningException If something goes wrong in initializing
 	 */
 	public ProductAutomaton(BDD propertyBDD) throws PlanningException
 	{
@@ -96,13 +97,14 @@ public class ProductAutomaton
 	 */
 	private void initializeCounter()
 	{
-		counter		= new int[(int) numStatesSystem];
+		counter	= new int[(int) numStatesSystem];
 		Arrays.fill(counter, 0);
 	}
 	
 	/**
 	 * <p>Creates BDDPairing for changing pre vars to post vars</p>
 	 * @return BDDPairing for changing pre vars to post vars
+	 * @see BDDPairing
 	 */
 	public static BDDPairing oldVarToNewVarPairing() 
 	{
@@ -117,6 +119,7 @@ public class ProductAutomaton
 	/**
 	 * <p>Creates BDDPairing for changing post vars to pre vars</p>
 	 * @return BDDPairing for changing post vars to pre vars
+	 * @see BDDPairing
 	 */
 	public static BDDPairing newVarToOldVarPairing() 
 	{
@@ -132,7 +135,7 @@ public class ProductAutomaton
 	/**
 	 * <p>Creates BDDPairing for changing pre system vars to label vars</p>
 	 * @return BDDPairing for changing pre system vars to label vars
-	 * @throws PlanningException 
+	 * @see BDDPairing
 	 */
 	public static BDDPairing statesToLabelPairing() throws PlanningException 
 	{
@@ -151,6 +154,7 @@ public class ProductAutomaton
 	/**
 	 * <p>Creates BDDPairing for changing pre system vars to post system vars</p>
 	 * @return BDDPairing for changing pre system vars to post system vars
+	 * @see BDDPairing
 	 */
 	public static BDDPairing oldVarToNewVarSystemPairing() 
 	{
@@ -165,6 +169,7 @@ public class ProductAutomaton
 	/**
 	 * <p>Creates BDDPairing for changing post system vars to pre system vars</p>
 	 * @return BDDPairing for changing post system vars to pre system vars
+	 * @see BDDPairing
 	 */
 	public static BDDPairing newVarToOldVarSystemPairing() 
 	{
@@ -185,7 +190,7 @@ public class ProductAutomaton
 	
 	/**
 	 * set the initial state
-	 * @param initStates
+	 * @param initStates initial states represented as a BDD
 	 */
 	public void setInitState(BDD initStates) 
 	{
@@ -234,7 +239,7 @@ public class ProductAutomaton
 	 */
 	private static int numberOfStates()
 	{
-		return (int) StrictMath.pow( 2 , 	numAPSystem + propertyDomainPre().varNum());
+		return (int) StrictMath.pow( 2 , numAPSystem + propertyDomainPre().varNum());
 	}
 	
 	/**
@@ -248,7 +253,8 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @return BDDDoamin for pre vars of property
+	 * @return BDDDomain for pre vars of property
+	 * @see BDDDomain
 	 */
 	public static BDDDomain propertyDomainPre()
 	{
@@ -257,7 +263,8 @@ public class ProductAutomaton
 
 	/**
 	 * 
-	 * @return BDDDoamin for post vars of property
+	 * @return BDDDomain for post vars of property
+	 * @see BDDDomain
 	 */
 	public static BDDDomain propertyDomainPost()
 	{
@@ -267,6 +274,7 @@ public class ProductAutomaton
 	/**
 	 * 
 	 * @return BDDDomain for accepting sets
+	 * @see BDDDomain
 	 */
 	public static BDDDomain acceptingSetDomain()
 	{
@@ -276,6 +284,7 @@ public class ProductAutomaton
 	/**
 	 * 
 	 * @return BDDDomain for transition level
+	 * @see BDDDomain
 	 */
 	public static BDDDomain transitionLevelDomain()
 	{
@@ -284,9 +293,7 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @param i
 	 * @return ith system var in pre vars
-	 * @throws PlanningException 
 	 */
 	public static BDD ithVarSystemPre(int i) throws PlanningException 
 	{
@@ -298,9 +305,7 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @param i
 	 * @return ith system var in post vars
-	 * @throws PlanningException 
 	 */
 	public static BDD ithVarSystemPost(int i) throws PlanningException 
 	{
@@ -312,9 +317,7 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @param i
 	 * @return ith var used for labels
-	 * @throws PlanningException 
 	 */
 	public static BDD ithVarLabel(int i) throws PlanningException 
 	{
@@ -330,7 +333,6 @@ public class ProductAutomaton
 	/**
 	 * 
 	 * @return set of all pre system vars
-	 * @throws PlanningException 
 	 */
 	public static BDD allPreSystemVars() throws PlanningException 
 	{
@@ -345,7 +347,6 @@ public class ProductAutomaton
 	/**
 	 * 
 	 * @return set of all post system vars
-	 * @throws PlanningException 
 	 */
 	public static BDD allPostSystemVars() throws PlanningException 
 	{
@@ -366,7 +367,6 @@ public class ProductAutomaton
 	/**
 	 * 
 	 * @return set of all pre vars
-	 * @throws PlanningException 
 	 */
 	public static BDD allPreVars() throws PlanningException 
 	{
@@ -376,7 +376,6 @@ public class ProductAutomaton
 	/**
 	 * 
 	 * @return set of all post vars
-	 * @throws PlanningException 
 	 */
 	public static BDD allPostVars() throws PlanningException 
 	{
@@ -386,7 +385,7 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @return conjuction of all the vars
+	 * @return conjunction of all the vars
 	 */
 
 	public static BDD allVars()
@@ -401,9 +400,7 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @param bdd
 	 * @return true if bdd has only pre system vars
-	 * @throws PlanningException 
 	 */
 	public static boolean hasOnlyPreSystemVars(BDD bdd) throws PlanningException
 	{
@@ -412,33 +409,27 @@ public class ProductAutomaton
 	
 	/**
 	 * 
-	 * @param bdd
-	 * @return true if bdd has only post system vars
-	 * @throws PlanningException 
+	 * @return True if bdd has only post system vars
 	 */
-	public boolean hasOnlyPostSystemVars(BDD bdd) throws PlanningException 
+	public static boolean hasOnlyPostSystemVars(BDD bdd) throws PlanningException
 	{
 		return ! (bdd.support().imp(allPostSystemVars()).isZero());
 	}
 	
 	/**
 	 * 
-	 * @param bdd
 	 * @return true if bdd has only post system vars
-	 * @throws PlanningException 
 	 */
-	public boolean hasOnlyPreVars(BDD bdd) throws PlanningException 
+	public static boolean hasOnlyPreVars(BDD bdd) throws PlanningException
 	{
 		return ! (bdd.support().imp(allPreVars()).isZero());
 	}
 	
 	/**
 	 * 
-	 * @param bdd
 	 * @return true if bdd has only post system vars
-	 * @throws PlanningException 
 	 */
-	public boolean hasOnlyPostVars(BDD bdd) throws PlanningException 
+	public static boolean hasOnlyPostVars(BDD bdd) throws PlanningException
 	{
 		return ! (bdd.support().imp(allPostVars()).isZero());
 	}
@@ -447,7 +438,6 @@ public class ProductAutomaton
 	/**
 	 * <p>Compute final States</p>
 	 * @return BDD representing the set of final states
-	 * @throws PlanningException 
 	 */
 	public BDD finalStatesSystem() throws PlanningException
 	{
@@ -457,8 +447,6 @@ public class ProductAutomaton
 	
 	/**
 	 * <p>Compute the set of states from which there is an outgoing accepting transition</p>
-	 * @return
-	 * @throws PlanningException 
 	 */
 	public BDD preImageOfFinalStatesSystem() throws PlanningException 
 	{
@@ -469,64 +457,55 @@ public class ProductAutomaton
 //----------------------------------------------------------------------------------------------------------------
 	
 //----------------------------------------------------------------------------------------------------------------
-/**
- * states
- */
+// *** states
 	
 	
 	/**
-	 * 
-	 * @param bdd
-	 * @return
-	 * @throws PlanningException 
+	 * <p>Transform a BDD of pre vars changed to a BDD of post vars. This is used for converting a pre state to a post state.</p>
+	 * @param bdd Input BDD consisting only of pre vars
+	 * @return BDD of post vars
 	 */
-	public BDD changePreVarsToPostVars(BDD bdd) throws PlanningException
+	public static BDD changePreVarsToPostVars(BDD bdd) throws PlanningException
 	{
 		if(! hasOnlyPreVars(bdd)) 
 		{
 			throw new PlanningException("BDD has extra vars");
 		}
-		BDD temp	= bdd.replace(oldToNewPairing);
-		return temp;
+		return bdd.replace(oldToNewPairing);
 	}
 	
 	/**
-	 * 
-	 * @param bdd
-	 * @return
-	 * @throws PlanningException 
+	 * <p>Transform a BDD of post vars changed to a BDD of pre vars. This is used for converting a post state to a pre state.</p>
+	 * @param bdd Input BDD consisting only of post vars
+	 * @return BDD of pre vars
 	 */
-	public BDD changePostVarsToPreVars(BDD bdd) throws PlanningException 
+	public static BDD changePostVarsToPreVars(BDD bdd) throws PlanningException
 	{
 		if(! hasOnlyPostVars(bdd)) 
 		{
 			throw new PlanningException("BDD has extra vars");
 		}
-		BDD temp	= bdd.replace(newToOldPairing);
-		return temp;
+		return bdd.replace(newToOldPairing);
 	}
 	
 	/**
-	 * 
-	 * @param bdd
-	 * @return
-	 * @throws PlanningException 
+	 * <p>Does what changePostVarsToPreVars does except that they are restricted only to System vars</p>
+	 * @param bdd Input BDD consisting only of post system vars
+	 * @return BDD of pre system vars
 	 */
-	public BDD changePostSystemVarsToPreSystemVars(BDD bdd) throws PlanningException 
+	public static BDD changePostSystemVarsToPreSystemVars(BDD bdd) throws PlanningException
 	{
 		if(! hasOnlyPostSystemVars(bdd)) 
 		{
 			throw new PlanningException("BDD has extra vars");
 		}
-		BDD temp	= bdd.replace(newVarToOldVarSystemPairing);
-		return temp;
+		return bdd.replace(newVarToOldVarSystemPairing);
 	}
-	
+
 	/**
-	 * 
-	 * @param bdd
-	 * @return
-	 * @throws PlanningException 
+	 * <p>Does what changePreVarsToPostVars does except that they are restricted only to System vars</p>
+	 * @param bdd Input BDD consisting only of pre system vars
+	 * @return BDD of post system vars
 	 */
 	public static BDD changePreSystemVarsToPostSystemVars(BDD bdd) throws PlanningException
 	{
@@ -534,8 +513,7 @@ public class ProductAutomaton
 		{
 			throw new PlanningException("BDD has extra vars");
 		}
-		BDD temp	= bdd.replace(oldVarToNewVarSystemPairing);
-		return temp;
+		return bdd.replace(oldVarToNewVarSystemPairing);
 	}
 	
 	
@@ -543,15 +521,13 @@ public class ProductAutomaton
 	
 	/**
 	 * <p> Return a bdd after existentially quantifying all the variables except pre vars</p>
-	 * @param bdd
 	 * @return BDD with only pre vars
-	 * @throws PlanningException 
 	 */
-	public BDD removeAllExceptPreVars(BDD bdd) throws PlanningException 
+	public static BDD removeAllExceptPreVars(BDD bdd) throws PlanningException
 	{
-		BDD temp	= bdd;
+		BDD temp = bdd;
 		try{
-			temp	= temp.exist(propertyDomainPost().set());
+			temp = temp.exist(propertyDomainPost().set());
 		} catch(BDDException E)
 		{
 			E.printStackTrace();
@@ -571,7 +547,7 @@ public class ProductAutomaton
 		for(int i=0; i<numAPSystem; i++) 
 		{
 			try{
-				temp	= temp.exist(ithVarSystemPost(i));
+				temp = temp.exist(ithVarSystemPost(i));
 			} catch(BDDException E)
 			{
 				E.printStackTrace();
@@ -591,11 +567,9 @@ public class ProductAutomaton
 	
 	/**
 	 * <p> Return a bdd after existentially quantifying all the variables except post vars</p>
-	 * @param bdd
 	 * @return BDD with only post vars
-	 * @throws PlanningException 
 	 */
-	public BDD removeAllExceptPostVars(BDD bdd) throws PlanningException 
+	public static BDD removeAllExceptPostVars(BDD bdd) throws PlanningException
 	{
 		BDD temp	= bdd;
 		try{
@@ -639,11 +613,9 @@ public class ProductAutomaton
 	
 	/**
 	 * <p> Return a bdd after existentially quantifying all the variables except pre system vars</p>
-	 * @param bdd
 	 * @return BDD with only pre system vars
-	 * @throws PlanningException 
 	 */
-	public BDD removeAllExceptPreSystemVars(BDD bdd) throws PlanningException 
+	public static BDD removeAllExceptPreSystemVars(BDD bdd) throws PlanningException
 	{
 		BDD temp	= bdd;
 		try
@@ -699,11 +671,9 @@ public class ProductAutomaton
 	
 	/**
 	 * <p> Return a bdd after existentially quantifying all the variables except post system vars</p>
-	 * @param bdd
 	 * @return BDD with only post system vars
-	 * @throws PlanningException 
 	 */
-	public BDD removeAllExceptPostSystemVars(BDD bdd) throws PlanningException 
+	public static BDD removeAllExceptPostSystemVars(BDD bdd) throws PlanningException
 	{
 		BDD temp	= bdd;
 		try
@@ -757,7 +727,7 @@ public class ProductAutomaton
 		return temp;
 	}
 	
-	public BDD removeAllExceptSystemVars(BDD bdd) throws PlanningException {
+	public static BDD removeAllExceptSystemVars(BDD bdd) throws PlanningException {
 		BDD temp	= bdd;
 		try
 		{
@@ -803,13 +773,10 @@ public class ProductAutomaton
 	
 	
 	/**
-	 * <p>Computes pre image of a set of states</p>
-	 * @param states
-	 * @return pre image of states in product automaton
-	 * @throws PlanningException 
-	 * @throws PlanningException 
+	 * <p>Computes pre-image of a set of states. Pre-image of a set of states S are all the states which have an outgoing to a state in S.</p>
+	 * @return pre-image of states in product automaton
 	 */
-	public BDD preImageConcrete(BDD states) throws PlanningException, PlanningException
+	public BDD preImageConcrete(BDD states) throws PlanningException
 	{
 		if(! hasOnlyPreVars(states)) 
 		{
@@ -819,8 +786,12 @@ public class ProductAutomaton
 		temp		= temp.or(changePreVarsToPostVars(states));
 		return removeAllExceptPreVars(productAutomatonBDD.and(transitionLevelDomain().ithVar(3)).and(temp));
 	}
-	
-	public BDD preImageSystem(BDD states) throws PlanningException, PlanningException 
+
+	/**
+	 * <p>Computes pre-image of a set of states consisting of only system vars (look at preImageConcrete). It is equivalent to computing pre image of a set of states in the abstraction</p>
+	 * @return pre-image of states (with only system vars) in product automaton
+	 */
+	public BDD preImageSystem(BDD states) throws PlanningException
 	{
 		if(! hasOnlyPreSystemVars(states)) 
 		{
@@ -829,24 +800,25 @@ public class ProductAutomaton
 		BDD temp		= changePreVarsToPostVars(states);
 		return removeAllExceptPreSystemVars(productAutomatonBDD.and(temp));
 	}
-	
+
 	/**
-	 * <p>Computes post image of a set of states</p>
-	 * @param states
-	 * @return post image of states in product automaton
-	 * @throws PlanningException 
-	 * @throws PlanningException 
+	 * <p>Computes post-image of a set of states. Post-image of a set of states S are all the successors of S.</p>
+	 * @return post-image of states in product automaton
 	 */
-	public BDD postImageConcrete(BDD states) throws PlanningException, PlanningException
+	public BDD postImageConcrete(BDD states) throws PlanningException
 	{
-		if(! hasOnlyPreVars(states)) 
+		if(! hasOnlyPreVars(states))
 		{
 			throw new PlanningException("BDD has extra vars");
 		}
 		return changePostVarsToPreVars(removeAllExceptPostVars(productAutomatonBDD.and(transitionLevelDomain().ithVar(3)).and(states)));
 	}
-	
-	public BDD postImageSystem(BDD states) throws PlanningException, PlanningException 
+
+	/**
+	 * <p>Computes post-image of a set of states consisting of only system vars (look at postImageConcrete). It is equivalent to computing post image of a set of states in the abstraction</p>
+	 * @return post-image of states in product automaton
+	 */
+	public BDD postImageSystem(BDD states) throws PlanningException
 	{
 		if(! hasOnlyPreVars(states)) 
 		{
@@ -854,12 +826,11 @@ public class ProductAutomaton
 		}
 		return changePostVarsToPreVars(removeAllExceptPostSystemVars(productAutomatonBDD.and(states)));
 	}
-	
+
 	/**
-	 * 
-	 * @param i
+	 *
+	 * @param i For specifying i-th set
 	 * @return first states of all accepting transitions of ith accepting set
-	 * @throws PlanningException
 	 */
 	public BDD getAcceptingStates(int i) throws PlanningException 
 	{
@@ -870,17 +841,14 @@ public class ProductAutomaton
 //-------------------------------------------------------------------------------------------------------------------
 
 	
-//-------------------------------------------------------------------------------------------------------------------	
-/**
- * Label	
- */
+//-------------------------------------------------------------------------------------------------------------------
+// *** Label
+
 	
 	
 	/**
 	 * <p>Check if ith system var is used in property, returns the index of that var(AP) in apListProperty</p>
-	 * @param i
 	 * @return index of var in apListProperty
-	 * @throws PlanningException 
 	 */
 	private static int findIthSystemVarInLabel(int i) throws PlanningException 
 	{
@@ -929,7 +897,7 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	private static BDD restrictToLabelVarsInPreSystem(BDD states) throws PlanningException, PlanningException
+	private static BDD restrictToLabelVarsInPreSystem(BDD states) throws PlanningException
 	{
 		if(! hasOnlyPreSystemVars(states)) 
 		{
@@ -959,7 +927,7 @@ public class ProductAutomaton
 	 * @return BDD with only label vars
 	 * @throws PlanningException 
 	 */
-	public BDD removeAllExceptLabelVars(BDD bdd) throws PlanningException 
+	public static BDD removeAllExceptLabelVars(BDD bdd) throws PlanningException
 	{
 		BDD temp	= bdd;
 		try 
@@ -1011,7 +979,7 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	public BDD findLabelBDDFromSystemBDD(BDD states) throws PlanningException, PlanningException
+	public static BDD findLabelBDDFromSystemBDD(BDD states) throws PlanningException
 	{
 		if(! hasOnlyPreSystemVars(states)) 
 		{
@@ -1027,7 +995,7 @@ public class ProductAutomaton
 	}
 	
 	/**
-	 * </p>maintains an equivalence between Label vars and pre system vars, equate the values of the vars representing same atomic prop<p>
+	 * <p>maintains an equivalence between Label vars and pre system vars, equate the values of the vars representing same atomic prop </p>
 	 * @return
 	 * @throws PlanningException
 	 */
@@ -1047,9 +1015,9 @@ public class ProductAutomaton
 
 
 //----------------------------------------------------------------------------------------------------------------
-/**
- * Transitions
- */
+
+// *** Transitions
+
 	
 	
 	/**
@@ -1067,13 +1035,13 @@ public class ProductAutomaton
 	 * @return level of the transition
 	 * @throws PlanningException
 	 */
-	public int getLevel(BDD transition) throws PlanningException 
+	public static int getLevel(BDD transition) throws PlanningException
 	{
 		if(transition.pathCount() > 1) 
 		{
 			throw new PlanningException("More than one transition");
 		}
-		else if(transition.pathCount() < 1) 
+		if(transition.pathCount() < 1)
 		{
 			throw new PlanningException("No transition exists");
 		}
@@ -1090,7 +1058,7 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	public int getLevel(BDD fromState, BDD toState) throws PlanningException, PlanningException 
+	public int getLevel(BDD fromState, BDD toState) throws PlanningException
 	{
 		BDD toStatePrime	= changePreVarsToPostVars(toState);
 		BDD transition		= productAutomatonBDD.and(fromState).and(toStatePrime);
@@ -1122,7 +1090,7 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	public void setLevel(BDD fromState, BDD toState, int level) throws PlanningException, PlanningException 
+	public void setLevel(BDD fromState, BDD toState, int level) throws PlanningException
 	{
 		if(! hasOnlyPreVars(fromState) 	||	 ! hasOnlyPreVars(toState)) 
 		{
@@ -1138,10 +1106,10 @@ public class ProductAutomaton
 	 * @param transition
 	 * @return
 	 */
-	public ArrayList<Integer> findAcceptingSets(BDD transition) 
+	public static ArrayList<Integer> findAcceptingSets(BDD transition)
 	{
 		int accSet				= transition.scanVar(acceptingSetDomain()).intValue();
-		ArrayList<Integer>temp	= new ArrayList<Integer>();
+		ArrayList<Integer>temp	= new ArrayList<>();
 		temp.add(accSet);
 		return temp;
 	}
@@ -1190,10 +1158,8 @@ public class ProductAutomaton
 	/**
 	 * <p>Add a set of transitions to the product automaton</p>
 	 * @param transitions
-	 * @throws PlanningException
 	 */
-	public void addTransitions(BDD transitions) throws PlanningException
-	{
+	public void addTransitions(BDD transitions) {
 		productAutomatonBDD=productAutomatonBDD.or(transitions);		
 	}
 	
@@ -1203,7 +1169,7 @@ public class ProductAutomaton
 	 * @return first state in the transition i.e if (p->q) is the transition then return p
 	 * @throws PlanningException
 	 */
-	public BDD getFirstState(BDD transition) throws PlanningException 
+	public static BDD getFirstState(BDD transition) throws PlanningException
 	{
 		return removeAllExceptPreVars(transition);
 	}
@@ -1214,7 +1180,7 @@ public class ProductAutomaton
 	 * @return second state in the transition i.e if (p->q) is the transition then return q
 	 * @throws PlanningException
 	 */
-	public BDD getSecondState(BDD transition) throws PlanningException 
+	public static BDD getSecondState(BDD transition) throws PlanningException
 	{
 		return changePostVarsToPreVars(removeAllExceptPostVars(transition));
 	}
@@ -1225,7 +1191,7 @@ public class ProductAutomaton
 	 * @return second state in the transition i.e if (p->q) is the transition then return q
 	 * @throws PlanningException
 	 */
-	public BDD getFirstStateSystem(BDD transition) throws PlanningException 
+	public static BDD getFirstStateSystem(BDD transition) throws PlanningException
 	{
 		return removeAllExceptPreSystemVars(transition);
 	}
@@ -1236,7 +1202,7 @@ public class ProductAutomaton
 	 * @return second state in the transition i.e if (p->q) is the transition then return q
 	 * @throws PlanningException
 	 */
-	public BDD getSecondStateSystem(BDD transition) throws PlanningException 
+	public static BDD getSecondStateSystem(BDD transition) throws PlanningException
 	{
 		return changePostSystemVarsToPreSystemVars(removeAllExceptPostSystemVars(transition));
 	}
@@ -1248,7 +1214,7 @@ public class ProductAutomaton
 	 * @return primed first state in the transition i.e if (p->q) is the transition then return p'
 	 * @throws PlanningException
 	 */
-	public BDD getFirstStatePrime(BDD transition) throws PlanningException 
+	public static BDD getFirstStatePrime(BDD transition) throws PlanningException
 	{
 		return changePreVarsToPostVars(removeAllExceptPreVars(transition));
 	}
@@ -1259,7 +1225,7 @@ public class ProductAutomaton
 	 * @return primed second state in the transition i.e if (p->q) is the transition then return q'
 	 * @throws PlanningException
 	 */
-	public BDD getSecondStatePrime(BDD transition) throws PlanningException 
+	public static BDD getSecondStatePrime(BDD transition) throws PlanningException
 	{
 		return removeAllExceptPostVars(transition);
 	}
@@ -1270,7 +1236,7 @@ public class ProductAutomaton
 	 * @return primed second state in the transition i.e if (p->q) is the transition then return q'
 	 * @throws PlanningException
 	 */
-	public BDD getSecondStateSystemPrime(BDD transition) throws PlanningException 
+	public static BDD getSecondStateSystemPrime(BDD transition) throws PlanningException
 	{
 		return removeAllExceptPostSystemVars(transition);
 	}
@@ -1281,7 +1247,7 @@ public class ProductAutomaton
 	 * @return primed second state in the transition i.e if (p->q) is the transition then return q'
 	 * @throws PlanningException
 	 */
-	public BDD getFirstStateSystemPrime(BDD transition) throws PlanningException 
+	public static BDD getFirstStateSystemPrime(BDD transition) throws PlanningException
 	{
 		return changePostSystemVarsToPreSystemVars(removeAllExceptPostSystemVars(transition));
 	}
@@ -1300,9 +1266,8 @@ public class ProductAutomaton
 	
 	
 //-----------------------------------------------------------------------------------------------------------------
-/**
- * Counter and stateID
- */
+// *** Counter and stateID
+
 	
 
 	/**
@@ -1311,12 +1276,13 @@ public class ProductAutomaton
 	 * @return ID of the state
 	 * @throws PlanningException 
 	 */
-	public int getSystemStateID(BDD fromState) throws PlanningException
+	public static int getSystemStateID(BDD fromState) throws PlanningException
 	{
 		if(fromState.satCount(allPreSystemVars())>1) 
 		{
 			throw new PlanningException("More than one state");
-		} else if(fromState.satCount(allPreSystemVars())==0) 
+		}
+		if(fromState.satCount(allPreSystemVars())==0)
 		{
 			throw new PlanningException("State doesn't exist");
 		}
@@ -1325,7 +1291,7 @@ public class ProductAutomaton
 		{
 			if(! fromState.and(ithVarSystemPre(i)).equals(factory.zero())) 
 			{
-				stateID	+= (int)Math.pow(2, i);
+				stateID	+= (int) StrictMath.pow(2, i);
 			}
 		}
 		return stateID;
@@ -1337,21 +1303,22 @@ public class ProductAutomaton
 	 * @return ID of the state
 	 * @throws PlanningException 
 	 */
-	public int getStateID(BDD fromState) throws PlanningException
+	public static int getStateID(BDD fromState) throws PlanningException
 	{
 		if(fromState.satCount(allPreVars())>1) 
 		{
 			throw new PlanningException("More than one state");
-		} else if(fromState.satCount(allPreVars()) == 0) 
+		}
+		if(fromState.satCount(allPreVars()) == 0)
 		{
-			throw new PlanningException("State desn't exist");
+			throw new PlanningException("State doesn't exist");
 		}
 		int stateID		= fromState.scanVar(propertyDomainPre()).intValue();
 		for(int i=0; i<numAPSystem; i++) 
 		{
 			if(! fromState.and(ithVarSystemPre(i)).equals(factory.zero())) 
 			{
-				stateID	+= (int)Math.pow(2, i+propertyDomainPre().varNum());
+				stateID	+= (int) StrictMath.pow(2, i+propertyDomainPre().varNum());
 			}
 		}
 		return stateID;
@@ -1363,16 +1330,16 @@ public class ProductAutomaton
 	 * @return BDD for the state with stateID id.
 	 * @throws PlanningException
 	 */
-	public BDD getStateFromID(int id) throws PlanningException 
+	public static BDD getStateFromID(int id) throws PlanningException
 	{
 		BDD state		= factory.one();
 		int i			= numAPSystem-1;
 		while(i >= 0) 
 		{
 			
-			if(id/(int) Math.pow(2, i+propertyDomainPre().varNum()) 	>= 	1) 
+			if(id/(int) StrictMath.pow(2, i+propertyDomainPre().varNum()) 	>= 	1)
 			{
-				id		= (int) (id % Math.pow(2, i+propertyDomainPre().varNum()));
+				id = (int) (id % StrictMath.pow(2, i + propertyDomainPre().varNum()));
 				state	= state.and(ithVarSystemPre(i));
 			} else 
 			{
@@ -1405,19 +1372,19 @@ public class ProductAutomaton
 
 	
 //-------------------------------------------------------------------------------------------------------------------	
-/**
- * Check Accepting condition
- * @throws PlanningException 
- */
 
-	
+
+	/**
+ 	* Check Accepting condition
+ 	* @throws PlanningException
+ 	*/
 	public ArrayList<BDD> findAcceptingPath() throws PlanningException 
 	{
 		EmptinessCheck newCheck	= new EmptinessCheck(this);
 		return newCheck.findAcceptingPath(getInitStates());
 	}
 
-	public ArrayList<BDD> findAcceptingPath(ArrayList<BDD> movementBDD) throws PlanningException {
+	public ArrayList<BDD> findAcceptingPath(List<BDD> movementBDD) throws PlanningException {
 		EmptinessCheck newCheck = new EmptinessCheck(this);
 		BDD st = findCurrentState(movementBDD);
 		if(st.isZero()){
@@ -1426,14 +1393,13 @@ public class ProductAutomaton
 		return newCheck.findAcceptingPath(st);
 	}
 
-	private BDD findCurrentState(ArrayList<BDD> movementBDD) throws PlanningException {
+	private BDD findCurrentState(List<BDD> movementBDD) throws PlanningException {
 		Iterator<BDD> it = movementBDD.iterator();
 		BDD currentState = it.next().and(propertyDomainPre().ithVar(0));
 		movementBDD.set(0, currentState);
-		BDD nextState;
 		int i = 1;
 		while(it.hasNext()) {
-			nextState = it.next();
+			BDD nextState = it.next();
 			currentState = postImageConcrete(currentState).and(nextState);
 			movementBDD.set(i, currentState);
 			i++;
@@ -1446,17 +1412,16 @@ public class ProductAutomaton
 
 	
 //-------------------------------------------------------------------------------------------------------------------	
-/**
- * Printing
- */
+
+// *** Printing
+
 	
 	
 	/**
 	 * <p>Create a dot file representing the product automaton</p>
 	 * @throws PlanningException 
 	 */
-	public void createDot() throws Exception
-	{
+	public void createDot() throws java.io.IOException, PlanningException {
 		new PrintProductAutomaton(this);
 	}
 
@@ -1465,7 +1430,7 @@ public class ProductAutomaton
 	 * @param path
 	 * @throws PlanningException
 	 */
-	public void printPath(ArrayList<BDD> path) throws PlanningException 
+	public static void printPath(ArrayList<BDD> path) throws PlanningException
 	{
 		new PrintAcceptingPath(path);
 	}
@@ -1491,14 +1456,11 @@ public class ProductAutomaton
 
 	public boolean isAcceptingTransition(BDD transition) throws PlanningException 
 	{
-		if(transition == null)
-			return false;
-		BDD test = productAutomatonBDD.and(acceptingSetDomain().ithVar(0).not());
-		if(productAutomatonBDD.and(propertyBDD.and(getLabelEquivalence()).and(transition).and(transitionLevelDomain().ithVar(3)).and(acceptingSetDomain().ithVar(0).not())).isZero())
-		{
+		if(transition == null) {
 			return false;
 		}
-		return true;
+		BDD test = productAutomatonBDD.and(acceptingSetDomain().ithVar(0).not());
+		return !productAutomatonBDD.and(propertyBDD.and(getLabelEquivalence()).and(transition).and(transitionLevelDomain().ithVar(3)).and(acceptingSetDomain().ithVar(0).not())).isZero();
 	}
 
 

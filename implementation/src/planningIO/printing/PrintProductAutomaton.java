@@ -36,11 +36,11 @@ public class PrintProductAutomaton
 
 	private void addTransitionToDotFile(BDD transition) throws PlanningException, java.io.IOException {
 		
-		BDD fromState		= productAutomaton.removeAllExceptPreVars(transition);
-		BDD toState			= productAutomaton.removeAllExceptPostVars(transition);
+		BDD fromState		= ProductAutomaton.removeAllExceptPreVars(transition);
+		BDD toState			= ProductAutomaton.removeAllExceptPostVars(transition);
 		toState				= productAutomaton.changePostVarsToPreVars(toState);
-		int fromStateID		= productAutomaton.getStateID(fromState);
-		int toStateID		= productAutomaton.getStateID(toState);
+		int fromStateID		= ProductAutomaton.getStateID(fromState);
+		int toStateID		= ProductAutomaton.getStateID(toState);
 		int acceptingSet 	= transition.scanVar(ProductAutomaton.acceptingSetDomain()).intValue();
 
 		if(! visited[fromStateID])
@@ -72,7 +72,7 @@ public class PrintProductAutomaton
 	private String getTransitionLabelString(BDD transition) throws PlanningException {
 		boolean visited		= false;
 		StringBuilder labelString	= new StringBuilder();
-		BDD label			= productAutomaton.removeAllExceptLabelVars(transition);
+		BDD label			= ProductAutomaton.removeAllExceptLabelVars(transition);
 		for(int i=0; i<ProductAutomaton.numVars[2]; i++) 
 		{
 			if(! label.and(ProductAutomaton.ithVarLabel(i)).equals(ProductAutomaton.factory.zero())) 
