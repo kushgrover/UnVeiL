@@ -1,6 +1,13 @@
 package planningIO;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 import jhoafparser.parser.generated.ParseException;
@@ -8,20 +15,21 @@ import settings.PlanningSettings;
 
 public class PropertyReader 
 {
-	public BuchiAutomataParser propertyParser;
+	public BuchiAutomataParser propertyParser = null;
 	
 	
-	public PropertyReader(ArrayList<String> apListSystem, String propertyFile) throws IOException 
+	public PropertyReader(ArrayList<String> apListSystem, String propertyFile) throws IOException
 	{
-	    if(! ((String) PlanningSettings.get("propertyFile")).equals("")) {
+	    if(!((String) PlanningSettings.get("propertyFile")).isEmpty()) {
             propertyFile = (String) PlanningSettings.get("propertyFile");
             InputStream inputStream1 = new FileInputStream(propertyFile);
             InputStream inputStream2 = new FileInputStream(propertyFile);
             try
             {
                 propertyParser = new BuchiAutomataParser( inputStream1, inputStream2, apListSystem);
-                if((boolean) PlanningSettings.get("debug"))
+                if((boolean) PlanningSettings.get("debug")) {
                     System.out.println("done!");
+                }
             } catch (ParseException e)
             {
                 e.printStackTrace();
@@ -41,8 +49,9 @@ public class PropertyReader
 	        propertyReader.close();
 		}
         // Output
-        if((boolean) PlanningSettings.get("debug"))
+        if((boolean) PlanningSettings.get("debug")) {
             System.out.print("\nConstructing automaton for property: " + propertyString + " ... ");
+        }
         
     	
         // Using SPOT
@@ -69,15 +78,15 @@ public class PropertyReader
         Process p3 				= builder3.start();
         
         BufferedReader r 		= new BufferedReader(new InputStreamReader(p3.getInputStream()));
-        String line;
         BufferedWriter writer 	= new BufferedWriter(new FileWriter("temp/propertyAutomaton.hoa"));
         
         while (true) 
         {
-            line 	= r.readLine();
-            if (line == null) 
-            	break;
-            writer.write(line+"\n");
+            String line = r.readLine();
+            if (line == null) {
+                break;
+            }
+            writer.write(line+ '\n');
         } 
         writer.close();
         
@@ -86,8 +95,9 @@ public class PropertyReader
 			propertyParser		= new BuchiAutomataParser( p1.getInputStream(), 
 					p2.getInputStream(), 
 					apListSystem);
-            if((boolean) PlanningSettings.get("debug"))
+            if((boolean) PlanningSettings.get("debug")) {
                 System.out.println("done!");
+            }
 		} catch (ParseException e) 
         {
 			e.printStackTrace();

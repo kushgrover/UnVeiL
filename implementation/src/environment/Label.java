@@ -3,19 +3,22 @@ package environment;
 import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
 import net.sf.javabdd.BDDFactory;
+import settings.PlanningException;
 
 public class Label 
 {
 	int numOfAP;
-	ArrayList<Path2D> areas;
+	List<Path2D> areas;
 	ArrayList<String> apListSystem;
 	BDDFactory factory;
 	
-	public Label(ArrayList<String> apListSystem, ArrayList<Path2D> areas) 
+	public Label(ArrayList<String> apListSystem, List<Path2D> areas)
 	{
 		this.numOfAP 		= apListSystem.size();
 		this.apListSystem 	= apListSystem;
@@ -23,7 +26,7 @@ public class Label
 		this.factory 		= ProductAutomaton.factory;
 	}
 	
-	public BDD getLabel(Point2D x) throws Exception 
+	public BDD getLabel(Point2D x) throws PlanningException
 	{
 		BDD label 	= factory.one();
 		for(int i=0; i<numOfAP; i++) 
@@ -48,8 +51,8 @@ public class Label
 		return apListSystem;
 	}
 	
-	public ArrayList<Path2D> getAreas()
+	public List<Path2D> getAreas()
 	{
-		return areas;
+		return Collections.unmodifiableList(areas);
 	}
 }

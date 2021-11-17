@@ -1,10 +1,13 @@
 package settings;
 
+import java.io.Serial;
+
 public class PlanningException extends Exception {
 
 	/**
 	 * 
 	 */
+	@Serial
 	private static final long serialVersionUID = 5401620187145012673L;
 
 	public PlanningException() {

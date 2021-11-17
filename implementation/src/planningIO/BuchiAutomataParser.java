@@ -1,7 +1,5 @@
 package planningIO;
 
-//package jhoafparser.examples;
-
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,12 +20,14 @@ import settings.PlanningSettings;
 
 public class BuchiAutomataParser
 {
-	BDD buchiBDD, initStatesProperty;
+	BDD buchiBDD;
+	BDD initStatesProperty;
 	int numberOfStates		= 0;
 	int acceptingSets		= 0;
-	int numVars[]			= new int[4];
+	int[] numVars = new int[4];
 	BDDDomain[] bddDomain;
-	ArrayList<String> apListSystem, apListProperty;
+	ArrayList<String> apListSystem;
+	ArrayList<String> apListProperty = null;
 
 	public class addEdgeToBDD extends HOAConsumerStore
 	{
@@ -60,10 +60,10 @@ public class BuchiAutomataParser
 					newEdge.andWith(bddDomain[2].ithVar(0));
 //					System.out.println("Added edge in buchi from state "+stateId+" ----"+labelExpr.toString()+"----> "+i+" {}");
 				}
-				if (labelExpr.isTRUE()){
-				}
-				else if (! labelExpr.isFALSE()){
-					newEdge.andWith(getBDDFromLabel(labelExpr));
+				if (!labelExpr.isTRUE()) {
+					if (! labelExpr.isFALSE()){
+						newEdge.andWith(getBDDFromLabel(labelExpr));
+					}
 				}
 				buchiBDD.orWith(newEdge);
 			}
@@ -111,7 +111,7 @@ public class BuchiAutomataParser
 						acceptingSets	= i;
 					}
 				}
-			} catch(NullPointerException E) 
+			} catch(NullPointerException ignored)
 			{
 //				E.printStackTrace();
 			}
@@ -160,7 +160,7 @@ public class BuchiAutomataParser
 	
 	public int[] getNumVars() 
 	{
-		return numVars;
+		return numVars.clone();
 	}
 	
 	public ArrayList<String> getAPListProperty()

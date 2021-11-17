@@ -9,106 +9,98 @@ import java.util.ArrayList;
 
 import settings.PlanningSettings;
 
-public class GenerateRandomEnv {
+public final class GenerateRandomEnv {
 	public Environment env;
 
 	public GenerateRandomEnv() throws IOException {
 		System.out.print("Generating random environment ... ");
-		
-		
-		Point2D p1, p3, init;
-		ArrayList<Path2D> seeThroughObstacles = new ArrayList<Path2D>();
-		ArrayList<Path2D> obstacles	= new ArrayList<Path2D>();
-		ArrayList<Path2D> labels = new ArrayList<Path2D>();
-		ArrayList<String> apList = new ArrayList<String>();
+
 		Path2D tables = new Path2D.Float();
 		Path2D bins = new Path2D.Float();
 
-		
-		p1 = new Point2D.Float(0f,0f);
-		p3 = new Point2D.Float(6f,3f);
-		
-		init = new Point2D.Float(0.1f,1.5f);
-		
-		Path2D rect;
-		
-		rect = new Path2D.Float();
-		rect.moveTo(0f, 0.95f);
+		Point2D p1 = new Point2D.Float(0.0f, 0.0f);
+		Point2D p3 = new Point2D.Float(6.0f, 3.0f);
+
+		Point2D init = new Point2D.Float(0.1f, 1.5f);
+
+		Path2D rect = new Path2D.Float();
+		rect.moveTo(0.0f, 0.95f);
 		rect.lineTo(0.8f, 0.95f);
 		rect.lineTo(0.8f, 1.05f);
-		rect.lineTo(0f, 1.05f);
-		rect.lineTo(0f, 0.95f);
+		rect.lineTo(0.0f, 1.05f);
+		rect.lineTo(0.0f, 0.95f);
 		rect.closePath();
+		ArrayList<Path2D> obstacles = new ArrayList<Path2D>();
 		obstacles.add(rect);
-		
+
 		rect = new Path2D.Float();
 		rect.moveTo(1.2f, 0.95f);
-		rect.lineTo(2f, 0.95f);
-		rect.lineTo(2f, 1.05f);
+		rect.lineTo(2.0f, 0.95f);
+		rect.lineTo(2.0f, 1.05f);
 		rect.lineTo(1.2f, 1.05f);
 		rect.lineTo(1.2f, 0.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
-		rect.moveTo(0f, 1.95f);
+		rect.moveTo(0.0f, 1.95f);
 		rect.lineTo(0.8f, 1.95f);
 		rect.lineTo(0.8f, 2.05f);
-		rect.lineTo(0f, 2.05f);
-		rect.lineTo(0f, 1.95f);
+		rect.lineTo(0.0f, 2.05f);
+		rect.lineTo(0.0f, 1.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
 		rect.moveTo(1.2f, 1.95f);
-		rect.lineTo(2f, 1.95f);
-		rect.lineTo(2f, 2.05f);
+		rect.lineTo(2.0f, 1.95f);
+		rect.lineTo(2.0f, 2.05f);
 		rect.lineTo(1.2f, 2.05f);
 		rect.lineTo(1.2f, 1.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
-		rect.moveTo(2f, 0.95f);
+		rect.moveTo(2.0f, 0.95f);
 		rect.lineTo(2.8f, 0.95f);
 		rect.lineTo(2.8f, 1.05f);
-		rect.lineTo(2f, 1.05f);
-		rect.lineTo(2f, 0.95f);
+		rect.lineTo(2.0f, 1.05f);
+		rect.lineTo(2.0f, 0.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
 		rect.moveTo(3.2f, 0.95f);
-		rect.lineTo(4f, 0.95f);
-		rect.lineTo(4f, 1.05f);
+		rect.lineTo(4.0f, 0.95f);
+		rect.lineTo(4.0f, 1.05f);
 		rect.lineTo(3.2f, 1.05f);
 		rect.lineTo(3.2f, 0.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
-		rect.moveTo(2f, 1.95f);
+		rect.moveTo(2.0f, 1.95f);
 		rect.lineTo(2.8f, 1.95f);
 		rect.lineTo(2.8f, 2.05f);
-		rect.lineTo(2f, 2.05f);
-		rect.lineTo(2f, 1.95f);
+		rect.lineTo(2.0f, 2.05f);
+		rect.lineTo(2.0f, 1.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
 		rect.moveTo(3.2f, 1.95f);
-		rect.lineTo(4f, 1.95f);
-		rect.lineTo(4f, 2.05f);
+		rect.lineTo(4.0f, 1.95f);
+		rect.lineTo(4.0f, 2.05f);
 		rect.lineTo(3.2f, 2.05f);
 		rect.lineTo(3.2f, 1.95f);
 		rect.closePath();
 		obstacles.add(rect);
 		
 		rect = new Path2D.Float();
-		rect.moveTo(4f, 0.95f);
+		rect.moveTo(4.0f, 0.95f);
 		rect.lineTo(4.8f, 0.95f);
 		rect.lineTo(4.8f, 1.05f);
-		rect.lineTo(4f, 1.05f);
+		rect.lineTo(4.0f, 1.05f);
 		rect.lineTo(4f, 0.95f);
 		rect.closePath();
 		obstacles.add(rect);
@@ -184,7 +176,9 @@ public class GenerateRandomEnv {
 		rect.lineTo(0f, 2f);
 		rect.lineTo(0f, 1f);
 		rect.closePath();
+		ArrayList<Path2D> labels = new ArrayList<Path2D>();
 		labels.add(rect);
+		ArrayList<String> apList = new ArrayList<String>();
 		apList.add("h");
 		
 		// room 1
@@ -265,10 +259,12 @@ public class GenerateRandomEnv {
 		rect.lineTo(x, 		y + w);
 		rect.lineTo(x, 		y);
 		rect.closePath();
-		if((boolean) PlanningSettings.get("onlyOpaqueObstacles"))
+		ArrayList<Path2D> seeThroughObstacles = new ArrayList<Path2D>();
+		if((boolean) PlanningSettings.get("onlyOpaqueObstacles")) {
 			obstacles.add(rect);
-		else
+		} else {
 			seeThroughObstacles.add(rect);
+		}
 		addTable(tables, x, y, l, w);
 		
 		// bin 1
@@ -303,10 +299,11 @@ public class GenerateRandomEnv {
 		rect.lineTo(x, 		y+w);
 		rect.lineTo(x, 		y);
 		rect.closePath();
-		if((boolean) PlanningSettings.get("onlyOpaqueObstacles"))
+		if((boolean) PlanningSettings.get("onlyOpaqueObstacles")) {
 			obstacles.add(rect);
-		else
+		} else {
 			seeThroughObstacles.add(rect);
+		}
 		addTable(tables, x, y, l, w);
 		
 		// bin 2
@@ -340,10 +337,11 @@ public class GenerateRandomEnv {
 		rect.lineTo(x, y+w);
 		rect.lineTo(x, y);
 		rect.closePath();
-		if((boolean) PlanningSettings.get("onlyOpaqueObstacles"))
+		if((boolean) PlanningSettings.get("onlyOpaqueObstacles")) {
 			obstacles.add(rect);
-		else
+		} else {
 			seeThroughObstacles.add(rect);
+		}
 		addTable(tables, x, y, l, w);
 		
 		// bin 3
@@ -378,10 +376,11 @@ public class GenerateRandomEnv {
 		rect.lineTo(x, y+w);
 		rect.lineTo(x, y);
 		rect.closePath();
-		if((boolean) PlanningSettings.get("onlyOpaqueObstacles"))
+		if((boolean) PlanningSettings.get("onlyOpaqueObstacles")) {
 			obstacles.add(rect);
-		else
+		} else {
 			seeThroughObstacles.add(rect);
+		}
 		addTable(tables, x, y, l, w);
 		
 		// bin 4
@@ -496,7 +495,7 @@ public class GenerateRandomEnv {
 		
 	}
 	
-	private boolean intersects(Path2D rect1, Path2D rect2) {
+	private static boolean intersects(Path2D rect1, Path2D rect2) {
 		PathIterator it1 = rect1.getPathIterator(new AffineTransform());
 		float[] point = new float[6];
 		int segType1 = it1.currentSegment(point);
@@ -514,7 +513,7 @@ public class GenerateRandomEnv {
 		return false;
 	}
 
-	void addTable(Path2D tables, float x, float y, float l, float w) {
+	static void addTable(Path2D tables, float x, float y, float l, float w) {
 		tables.moveTo(x - 0.1f, 		y - 0.1f);
 		tables.lineTo(x + l + 0.1f, 	y - 0.1f);
 		tables.lineTo(x + l + 0.1f, 	y + w + 0.1f);
@@ -522,7 +521,7 @@ public class GenerateRandomEnv {
 		tables.lineTo(x - 0.1f, 		y - 0.1f);
 	}
 	
-	void addBin(Path2D bins, float x, float y, float l, float w) {
+	static void addBin(Path2D bins, float x, float y, float l, float w) {
 		bins.moveTo(x - 0.1f, 		y - 0.1f);
 		bins.lineTo(x + l + 0.1f, 	y - 0.1f);
 		bins.lineTo(x + l + 0.1f, 	y + w + 0.1f);
@@ -530,7 +529,7 @@ public class GenerateRandomEnv {
 		bins.lineTo(x - 0.1f, 		y - 0.1f);
 	}
 	
-	public float randomNumber(float min, float max) {
+	public static float randomNumber(float min, float max) {
 		return (float) (Math.random() * (max - min) + min);
 	}
 

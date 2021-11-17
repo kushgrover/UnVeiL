@@ -1457,9 +1457,9 @@ public class ProductAutomaton
 	 * <p>Create a dot file representing the product automaton</p>
 	 * @throws PlanningException 
 	 */
-	public void createDot(int i) throws Exception
+	public void createDot() throws Exception
 	{
-		new PrintProductAutomaton(this, i);
+		new PrintProductAutomaton(this);
 	}
 
 	/**

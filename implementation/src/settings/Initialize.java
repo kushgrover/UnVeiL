@@ -7,7 +7,6 @@ import modules.KnownRRG;
 import modules.RRG;
 import modules.UnknownRRG;
 import net.sf.javabdd.BDDFactory;
-import net.sf.javabdd.BuDDyFactory;
 import planningIO.EnvironmentReader;
 import planningIO.PropertyReader;
 
@@ -25,9 +24,8 @@ public class Initialize
 	static BDDFactory factory;
 	
 	
-	public Initialize(BDDFactory factory) throws Exception
-	{
-		this.factory = factory;
+	public Initialize(BDDFactory factory) throws java.io.IOException, PlanningException {
+		Initialize.factory = factory;
 //		factory = BuDDyFactory.init(20, (int) PlanningSettings.get("bddFactoryCacheSize"));
 		ProductAutomaton.factory = Initialize.factory;
         ProductAutomaton.threshold = (int) PlanningSettings.get("transitionThreshold");
@@ -77,7 +75,7 @@ public class Initialize
 	 * 
 	 * @return environment
 	 */
-	public Environment getEnvironment()
+	public static Environment getEnvironment()
 	{
 		return env;
 	}

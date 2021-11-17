@@ -63,14 +63,14 @@ public class Planning
         rrg 					= initialize.getRRG();
         productAutomaton		= initialize.getProductAutomaton();
         exper					= new DefaultExperiment(productAutomaton); // learn and advce procedures
-        env 					= initialize.getEnvironment();
+        env 					= Initialize.getEnvironment();
         
         Label label				= Environment.getLabelling();
-        BDD initStateSystem		= label.getLabel(env.getInit());
+        BDD initStateSystem		= label.getLabel(Environment.getInit());
 
 		//stores the set of states in the abstraction we have seen till now
         currentStates			= initStateSystem.id();
-        rrg.setStartingPoint(env.getInit());
+        rrg.setStartingPoint(Environment.getInit());
 
 		// and for initial state in the product automaton
         productAutomaton.setInitState(productAutomaton.getInitStates().and(initStateSystem));
@@ -102,7 +102,7 @@ public class Planning
 
 		if((boolean) PlanningSettings.get("debug")){
 			System.out.print("Exporting product automaton ... ");
-			productAutomaton.createDot(iterationNumber);
+			productAutomaton.createDot();
 			System.out.println("done");
 		}
 
@@ -209,7 +209,7 @@ public class Planning
 		UnknownRRG urrg = (UnknownRRG) rrg;
 		urrg.grid.knowDiscretization(env,
 				productAutomaton,
-				env.getInit(),
+				Environment.getInit(),
 				(float) PlanningSettings.get("sensingRadius"));
 		boolean computePath = false;
 		while( true )
@@ -381,7 +381,7 @@ public class Planning
 	}
 
 	private float exploreDiscretization(KnownGrid grid) throws Exception {
-		Point2D currentPosition = env.getInit();
+		Point2D currentPosition = Environment.getInit();
 		grid.initializeGraph();
 		grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		grid.updateInitPoint(currentPosition);

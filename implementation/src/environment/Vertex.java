@@ -3,18 +3,18 @@ package environment;
 import java.awt.geom.Point2D;
 
 import net.sf.javabdd.BDD;
+import settings.PlanningException;
 
 public class Vertex {
 	Point2D point;
-	BDD label;
+	BDD label = null;
 	
 	public Vertex(Point2D point) {
 		this.point = point;
 		try {
 			this.label = Environment.getLabelling().getLabel(point);
-		} catch (NullPointerException e) {
-			this.label = null;
-		} catch (Exception e) {
+		} catch (NullPointerException ignored) {
+		} catch (PlanningException e) {
 			e.printStackTrace();
 		}
 	}

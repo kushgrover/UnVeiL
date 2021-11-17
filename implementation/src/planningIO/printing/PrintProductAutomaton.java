@@ -13,11 +13,10 @@ public class PrintProductAutomaton
 {
 	ProductAutomaton productAutomaton;
 	BufferedWriter writer;
-	boolean visited[];
-	public PrintProductAutomaton(ProductAutomaton productAutomaton, int num) throws Exception
-	{
+	boolean[] visited;
+	public PrintProductAutomaton(ProductAutomaton productAutomaton) throws java.io.IOException, PlanningException {
 		visited 				= new boolean[ProductAutomaton.getNumStates()];
-		writer 					= new BufferedWriter(new FileWriter(((String) PlanningSettings.get("outputDictory")) + "productAutomaton.dot"));
+		writer 					= new BufferedWriter(new FileWriter(PlanningSettings.get("outputDirectory") + "productAutomaton.dot"));
 		
 		this.productAutomaton	= productAutomaton;
 		BDD productAutomatonBDD = productAutomaton.getBDD();
@@ -35,7 +34,7 @@ public class PrintProductAutomaton
 		writer.close();
 	}
 
-	private void addTransitionToDotFile(BDD transition) throws Exception {
+	private void addTransitionToDotFile(BDD transition) throws PlanningException, java.io.IOException {
 		
 		BDD fromState		= productAutomaton.removeAllExceptPreVars(transition);
 		BDD toState			= productAutomaton.removeAllExceptPostVars(transition);
@@ -59,8 +58,9 @@ public class PrintProductAutomaton
 		
 		String labelString	= getTransitionLabelString(transition);
 		
-		if(level == 3)
+		if(level == 3) {
 			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=green, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
+		}
 //		if(level == 2)
 //			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=blue, label=\""  + labelString + " (" + acceptingSet + ")\"];\n");
 //		if(level == 1)
@@ -69,44 +69,42 @@ public class PrintProductAutomaton
 //			writer.append(fromStateID + " -> " + toStateID + " [style=filled, color=black, label=\"" + labelString + " (" + acceptingSet + ")\"];\n");
 	}
 	
-	private String getTransitionLabelString(BDD transition) throws Exception
-	{
+	private String getTransitionLabelString(BDD transition) throws PlanningException {
 		boolean visited		= false;
-		String labelString	= "";
+		StringBuilder labelString	= new StringBuilder();
 		BDD label			= productAutomaton.removeAllExceptLabelVars(transition);
 		for(int i=0; i<ProductAutomaton.numVars[2]; i++) 
 		{
 			if(! label.and(ProductAutomaton.ithVarLabel(i)).equals(ProductAutomaton.factory.zero())) 
 			{
-				if(visited == true) 
+				if(visited)
 				{
-					labelString 	= labelString.concat(", "+ProductAutomaton.apListProperty.get(i));
+					labelString.append(", ").append(ProductAutomaton.apListProperty.get(i));
 				}
 				else 
 				{
-					labelString		= labelString.concat(ProductAutomaton.apListProperty.get(i));
+					labelString.append(ProductAutomaton.apListProperty.get(i));
 					visited			= true;
 				}
 			}
 			else 
 			{
-				if(visited == true) 
+				if(visited)
 				{
-					labelString		= labelString.concat(", -"+ProductAutomaton.apListProperty.get(i));
+					labelString = new StringBuilder(labelString + ", -" + ProductAutomaton.apListProperty.get(i));
 				}
 				else 
 				{
-					labelString		= labelString.concat("-"+ProductAutomaton.apListProperty.get(i));
+					labelString = new StringBuilder(labelString.toString() + '-' + ProductAutomaton.apListProperty.get(i));
 					visited			= true;
 				}
 			}
 		}
-		return labelString;
+		return labelString.toString();
 	}
 
-	private String stateLabelString(BDD state) throws Exception 
-	{
-		String stateLabel	= Integer.toString(state.scanVar(ProductAutomaton.propertyDomainPre()).intValue());
+	private static String stateLabelString(BDD state) throws PlanningException {
+		StringBuilder stateLabel	= new StringBuilder(Integer.toString(state.scanVar(ProductAutomaton.propertyDomainPre()).intValue()));
 		if(state.pathCount() != 1)
 		{
 			throw new PlanningException("More than one state");
@@ -115,9 +113,9 @@ public class PrintProductAutomaton
 		{
 			if(! state.and(ProductAutomaton.ithVarSystemPre(i)).equals(ProductAutomaton.factory.zero())) 
 			{
-				stateLabel	= stateLabel.concat(", "+ProductAutomaton.apListSystem.get(i));
+				stateLabel.append(", ").append(ProductAutomaton.apListSystem.get(i));
 			}
 		}
-		return stateLabel;
+		return stateLabel.toString();
 	}
 }

@@ -3,6 +3,7 @@ package planningIO.printing;
 import java.awt.Graphics;
 import java.awt.geom.Path2D;
 import java.awt.geom.PathIterator;
+import java.io.Serial;
 import java.util.Iterator;
 import java.util.List;
 
@@ -20,9 +21,11 @@ public class ShowGraphKnown extends JFrame {
 	/**
 	 * 
 	 */
+	@Serial
 	private static final long serialVersionUID = 1L;
 	
-	Graph<Vertex, DefaultEdge> graphRRG, graphMovement;
+	Graph<Vertex, DefaultEdge> graphRRG;
+	Graph<Vertex, DefaultEdge> graphMovement;
 	Environment env;
 	List<DefaultEdge> movement;
 	List<DefaultEdge> finalPath;
@@ -43,14 +46,14 @@ public class ShowGraphKnown extends JFrame {
 	{
 		Plot plot = new Plot("plot", "", "");
 		plot.setLimits(env.getBoundsX()[0], env.getBoundsX()[1], env.getBoundsY()[0], env.getBoundsY()[1]);
-		
-		
-		DefaultEdge nextEdge;
-		Vertex source, target;
-		
+
+
 		// Whole Graph
 		plot.setColor("black");
 		Iterator<DefaultEdge> ite = graphRRG.edgeSet().iterator();
+		DefaultEdge nextEdge;
+		Vertex source;
+		Vertex target;
 		while(ite.hasNext())
 		{
 			nextEdge = ite.next();
@@ -90,19 +93,18 @@ public class ShowGraphKnown extends JFrame {
 		{
 			Path2D rect = i.next();
 			PathIterator it = rect.getPathIterator(null);
-			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			float[] coords = {0.0f, 0.0f};
+			float[] from = {0.0f, 0.0f};
 			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords.clone();
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords.clone();
-						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+				switch (it.currentSegment(coords)) {
+					case (PathIterator.SEG_MOVETO) -> from = coords.clone();
+					case (PathIterator.SEG_LINETO) -> {
+						float[] to = coords.clone();
+						plot.add("line", new double[]{from[0], to[0]}, new double[]{from[1], to[1]});
 						from = to.clone();
-						break;
-					default:
-						break;
+					}
+					default -> {
+					}
 				}
 				it.next();
 			}
@@ -115,19 +117,18 @@ public class ShowGraphKnown extends JFrame {
 		{
 			Path2D rect = i.next();
 			PathIterator it = rect.getPathIterator(null);
-			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			float[] coords = {0.0f, 0.0f};
+			float[] from = {0.0f, 0.0f};
 			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords.clone();
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords.clone();
-						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+				switch (it.currentSegment(coords)) {
+					case (PathIterator.SEG_MOVETO) -> from = coords.clone();
+					case (PathIterator.SEG_LINETO) -> {
+						float[] to = coords.clone();
+						plot.add("line", new double[]{from[0], to[0]}, new double[]{from[1], to[1]});
 						from = to.clone();
-						break;
-					default:
-						break;
+					}
+					default -> {
+					}
 				}
 				it.next();
 			}
@@ -140,19 +141,18 @@ public class ShowGraphKnown extends JFrame {
 		{
 			Path2D rect = i.next();
 			PathIterator it = rect.getPathIterator(null);
-			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			float[] coords = {0.0f, 0.0f};
+			float[] from = {0.0f, 0.0f};
 			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords.clone();
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords.clone();
-						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
+				switch (it.currentSegment(coords)) {
+					case (PathIterator.SEG_MOVETO) -> from = coords.clone();
+					case (PathIterator.SEG_LINETO) -> {
+						float[] to = coords.clone();
+						plot.add("line", new double[]{from[0], to[0]}, new double[]{from[1], to[1]});
 						from = to.clone();
-						break;
-					default:
-						break;
+					}
+					default -> {
+					}
 				}
 				it.next();
 			}

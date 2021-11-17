@@ -15,9 +15,10 @@ import environment.Environment;
 import environment.Vertex;
 import settings.PlanningSettings;
 
-public class StoreGraphKnown {
+public final class StoreGraphKnown {
 
-	public float movementLength, remainingPathLength;
+	public float movementLength = 0.0F;
+	public float remainingPathLength = 0.0F;
 
 	public StoreGraphKnown(Environment env, Graph<Vertex, DefaultEdge> graphRRG, Graph<Vertex, DefaultEdge> graphMovement, List<DefaultEdge> finalPath, List<DefaultEdge> movement, String fileName) {
 		try {
@@ -40,22 +41,16 @@ public class StoreGraphKnown {
 	}
 	
 	
-	public void outputGraph(Graph<Vertex, DefaultEdge> graph, String fileName) throws IOException {
+	public static void outputGraph(Graph<Vertex, DefaultEdge> graph, String fileName) throws IOException {
 		BufferedWriter writer = new BufferedWriter(new FileWriter(fileName + ".csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
-		
-		DefaultEdge nextEdge;
-		Vertex source, target;
-		
+
 		// Whole Graph
-		Iterator<DefaultEdge> ite = graph.edgeSet().iterator();
-		while(ite.hasNext())
-		{
-			nextEdge = ite.next();
-			source = graph.getEdgeSource(nextEdge);
-			target = graph.getEdgeTarget(nextEdge);
-			writer.write(source.getPoint().getX() + "," +source.getPoint().getY() + "," + target.getPoint().getX() + "," + target.getPoint().getY() + "\n");
+		for (DefaultEdge nextEdge : graph.edgeSet()) {
+			Vertex source = graph.getEdgeSource(nextEdge);
+			Vertex target = graph.getEdgeTarget(nextEdge);
+			writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + ',' + target.getPoint().getX() + ',' + target.getPoint().getY() + '\n');
 		}
 		
 		writer.close();
@@ -65,50 +60,42 @@ public class StoreGraphKnown {
 		BufferedWriter writer 		= new BufferedWriter(new FileWriter(fileName+"-finalpath.csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
-		
-		DefaultEdge nextEdge;
-		Vertex source, target;
-		remainingPathLength = 0;
-		
-		Iterator<DefaultEdge> i = finalPath.iterator();
-		while(i.hasNext())
-		{
-			nextEdge = i.next();
-			remainingPathLength += graph.getEdgeWeight(nextEdge);
-			source = graph.getEdgeSource(nextEdge);
-			target = graph.getEdgeTarget(nextEdge);
-			writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + "," + target.getPoint().getX() + "," + target.getPoint().getY() + "\n");
+
+//		remainingPathLength = 0;
+
+		for (DefaultEdge nextEdge : finalPath) {
+			remainingPathLength += (float) graph.getEdgeWeight(nextEdge);
+			Vertex source = graph.getEdgeSource(nextEdge);
+			Vertex target = graph.getEdgeTarget(nextEdge);
+			writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + ',' + target.getPoint().getX() + ',' + target.getPoint().getY() + '\n');
 		}
 		writer.close();
 	}
 	
 	public void outputMovement(Graph<Vertex, DefaultEdge> graph, List<DefaultEdge> movement, String fileName) throws IOException {
 		
-		if(graph == null) return;
+		if(graph == null) {
+			return;
+		}
 		
 		BufferedWriter writer 		= new BufferedWriter(new FileWriter(fileName + "-movement.csv"));
 		
 		writer.write("x1,y1,x2,y2\n");
-		
-		DefaultEdge nextEdge;
-		Vertex source, target;
+
 		movementLength = 0;
 		
 		if(movement != null) {
-			Iterator<DefaultEdge> i = movement.iterator();
-			while(i.hasNext())
-			{
-				nextEdge = i.next();
-				movementLength += graph.getEdgeWeight(nextEdge);
-				source = graph.getEdgeSource(nextEdge);
-				target = graph.getEdgeTarget(nextEdge);
-				writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + "," + target.getPoint().getX() + "," + target.getPoint().getY() + "\n");
+			for (DefaultEdge nextEdge : movement) {
+				movementLength += (float) graph.getEdgeWeight(nextEdge);
+				Vertex source = graph.getEdgeSource(nextEdge);
+				Vertex target = graph.getEdgeTarget(nextEdge);
+				writer.write(source.getPoint().getX() + "," + source.getPoint().getY() + ',' + target.getPoint().getX() + ',' + target.getPoint().getY() + '\n');
 			}
 			writer.close();
 		}
 	}
 	
-	public void outputObstacles(Environment env) throws IOException {
+	public static void outputObstacles(Environment env) throws IOException {
 		String outputDir = (String) PlanningSettings.get("outputDirectory");
 		BufferedWriter writer = new BufferedWriter(new FileWriter(outputDir + "obstacles.csv"));
 		writer.write("x1,y1,x2,y2\n");
@@ -123,20 +110,19 @@ public class StoreGraphKnown {
 		{
 			Path2D rect = i.next();
 			PathIterator it = rect.getPathIterator(null);
-			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			float[] coords = {0.0f, 0.0f};
+			float[] from = {0.0f, 0.0f};
 			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords.clone();
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords.clone();
-						writer.write(from[0] + "," + from[1] + "," + to[0] + "," + to[1] + "\n");
+				switch (it.currentSegment(coords)) {
+					case (PathIterator.SEG_MOVETO) -> from = coords.clone();
+					case (PathIterator.SEG_LINETO) -> {
+						float[] to = coords.clone();
+						writer.write(from[0] + "," + from[1] + ',' + to[0] + ',' + to[1] + '\n');
 //						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
 						from = to.clone();
-						break;
-					default:
-						break;
+					}
+					default -> {
+					}
 				}
 				it.next();
 			}
@@ -147,20 +133,19 @@ public class StoreGraphKnown {
 		{
 			Path2D rect = i.next();
 			PathIterator it = rect.getPathIterator(null);
-			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			float[] coords = {0.0f, 0.0f};
+			float[] from = {0.0f, 0.0f};
 			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords.clone();
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords.clone();
-						writer.write(from[0] + "," + from[1] + "," + to[0] + "," + to[1] + "\n");
+				switch (it.currentSegment(coords)) {
+					case (PathIterator.SEG_MOVETO) -> from = coords.clone();
+					case (PathIterator.SEG_LINETO) -> {
+						float[] to = coords.clone();
+						writer.write(from[0] + "," + from[1] + ',' + to[0] + ',' + to[1] + '\n');
 //						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
 						from = to.clone();
-						break;
-					default:
-						break;
+					}
+					default -> {
+					}
 				}
 				it.next();
 			}
@@ -176,20 +161,19 @@ public class StoreGraphKnown {
 		{
 			Path2D rect = i.next();
 			PathIterator it = rect.getPathIterator(null);
-			float[] coords = new float[] {0f, 0f}, from = new float[] {0f, 0f}, to;
+			float[] coords = {0.0f, 0.0f};
+			float[] from = {0.0f, 0.0f};
 			while(! it.isDone()) {
-				switch(it.currentSegment(coords)) {
-					case(PathIterator.SEG_MOVETO):
-						from = coords.clone();
-						break;
-					case(PathIterator.SEG_LINETO):
-						to = coords.clone();
-						writer.write(from[0] + "," + from[1] + "," + to[0] + "," + to[1] + "\n");
+				switch (it.currentSegment(coords)) {
+					case (PathIterator.SEG_MOVETO) -> from = coords.clone();
+					case (PathIterator.SEG_LINETO) -> {
+						float[] to = coords.clone();
+						writer.write(from[0] + "," + from[1] + ',' + to[0] + ',' + to[1] + '\n');
 //						plot.add("line", new double[] {from[0], to[0]}, new double[] {from[1], to[1]});
 						from = to.clone();
-						break;
-					default:
-						break;
+					}
+					default -> {
+					}
 				}
 				it.next();
 			}

@@ -13,21 +13,15 @@ import environment.Environment;
 import environment.Label;
 import settings.PlanningSettings;
 
-public class EnvironmentReader 
+@SuppressWarnings("ALL")
+public final class EnvironmentReader
 {
 	public static Environment env;
 	
 	public EnvironmentReader(String envFile, String labelFile) throws IOException
 	{
-		
-		Point2D.Float p1, p2, p3, p4, init;
-		ArrayList<Path2D> seeThroughObstacles = new ArrayList<Path2D>();
-		ArrayList<Path2D> obstacles	= new ArrayList<Path2D>();
-		
-		
 		BufferedReader reader 		= new BufferedReader(new FileReader(envFile));
 
-		
 		String point 				= "\\(\\s*(\\d*|\\d*\\.\\d*)\\s*,\\s*(\\d*|\\d*\\.\\d*)\\s*\\)";
         String rectangle 			= "\\[\\s*" + point + "\\s*,\\s*" + point + "\\s*,\\s*" + point + "\\s*,\\s*" + point + "\\s*\\]";
 
@@ -37,13 +31,14 @@ public class EnvironmentReader
 		Pattern p 		= Pattern.compile(rectangle);
 		Matcher m 		= p.matcher(line);
 		m.find();
-		p1 	= new Point2D.Float(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
-		p2 	= new Point2D.Float(Float.parseFloat(m.group(3)), Float.parseFloat(m.group(4)));
-		p3 	= new Point2D.Float(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
-		p4 	= new Point2D.Float(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
-		
-		if((boolean) PlanningSettings.get("debug"))
-			System.out.println("\nEnvironment boundaries: " + p1.toString() + ", " + p2.toString() + ", " + p3.toString() + ", " + p4.toString());
+		Point2D.Float p1 = new Point2D.Float(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
+		Point2D.Float p2 = new Point2D.Float(Float.parseFloat(m.group(3)), Float.parseFloat(m.group(4)));
+		Point2D.Float p3 = new Point2D.Float(Float.parseFloat(m.group(5)), Float.parseFloat(m.group(6)));
+		Point2D.Float p4 = new Point2D.Float(Float.parseFloat(m.group(7)), Float.parseFloat(m.group(8)));
+
+		if((boolean) PlanningSettings.get("debug")) {
+			System.out.println("\nEnvironment boundaries: " + p1 + ", " + p2 + ", " + p3 + ", " + p4);
+		}
 
 		
 		
@@ -52,31 +47,35 @@ public class EnvironmentReader
         p 		= Pattern.compile(point);
         m 		= p.matcher(line);
         m.find();
-		init 	= new Point2D.Float(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
-		
-		if ((boolean) PlanningSettings.get("debug"))
-			System.out.println("Initial Point: " + init.toString());
+		Point2D.Float init = new Point2D.Float(Float.parseFloat(m.group(1)), Float.parseFloat(m.group(2)));
+
+		if ((boolean) PlanningSettings.get("debug")) {
+			System.out.println("Initial Point: " + init);
+		}
 
 		
 		
 		// For obstacles
 		p = Pattern.compile(rectangle);
-		Path2D rect;
-		int i = 0;
-		if((boolean) PlanningSettings.get("debug"))
-        	System.out.println("\nObstacles: ");
+		if((boolean) PlanningSettings.get("debug")) {
+			System.out.println("\nObstacles: ");
+		}
 
 		line = reader.readLine();
 		if(line.equalsIgnoreCase("obstacles")) {
 			line = reader.readLine();
 		}
+		ArrayList<Path2D> obstacles = new ArrayList<Path2D>();
+		int i = 0;
+		Path2D rect;
 		while(line != null)
 		{
 			if(line.equalsIgnoreCase("see through obstacles")) {
 				break;
 			}
-			if((boolean) PlanningSettings.get("debug"))
+			if((boolean) PlanningSettings.get("debug")) {
 				System.out.println(line);
+			}
 			try
 			{
 				m = p.matcher(line);
@@ -103,16 +102,18 @@ public class EnvironmentReader
 		// For see through obstacles
 		p = Pattern.compile(rectangle);
 		i = 0;
-		if((boolean) PlanningSettings.get("debug") && ! (boolean) PlanningSettings.get("onlyOpaqueObstacles"))
-        	System.out.println("\nSee through Obstacles: ");
+		if((boolean) PlanningSettings.get("debug") && ! (boolean) PlanningSettings.get("onlyOpaqueObstacles")) {
+			System.out.println("\nSee through Obstacles: ");
+		}
 
+		ArrayList<Path2D> seeThroughObstacles = new ArrayList<Path2D>();
 		while(line != null)
 		{
 			line = reader.readLine();
 			try
 			{
 				m = p.matcher(line);
-			} catch (Exception E) {
+			} catch (RuntimeException E) {
 				continue;
 			}
 			m.find();
@@ -130,8 +131,9 @@ public class EnvironmentReader
 			else {
 				seeThroughObstacles.add(rect);
 			}
-			if((boolean) PlanningSettings.get("debug"))
-            	System.out.println(line);
+			if((boolean) PlanningSettings.get("debug")) {
+				System.out.println(line);
+			}
 
 			i++;
 		}
@@ -142,19 +144,18 @@ public class EnvironmentReader
         // For Label
         reader 				= new BufferedReader(new FileReader(labelFile));
         line 				= reader.readLine();
-        
-        String apName 		= "\\s*(\\w*)\\s*\\:\\s*";
-    	Pattern apNameRegex			= Pattern.compile(apName);
-    	Pattern rectRegex 	= Pattern.compile(rectangle);
-        
-    	
-    	ArrayList<Path2D> labelRect = new ArrayList<Path2D>();
-    	ArrayList<String> apList 	= new ArrayList<String>();
-    	i	= 0;
+
+
+		i	= 0;
         if ((boolean) PlanningSettings.get("debug"))
         	System.out.println("\n\nLabelling: ");
 
-        while (line != null)
+		String apName = "\\s*(\\w*)\\s*\\:\\s*";
+		Pattern apNameRegex = Pattern.compile(apName);
+		Pattern rectRegex = Pattern.compile(rectangle);
+		ArrayList<Path2D> labelRect = new ArrayList<Path2D>();
+		ArrayList<String> apList = new ArrayList<String>();
+		while (line != null)
         {
         	m 		= apNameRegex.matcher(line);
         	m.find();
@@ -185,7 +186,7 @@ public class EnvironmentReader
 
         	if((boolean) PlanningSettings.get("debug"))
     		{
-    			System.out.println("");
+    			System.out.println();
     		}
         	line = reader.readLine();
         	
@@ -196,6 +197,5 @@ public class EnvironmentReader
 
         env = new Environment(new float[] {p1.x, p3.x}, new float[] {p1.y, p3.y}, seeThroughObstacles, obstacles, init, labelling);
 	}
-	
-	
+
 }

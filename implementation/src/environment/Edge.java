@@ -9,8 +9,8 @@ public class Edge {
 		this.length = distance(a.getPoint(), b.getPoint());
 	}
 		
-	private float distance(Point2D p, Point2D q) 
+	private static float distance(Point2D p, Point2D q)
 	{
-		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2) + Math.pow(p.getY() - q.getY(), 2));
+		return (float) Math.sqrt(StrictMath.pow(p.getX() - q.getX(), 2) + StrictMath.pow(p.getY() - q.getY(), 2));
 	}
 }
