@@ -12,6 +12,7 @@ import net.sf.javabdd.BDDFactory;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 import settings.Initialize;
+import settings.PlanningException;
 import settings.PlanningSettings;
 
 import java.awt.geom.Point2D;
@@ -51,9 +52,9 @@ public class Planning
     List<DefaultEdge> finalPath = new ArrayList<>();
 
     /**
-     * initialize everything
-     * @throws Exception
-	 * @param factory
+     * This constructor initialises everything
+     * @param factory BDD factory
+	 * @see BDDFactory
      */
 	public Planning(BDDFactory factory) throws Exception
 	{
@@ -62,7 +63,7 @@ public class Planning
 		Initialize initialize	= new Initialize(factory);// read the files and initialise everything
         rrg 					= initialize.getRRG();
         productAutomaton		= initialize.getProductAutomaton();
-        exper					= new DefaultExperiment(productAutomaton); // learn and advce procedures
+        exper					= new DefaultExperiment(productAutomaton); // learn and advice procedures
         env 					= Initialize.getEnvironment();
         
         Label label				= Environment.getLabelling();
@@ -79,10 +80,8 @@ public class Planning
 	
 	/**
 	 * outputs the results and times
-	 * @throws Exception
 	 */
-	void printOutput() throws Exception 
-	{
+	void printOutput() throws java.io.IOException, settings.PlanningException {
 
 
 		Pair<Float, Float> length = new Pair<>(0.0f, 0.0f);
@@ -154,9 +153,8 @@ public class Planning
 	
 	/**
 	 * update advice if required
-	 * @throws Exception
 	 */
-	void updateAdvice() throws Exception {
+	void updateAdvice() throws PlanningException {
 		startTime 	= System.nanoTime(); // Advice time
     	if ( needNewAdvice ) {
     		advice			= exper.getAdvice(currentStates);
@@ -167,8 +165,7 @@ public class Planning
 	
 	/**
 	 * sample a batch
-	 * @return
-	 * @throws Exception
+	 * @return A set of transitions sampled in current batch
 	 */
 	BDD sampleBatch(RRG rrg) throws Exception {
 		startTime = System.nanoTime(); 
@@ -178,11 +175,10 @@ public class Planning
 	}
 	
 	/**
-	 * call learn procedure
-	 * @param transitions
-	 * @throws Exception
+	 * Use learning procedure on the set of transition
+	 * @param transitions set of transitions as a BDD
 	 */
-	void learn(BDD transitions) throws Exception {
+	void learn(BDD transitions) throws PlanningException {
 		BDD bdd = transitions;
 		startTime = System.nanoTime(); 
     	BDDIterator ite = bdd.iterator(ProductAutomaton.allSystemVars());
@@ -191,7 +187,7 @@ public class Planning
     		bdd = (BDD) ite.next();
 //    		if( needLearning(transitions) ) {
     			exper.learn(bdd);
-        		currentStates = currentStates.or(productAutomaton.getSecondStateSystem(bdd));
+        		currentStates = currentStates.or(ProductAutomaton.getSecondStateSystem(bdd));
         		needNewAdvice = true;
 //        	}
     	}
@@ -200,7 +196,6 @@ public class Planning
 	
 	/**
 	 * Do exploration and planning simultaneously
-	 * @throws Exception
 	 */
 	public Object[] explAndPlanTogether() throws Exception
 	{
@@ -224,7 +219,7 @@ public class Planning
         	
         	iterationNumber++;
         	if((boolean) PlanningSettings.get("debug")) {
-				System.out.println("Iter num: " + iterationNumber);
+				System.out.println("Iteration num: " + iterationNumber);
 			}
 
         	if ((boolean) PlanningSettings.get("useAdvice") ) {
@@ -289,7 +284,6 @@ public class Planning
 	
 	/**
 	 * Do exploration first, then do the planning
-	 * @throws Exception
 	 */
 	public Object[] firstExplThenPlan() throws Exception {
 		KnownGrid grid = new KnownGrid(env, (float) PlanningSettings.get("gridSize"));
@@ -302,7 +296,7 @@ public class Planning
 		KnownRRG krrg = (KnownRRG) rrg;
 		krrg.setGrid(grid);
 		krrg.setStartingPoint(krrg.currentRobotPosition);
-		ArrayList<BDD> movementBDD = new ArrayList<>();
+		List<BDD> movementBDD = new ArrayList<>();
 		movementBDD.add(Environment.getLabelling().getLabel(krrg.currentRobotPosition));
 
 		System.out.print("Starting planning ... ");
@@ -314,7 +308,7 @@ public class Planning
 			iterationNumber++;
 
 			if((boolean) PlanningSettings.get("debug")) {
-				System.out.println("Iter num: " + iterationNumber);
+				System.out.println("Iteration num: " + iterationNumber);
 			}
         	
         	if ( (boolean) PlanningSettings.get("useAdvice") ) {
@@ -380,7 +374,7 @@ public class Planning
 		};
 	}
 
-	private float exploreDiscretization(KnownGrid grid) throws Exception {
+	private float exploreDiscretization(KnownGrid grid) throws PlanningException {
 		Point2D currentPosition = Environment.getInit();
 		grid.initializeGraph();
 		grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));

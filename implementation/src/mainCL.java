@@ -31,20 +31,25 @@ public final class mainCL {
 				(double) 0, // total time
 		};
 
+		// one iteration for each run
 		for(int i=0; i < numOfRuns; i++) {
+			// Initialize Everything
 			BDDFactory factory = BuDDyFactory.init(1000000, (int) PlanningSettings.get("bddFactoryCacheSize"));
 			System.out.println("Starting initialization ... ");
 			Planning plan = new Planning(factory);
 			System.out.println("Initialization complete\n\n");
+
 			Object[] data;
+			// which algorithm to use
 			if ((boolean) PlanningSettings.get("firstExplThenPlan")) {
 				data = plan.firstExplThenPlan();
 			} else {
 				data = plan.explAndPlanTogether();
 			}
 			System.out.println("\n\n");
-			factory.done();
+			factory.done(); // close factory
 
+			//Output results
 			String outputDir = (String) PlanningSettings.get("outputDirectory");
 			BufferedWriter writer = new BufferedWriter(new FileWriter(outputDir + "output.csv", true));
 			for(int j=0; j<7; j++){
