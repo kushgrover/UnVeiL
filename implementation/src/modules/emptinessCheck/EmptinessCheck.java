@@ -1,10 +1,7 @@
-/**
- * 
- */
 package modules.emptinessCheck;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.List;
 
 import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
@@ -25,7 +22,7 @@ public class EmptinessCheck {
 	int max=0;
 	int totalAcceptingSets;
 	int[] rank;
-	BDD statesSCC;
+	BDD statesSCC = null;
 
 	public EmptinessCheck(ProductAutomaton productAutomaton) {
 		this.productAutomaton	= productAutomaton;
@@ -90,7 +87,7 @@ public class EmptinessCheck {
 	private ArrayList<BDD> findPath(BDD initState) throws PlanningException
 	{
 		BDD statesSCC				= initializeStatesSCC();
-		ArrayList<BDD> path			= new ArrayList<BDD>();
+		ArrayList<BDD> path			= new ArrayList<>();
 		int[] visitedAcceptingSets	= new int[totalAcceptingSets + 1];
 		
 
@@ -121,11 +118,10 @@ public class EmptinessCheck {
 		return statesSCC;
 	}
 
-	private BDD bfs(BDD fromState, int[] visitedAcceptingSets, ArrayList<BDD> path) throws PlanningException
+	private void bfs(BDD fromState, int[] visitedAcceptingSets, List<BDD> path) throws PlanningException
 	{
-		ArrayList<BDD> setStates	= new ArrayList<BDD>();
+		ArrayList<BDD> setStates	= new ArrayList<>();
 		setStates.add(fromState);
-		int i 						= 0;
 		BDD accTransitions			= factory.zero();
 		for(int j=1; j<totalAcceptingSets+1; j++) 
 		{
@@ -135,9 +131,10 @@ public class EmptinessCheck {
 			}
 		}
 		if(accTransitions.isZero()){
-			return fromState;
+			return;
 		}
-		while(accTransitions.and(setStates.get(i)).and(productAutomaton.changePreVarsToPostVars(statesSCC)).isZero()) 
+		int i = 0;
+		while(accTransitions.and(setStates.get(i)).and(productAutomaton.changePreVarsToPostVars(statesSCC)).isZero())
 		{
 			setStates.add(productAutomaton.postImageConcrete(setStates.get(i)).and(statesSCC));
 			i++;
@@ -160,15 +157,14 @@ public class EmptinessCheck {
 		}
 		path.addAll(setStates);
 		BDD transition					= (setStates.get(i-1).and(accTransitions));
-		BDD toState						= productAutomaton.getSecondState(transition);
+//		BDD toState						= productAutomaton.getSecondState(transition);
 		int accSet						= transition.scanVar(ProductAutomaton.acceptingSetDomain()).intValue();
 		visitedAcceptingSets[accSet]	= 1;
-		return toState;
 	}
 
-	private void bfs(BDD fromState, BDD toState, ArrayList<BDD> path, int[] visitedAcceptingSets) throws PlanningException
+	private void bfs(BDD fromState, BDD toState, List<BDD> path, int[] visitedAcceptingSets) throws PlanningException
 	{		
-		ArrayList<BDD> setStates		= new ArrayList<BDD>();
+		ArrayList<BDD> setStates		= new ArrayList<>();
 		setStates.add(fromState);
 		int i							= 0;
 		while(setStates.get(i).and(toState).isZero()) 
@@ -190,11 +186,9 @@ public class EmptinessCheck {
 				setStates.set(i+1, productAutomaton.postImageConcrete(setStates.get(i)).and(setStates.get(i+1)));
 				BDD transition = setStates.get(i).and(productAutomaton.changePreVarsToPostVars(setStates.get(i+1)));
 				transition = transition.and(productAutomaton.getBDD()).and(ProductAutomaton.transitionLevelDomain().ithVar(3));
-				ArrayList<Integer> k = productAutomaton.findAcceptingSets(transition);
-				Iterator<Integer> k_it = k.iterator();
-				while(k_it.hasNext()){
-					int k_n = k_it.next();
-					if(k_n > 0) {
+				List<Integer> k = productAutomaton.findAcceptingSets(transition);
+				for (int k_n : k) {
+					if (k_n > 0) {
 						visitedAcceptingSets[k_n] = 1;
 						path.add(setStates.get(i));
 						return;
@@ -206,7 +200,7 @@ public class EmptinessCheck {
 		
 	}
 
-	private boolean containAllAcc(ArrayList<Integer> accSet) 
+	private boolean containAllAcc(List<Integer> accSet)
 	{
 		for(int i=1; i<totalAcceptingSets+1; i++) 
 		{
@@ -218,7 +212,7 @@ public class EmptinessCheck {
 		return true;
 	}
 	
-	private ArrayList<Integer> union(ArrayList<Integer> nextSuccAcc, ArrayList<Integer> arrayList) 
+	private static ArrayList<Integer> union(ArrayList<Integer> nextSuccAcc, Iterable<Integer> arrayList)
 	{
 		for(int i: arrayList) 
 		{
@@ -246,7 +240,7 @@ public class EmptinessCheck {
 	{
 		max++;
 		setRank(state,max);
-		SCC.push(max, acc, new ArrayList<Integer>(), factory.zero());
+		SCC.push(max, acc, new ArrayList<>(), factory.zero());
 		todo.push(state, state.and(productAutomaton.getSampledProductTransitions()));
 	}
 
@@ -266,7 +260,7 @@ public class EmptinessCheck {
 		}
 	}
 	
-	private ArrayList<Integer> merge(ArrayList<Integer> nextSuccAcc, int t) 
+	private List<Integer> merge(ArrayList<Integer> nextSuccAcc, int t)
 	{
 		BDD r	= factory.zero();
 		while(t<SCC.getTop().getRoot()) 

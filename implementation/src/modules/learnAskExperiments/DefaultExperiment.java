@@ -22,7 +22,7 @@ public class DefaultExperiment implements Experiments
 	
 	ProductAutomaton productAutomaton;
 	BDDFactory factory;
-	BDD productAutomatonBDD;
+//	BDD productAutomatonBDD = null;
 	public double time;
 	
 	
@@ -42,30 +42,27 @@ public class DefaultExperiment implements Experiments
 	 * LEARN procedure
 	 */
 	@Override
-	public BDD learn(BDD transitions) throws Exception 
-	{
+	public void learn(BDD transitions) throws PlanningException {
 		double startTime = System.nanoTime();
 //		BDD transition		= fromState.and(productAutomaton.changePreSystemVarsToPostSystemVars(toState));
-		BDD productTransitions = ProductAutomaton.factory.zero();
 		if(transitions.and(productAutomaton.sampledTransitions).isZero()) {
 			productAutomaton.sampledTransitions			= productAutomaton.sampledTransitions.or(transitions);
 			productAutomaton.removeTransition(transitions);
-			productTransitions 							= productAutomaton.addTransition(transitions, 3);
+			BDD productTransitions = productAutomaton.addTransition(transitions, 3);
 			productAutomaton.sampledProductTransitions 	= productAutomaton.sampledProductTransitions.or(productTransitions);
 		}
 		else {
 			time += System.nanoTime() - startTime;
-			return null;
+			return;
 		}
 
 		if((boolean) PlanningSettings.get("useAdvice")) {
 			if (!productAutomaton.removeAllExceptPreSystemVars(transitions).equals(productAutomaton.changePostSystemVarsToPreSystemVars(productAutomaton.removeAllExceptPostSystemVars(transitions)))){
-				BDD nextTransition, fromState, toState;
 				BDDIterator it = transitions.iterator(ProductAutomaton.allSystemVars());
 				while (it.hasNext()) {
-					nextTransition = (BDD) it.next();
-					fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
-					toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
+					BDD nextTransition = (BDD) it.next();
+					BDD fromState = nextTransition.exist(ProductAutomaton.allPostSystemVars());
+					BDD toState = productAutomaton.changePostSystemVarsToPreSystemVars(nextTransition.exist(ProductAutomaton.allPreSystemVars()));
 					learnSimilarTransitions(fromState, toState);
 				}
 			}
@@ -85,18 +82,15 @@ public class DefaultExperiment implements Experiments
 //		}
 		
 		time += System.nanoTime() - startTime;
-		return productTransitions;
 	}
 
 	/**
 	 * procedure to add maybe (level 2) transitions give a transition from 'fromState' to 'toState'
 	 * @param fromState
 	 * @param toState
-	 * @return BDD representing the set of similar transitions
-	 * @throws Exception
+	 * @throws PlanningException
 	 */
-	private BDD learnSimilarTransitions(BDD fromState, BDD toState) throws Exception
-	{
+	private void learnSimilarTransitions(BDD fromState, BDD toState) throws PlanningException {
 		BDD complementDomainOfChanges	= allExceptDomainOfChanges(fromState,toState);
 		BDD fromStateSimilar			= fromState.exist(complementDomainOfChanges);
 		BDD toStateSimilarPrime			= factory.one();
@@ -128,7 +122,6 @@ public class DefaultExperiment implements Experiments
 		
 		//adding filters here
 		productAutomaton.addTransitions(transitions.and(addFilters()));
-		return transitions;
 	}
 
 	/**
@@ -136,10 +129,9 @@ public class DefaultExperiment implements Experiments
 	 * @param fromState
 	 * @param toState
 	 * @return complement of the set 'domain of changes'
-	 * @throws Exception
+	 * @throws PlanningException
 	 */
-	private BDD allExceptDomainOfChanges(BDD fromState, BDD toState) throws Exception
-	{
+	private BDD allExceptDomainOfChanges(BDD fromState, BDD toState) throws PlanningException {
 		BDD complementDomainOfChanges=factory.one();
 		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
 		{
@@ -158,9 +150,8 @@ public class DefaultExperiment implements Experiments
 	 * ASK procedure
 	 */
 	@Override
-	public ArrayList<BDD> getAdvice(BDD currentStates) throws Exception
-	{
-		ArrayList<BDD> advice	= new ArrayList<BDD>();
+	public ArrayList<BDD> getAdvice(BDD currentStates) throws PlanningException {
+		ArrayList<BDD> advice	= new ArrayList<>();
 		BDD target = productAutomaton.finalStatesSystem();
 		BDD source = productAutomaton.preImageOfFinalStatesSystem();
 		
@@ -177,7 +168,7 @@ public class DefaultExperiment implements Experiments
 		return advice;
 	}
 	
-	public void printAPList(BDD state) throws PlanningException 
+	public static void printAPList(BDD state) throws PlanningException
 	{
 		ArrayList<String> apList	= findAPList(state);
 		System.out.print("[");
@@ -185,7 +176,7 @@ public class DefaultExperiment implements Experiments
 		{
 			if(j < apList.size() - 1) 
 			{
-				System.out.print(apList.get(j)+",");
+				System.out.print(apList.get(j)+ ',');
 			}
 			else 
 			{
@@ -195,9 +186,9 @@ public class DefaultExperiment implements Experiments
 		System.out.print("]  ");
 	}
 
-	private ArrayList<String> findAPList(BDD state) throws PlanningException 
+	private static ArrayList<String> findAPList(BDD state) throws PlanningException
 	{
-		ArrayList<String> list		= new ArrayList<String>();
+		ArrayList<String> list		= new ArrayList<>();
 		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
 		{
 			if(! state.and(ProductAutomaton.ithVarSystemPre(i)).isZero()) 
@@ -215,10 +206,9 @@ public class DefaultExperiment implements Experiments
 	 * Some filters for the states like H and r1 can never occur together
 	 * User gives it at the beginning
 	 * @return a BDD representing the formula for the filters
-	 * @throws Exception
+	 * @throws PlanningException
 	 */
-	public BDD addFilters() throws Exception 
-	{
+	public BDD addFilters() throws PlanningException {
 		BDD h	= ProductAutomaton.ithVarSystemPre(0);
 		BDD r1	= ProductAutomaton.ithVarSystemPre(1);
 		BDD r2	= ProductAutomaton.ithVarSystemPre(2);
@@ -245,7 +235,8 @@ public class DefaultExperiment implements Experiments
 //		return factory.one();
 	}
 	
-	public ProductAutomaton getProductAutomaton() 
+	@Override
+	public ProductAutomaton getProductAutomaton()
 	{
 		return productAutomaton;
 	}

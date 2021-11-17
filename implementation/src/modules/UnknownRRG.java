@@ -1,28 +1,26 @@
 package modules;
 
 
-import java.awt.geom.Point2D;
-import java.io.IOException;
+import abstraction.ProductAutomaton;
+import com.infomatiq.jsi.Point;
+import com.infomatiq.jsi.Rectangle;
+import environment.Environment;
+import environment.Vertex;
 import gnu.trove.TIntProcedure;
 import net.sf.javabdd.BDD;
-import planningIO.StoreGraphKnown;
+import org.jgrapht.GraphPath;
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
+import org.jgrapht.alg.util.Pair;
+import org.jgrapht.graph.DefaultEdge;
 import planningIO.StoreGraphUnknown;
 import planningIO.printing.ShowGraphUnknown;
 import settings.PlanningException;
 import settings.PlanningSettings;
 
+import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import org.jgrapht.GraphPath;
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
-import org.jgrapht.alg.util.Pair;
-import org.jgrapht.graph.DefaultEdge;
-import com.infomatiq.jsi.Point;
-import com.infomatiq.jsi.Rectangle;
-import abstraction.ProductAutomaton;
-import environment.Environment;
-import environment.Vertex;
 
 public class UnknownRRG extends RRG
 {
@@ -51,17 +49,16 @@ public class UnknownRRG extends RRG
 		super(env);
 		this.sensingRadius		= (float) PlanningSettings.get("sensingRadius");
 		this.grid 				= new UnknownGrid(env, (float) PlanningSettings.get("gridSize"), graph, tree, treePoints);
-		this.movementBDD 		= new ArrayList<BDD>();
+		this.movementBDD 		= new ArrayList<>();
 	}
 	
 	/**
 	 * Set initial point
 	 * @param p2D
-	 * @throws Exception 
+	 * @throws PlanningException
 	 */
 	@Override
-	public void setStartingPoint(Point2D p2D) throws Exception 
-	{
+	public void setStartingPoint(Point2D p2D) throws PlanningException {
 		Point p 		= new Point((float) p2D.getX(), (float) p2D.getY());
 		Rectangle rect 	= new Rectangle((float) p2D.getX(), (float) p2D.getY(), (float) p2D.getX(), (float) p2D.getY());
 		this.initVertex = new Vertex(p2D);
@@ -74,18 +71,18 @@ public class UnknownRRG extends RRG
 	}
 	
 	@Override
-	public void updateMovement(Point2D newPosition) throws Exception {
+	public void updateMovement(Point2D newPosition) throws PlanningException {
 		Vertex source = findTheVertex(currentRobotPosition);
 		Vertex target = findTheVertex(newPosition);
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, source, target);
-		ArrayList<DefaultEdge> edges = new ArrayList<DefaultEdge>();
-		edges.addAll(path.getEdgeList());
+		List<DefaultEdge> edges = new ArrayList<>(path.getEdgeList());
 		movement.addAll(edges);
 		
 		Iterator<DefaultEdge> it = edges.iterator();
 		BDD lastMovement = null;
-		if(! movementBDD.isEmpty())
+		if(! movementBDD.isEmpty()) {
 			lastMovement = movementBDD.get(movementBDD.size() - 1);
+		}
 		
 		while(it.hasNext()) {
 			DefaultEdge nextEdge = it.next();
@@ -107,91 +104,88 @@ public class UnknownRRG extends RRG
 	 * @param advice
 	 * @param xRand2D
 	 */
+	@Override
 	void buildGraph(ArrayList<BDD> advice, Point2D xRand2D) {
 		
 		// need 'point2D' for graphRRG and 'point' for Rtree
 		Point xRand					= convertPoint2DToPoint(xRand2D);
-		
-		TIntProcedure procedure		= new TIntProcedure()	// execute this procedure for the nearest neighbour of 'xRand'
-		{ 
-			public boolean execute(int i) 
-			{	
-				Point xNearest		= treePoints.get(i);
-				Point2D xNearest2D	= convertPointToPoint2D(xNearest);				
-				Point2D xNew2D		= steer(xNearest2D, xRand2D);
-				Point xNew			= convertPoint2DToPoint(xNew2D);
-				
-				BDD transition 		= ProductAutomaton.factory.zero();
-				try {
-					transition		= Environment.getLabelling().getLabel(xNearest2D);
-					transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-				
-				
-				if(checkValidity(advice, xNearest2D, xNew2D, transition))
-				{
-					currentBatchSize++;
-					updateRrgRadius(); 
-					addSymbolicTransitions(xNearest2D, xNew2D);
-					addGraphEdge(xNearest2D, xNew2D);
-										
-					if((boolean) PlanningSettings.get("exportPlotData")) {
-						try {
-							if (!flagBin && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 7)).isZero()) {
-								StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "bin");
-								flagBin = true;
-							}
-							if (!flagRoom && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 4)).isZero()) {
-								StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "room");
-								flagRoom = true;
-							}
-						} catch (Exception e1) {
-							e1.printStackTrace();
-						}
-					}
-					tree.nearestN(xNew, 
-							new TIntProcedure() // For each neighbour of 'xNew' in the given radius, execute this method
-							{
-								public boolean execute(int i) 
-								{
-									Point neighbour			= treePoints.get(i);
-									Point2D neighbour2D		= convertPointToPoint2D(neighbour);
-									
-									if(neighbour2D.equals(xNew2D)) return true;
 
-									if(distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFreeAll(xNew2D, neighbour2D)){
-										addSymbolicTransitions(neighbour2D, xNew2D);
-										addGraphEdge(neighbour2D, xNew2D);
-									}
-									return true;
-								}
-							}, 
-							100, java.lang.Float.POSITIVE_INFINITY); // a max of 100 neighbours are considered
-					
-					// add point to the Rtree
-					Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
-					tree.add(rect, totalPoints);
-					treePoints.add(xNew);
-					totalPoints++;
-					
-					float tempTime = System.nanoTime();
-					if(!explorationComplete) {
-						int rank = (advice == null)? -1: findRank(advice, xNearest2D, xNew2D, transition); // rank of transition according to advice
-						try {
-							tryMove(rank, xNew2D, transition, advice); // move if required
-						} catch (Exception e) {
-							e.printStackTrace();
+		// execute this procedure for the nearest neighbour of 'xRand'
+		TIntProcedure procedure		= i -> {
+			Point xNearest		= treePoints.get(i);
+			Point2D xNearest2D	= convertPointToPoint2D(xNearest);
+			Point2D xNew2D		= steer(xNearest2D, xRand2D);
+			Point xNew			= convertPoint2DToPoint(xNew2D);
+
+			BDD transition 		= ProductAutomaton.factory.zero();
+			try {
+				transition		= Environment.getLabelling().getLabel(xNearest2D);
+				transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
+			} catch (PlanningException e) {
+				e.printStackTrace();
+			}
+
+
+			if(checkValidity(advice, xNearest2D, xNew2D, transition))
+			{
+				currentBatchSize++;
+				updateRrgRadius();
+				addSymbolicTransitions(xNearest2D, xNew2D);
+				addGraphEdge(xNearest2D, xNew2D);
+
+				if((boolean) PlanningSettings.get("exportPlotData")) {
+					try {
+						if (!flagBin && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 7)).isZero()) {
+							new StoreGraphUnknown(graph, movement, PlanningSettings.get("outputDirectory") + "bin");
+							flagBin = true;
 						}
+						if (!flagRoom && !Environment.getLabelling().getLabel(xNew2D).and(ProductAutomaton.factory.ithVar(ProductAutomaton.varsBeforeSystemVars + 4)).isZero()) {
+							new StoreGraphUnknown(graph, movement, PlanningSettings.get("outputDirectory") + "room");
+							flagRoom = true;
+						}
+					} catch (PlanningException e) {
+						e.printStackTrace();
 					}
-					else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) {
-						endBatch = true;
-					}
-					moveTime += System.nanoTime() - tempTime;
 				}
-		        return true;
-		    }
+				// For each neighbour of 'xNew' in the given radius, execute this method
+				tree.nearestN(xNew,
+						i1 -> {
+							Point neighbour			= treePoints.get(i1);
+							Point2D neighbour2D		= convertPointToPoint2D(neighbour);
+
+							if(neighbour2D.equals(xNew2D)) {
+								return true;
+							}
+
+							if(distance(xNew, neighbour) <= rrgRadius		&&		env.collisionFreeAll(xNew2D, neighbour2D)){
+								addSymbolicTransitions(neighbour2D, xNew2D);
+								addGraphEdge(neighbour2D, xNew2D);
+							}
+							return true;
+						},
+						100, Float.POSITIVE_INFINITY); // a max of 100 neighbours are considered
+
+				// add point to the Rtree
+				Rectangle rect 			= new Rectangle(xNew.x, xNew.y, xNew.x, xNew.y);
+				tree.add(rect, totalPoints);
+				treePoints.add(xNew);
+				totalPoints++;
+
+				float tempTime = System.nanoTime();
+				if(!explorationComplete) {
+					int rank = (advice == null)? -1: findRank(advice, xNearest2D, xNew2D, transition); // rank of transition according to advice
+					try {
+						tryMove(rank, xNew2D, transition, advice); // move if required
+					} catch (PlanningException e) {
+						e.printStackTrace();
+					}
+				}
+				else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) {
+					endBatch = true;
+				}
+				moveTime += System.nanoTime() - tempTime;
+			}
+			return true;
 		};
 		tree.nearest(xRand, procedure, java.lang.Float.POSITIVE_INFINITY); // apply 'procedure' to the nearest point of xRand
 	}
@@ -200,23 +194,22 @@ public class UnknownRRG extends RRG
 	 * sample one batch and add them in the graphs accordingly
 	 * @param advice
 	 * @return
-	 * @throws Exception
 	 */
-	public BDD sampleBatch(ArrayList<BDD> advice, int iterNum) throws Exception {
+	@Override
+	public BDD sampleBatch(ArrayList<BDD> advice, int iterNum) {
 		symbolicTransitionsInCurrentBatch = ProductAutomaton.factory.zero();
 		currentBatchSize = 0;
 		endBatch = false;
-		Point2D p;
-		
+
 		while( !endBatch ) {
-			p = sampleInExploredArea();
+			Point2D p = sampleInExploredArea();
 			buildGraph(advice, p);
 		}
 
 		if((boolean) PlanningSettings.get("exportVideoData")) {
 			try {
-				StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "video/together/" + iterNum);
-			} catch (Exception e1) {
+				new StoreGraphUnknown(graph, movement, PlanningSettings.get("outputDirectory") + "video/together/" + iterNum);
+			} catch (RuntimeException e1) {
 				e1.printStackTrace();
 			}
 		}
@@ -224,36 +217,13 @@ public class UnknownRRG extends RRG
 		return symbolicTransitionsInCurrentBatch;
 	}
 
-	/**
-	 * Checks if the edge is collision-free, have been sampled before and selects the edge according to its prob
-	 * @param advice
-	 * @param xNearest2D
-	 * @param xNew2D
-	 * @param transition
-	 * @return
-	 */
-	@Override 
-	boolean checkValidity(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition) {
-		if(! env.collisionFreeAll(xNearest2D, xNew2D)) return false; // new edge is obstacle free
-		if(! forwardSampledTransitions.and(transition).isZero()) return false; // transition already sampled
-		if(advice != null) {
-			int rank = findRank(advice, xNearest2D, xNew2D, transition);
-			float prob = getProb(rank);
-			float rand = (float) Math.random();
-			if(rand < prob) return true;
-			return false;
-		} else {
-			return true;
-		}
-	}
-	
-	
-	
-	private void move(Point2D xNew2D, int rank) throws Exception {
-		if(rank != -1 && rank < 10)
+
+	private void move(Point2D xNew2D, int rank) throws PlanningException {
+		if(rank != -1 && rank < 10) {
 			adviceSampled[rank]++;
+		}
 		updateMovement(xNew2D);
-		currentRobotPosition = (Point2D.Float) xNew2D.clone();
+		currentRobotPosition = xNew2D;
 		grid.knowDiscretization(env, productAutomaton, currentRobotPosition, sensingRadius);
 		endBatch = true;
 		if(grid.exploredCompletely()) {
@@ -270,17 +240,18 @@ public class UnknownRRG extends RRG
 	 * @param xNew2D
 	 * @param transition
 	 * @param advice
-	 * @throws Exception
+	 * @throws PlanningException
 	 */
-	public void tryMove(int rank, Point2D xNew2D, BDD transition, ArrayList<BDD> advice) throws Exception {
+	public void tryMove(int rank, Point2D xNew2D, BDD transition, List<BDD> advice) throws PlanningException {
 
 		if(rank != -1 && productAutomaton.sampledTransitions.and(transition).isZero()) // if sampled from advice and have not sampled it before
+		{
 			grid.addAdviceFrontier(xNew2D, currentRobotPosition, rank);
-		else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) { // batch is finished
+		} else if (currentBatchSize >= (int) PlanningSettings.get("batchSize")) { // batch is finished
 
 			if ((boolean) PlanningSettings.get("exportPlotData")) {
 				if (!flagFirstMove) { // plotting before the first time it moves
-					StoreGraphUnknown temp = new StoreGraphUnknown(graph, movement, (String) PlanningSettings.get("outputDirectory") + "firstMove");
+					new StoreGraphUnknown(graph, movement, PlanningSettings.get("outputDirectory") + "firstMove");
 					flagFirstMove = true;
 				}
 			}
@@ -289,7 +260,7 @@ public class UnknownRRG extends RRG
 			}
 			Pair<Point2D, Integer> foundMove = grid.findAMove(currentRobotPosition);
 			if(foundMove == null){
-				foundMove = new Pair<Point2D, Integer>(currentRobotPosition, -1);
+				foundMove = new Pair<>(currentRobotPosition, -1);
 			}
 			Point2D p = foundMove.getFirst();
 			if(p != null) {
@@ -308,13 +279,10 @@ public class UnknownRRG extends RRG
 	/**
 	 * sample a point inside sensing area
 	 * @return
-	 * @throws Exception
 	 */
-	private Point2D sampleInExploredArea() throws Exception 
-	{
-		Point2D p;
+	private Point2D sampleInExploredArea() {
 		while(true) {
-			p = env.sample();
+			Point2D p = env.sample();
 			if(grid.isExplored(p)) {
 				if(env.obstacleFreeAll(p)) {
 					if(env.collisionFreeFromOpaqueObstacles(currentRobotPosition, p)) {
@@ -336,29 +304,27 @@ public class UnknownRRG extends RRG
 	 * @param movement
 	 * @return
 	 */
-	public List<DefaultEdge> findPath(ArrayList<Point2D> movement) {
-		Vertex source, dest;
-		
+	public List<DefaultEdge> findPath(List<Point2D> movement) {
+
 		Iterator<Point2D> it = movement.iterator();
-		Point2D firstPoint, nextPoint;
-		List<DefaultEdge> finalPath;
-		
+		Point2D firstPoint;
+
 		if(it.hasNext()) {
 			firstPoint	= it.next(); // first point is already there
 		} else {
 			return null;
 		}
+		Point2D nextPoint;
 		if(it.hasNext()) {
 			nextPoint	= it.next();
 		} else {
 			return null;
 		}
-		
-		source = findTheVertex(firstPoint);
-		dest = findTheVertex(nextPoint);
+
+		Vertex source = findTheVertex(firstPoint);
+		Vertex dest = findTheVertex(nextPoint);
 		GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, dest);
-		finalPath = new ArrayList<DefaultEdge>();
-		finalPath.addAll(nextPath.getEdgeList());
+		List<DefaultEdge> finalPath = new ArrayList<>(nextPath.getEdgeList());
 		
 		// iterate over the abstract path
 		while(it.hasNext())
@@ -380,18 +346,18 @@ public class UnknownRRG extends RRG
 		
 	/**
 	 * Plot the graphRRG
-	 * @return 
-	 * @throws IOException 
+	 * @return
 	 */
 	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath)  
 	{
 		if(finalPath != null) {
-			if((boolean) PlanningSettings.get("generatePlot"))
+			if((boolean) PlanningSettings.get("generatePlot")) {
 				new ShowGraphUnknown(graph, env, movement, finalPath).setVisible(true);
-			StoreGraphUnknown temp = new StoreGraphUnknown(env, graph, finalPath, movement, (String) PlanningSettings.get("outputDirectory") + "end");
-			return new Pair<Float, Float>(temp.movementLength, temp.remainingPathLength);
+			}
+			StoreGraphUnknown temp = new StoreGraphUnknown(env, graph, finalPath, movement, PlanningSettings.get("outputDirectory") + "end");
+			return new Pair<>(temp.movementLength, temp.remainingPathLength);
 		}
-		return new Pair<Float, Float>(0f,0f);
+		return new Pair<>(0.0f, 0.0f);
 	}
 	
 	

@@ -6,17 +6,17 @@ import net.sf.javabdd.BDD;
 import settings.PlanningException;
 
 public class stackSCC {
-	SCCNode top;
+	SCCNode top = null;
 		
 	public void push(int root, ArrayList<Integer> last, ArrayList<Integer> acc, BDD rem) throws PlanningException{
-		SCCNode newNode=new SCCNode(root,last,acc,rem);
+		SCCNode newNode = new SCCNode(root,last,acc,rem);
 		newNode.setPrevious(top);
-		top=newNode;
+		top = newNode;
 	}
 		
 	protected SCCNode pop() {
-		SCCNode temp=top;
-		top=top.previous;
+		SCCNode temp = top;
+		top = top.previous;
 		return temp;
 	}
 	
@@ -25,9 +25,6 @@ public class stackSCC {
 	}
 	
 	public boolean isEmpty() {
-		if(top==null) {
-			return true;
-		}
-		return false;
+		return top == null;
 	}
 }

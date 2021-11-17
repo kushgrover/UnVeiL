@@ -1,26 +1,28 @@
 package modules;
 
-import java.awt.geom.Path2D;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
+import java.util.List;
 
-import org.jgrapht.Graph;
 import org.jgrapht.alg.util.Pair;
-import org.jgrapht.graph.DefaultEdge;
 
 import abstraction.ProductAutomaton;
 import environment.Environment;
-import environment.Vertex;
 import net.sf.javabdd.BDD;
 
 public abstract class Grid 
 { 
-	float x1, x2, y1, y2, size;
-	int numX, numY;
+	float x1;
+	float x2;
+	float y1;
+	float y2;
+	float size;
+	int numX;
+	int numY;
 	int[][] grid; // 0: don't know    1: free     2: visited     3:Obstacle
-	ArrayList<ArrayList<BDD>> labels;
+	List<ArrayList<BDD>> labels;
 	ArrayList<ArrayList<int[]>> frontiers;
-	boolean flag[][]; // used to compute frontiers
+	boolean[][] flag; // used to compute frontiers
 	
 	public Grid(Environment env, float size) 
 	{
@@ -33,16 +35,16 @@ public abstract class Grid
 		this.size = size;
 		this.flag = new boolean[numX][numY];
 		grid = new int[numX][numY];
-		labels = new ArrayList<ArrayList<BDD>>();
+		labels = new ArrayList<>();
 		
 		for(int i=0;i<numX;i++) {
-			labels.add(new ArrayList<BDD>());
+			labels.add(new ArrayList<>());
 			for(int j=0;j<numY;j++) {
 				labels.get(i).add(ProductAutomaton.factory.zero());
 				grid[i][j] = 0;
 			}
 		}
-		frontiers = new ArrayList<ArrayList<int[]>>();
+		frontiers = new ArrayList<>();
 	}
 	
 	/*
@@ -93,17 +95,13 @@ public abstract class Grid
 				}
 			}
 		}
-		if(count>0) {
-			return true;
-		}
-		return false;
+		return count > 0;
 	}
 
 	/*
 	 * updates the grid at point p with value
 	 */
-	public void updateDiscretization(Point2D p, int value) throws Exception
-	{
+	public void updateDiscretization(Point2D p, int value) {
 		float x = (float) p.getX();
 		float y = (float) p.getY();
 		int i 	= (int) ((x-x1)/size);
@@ -154,41 +152,44 @@ public abstract class Grid
 
 	
 	protected int clampX(int i) {
-		if(i == numX)
+		if(i == numX) {
 			return i-1;
+		}
 		return i;
 	}
 	
 	protected int clampY(int j) {
-		if(j == numY)
+		if(j == numY) {
 			return j-1;
+		}
 		return j;
 	}
 
 	protected boolean cellInsideSensingRadius(int i, int j, Point2D currentPosition, float sensingRadius) {
-		if(distance(new float[] {i*size, j*size}, currentPosition) > sensingRadius) 
+		if(distance(new float[] {i*size, j*size}, currentPosition) > sensingRadius) {
 			return false;
-		if(distance(new float[] {i*size, (j+1)*size}, currentPosition) > sensingRadius) 
+		}
+		if(distance(new float[] {i*size, (j+1)*size}, currentPosition) > sensingRadius) {
 			return false;
-		if(distance(new float[] {(i+1)*size, j*size}, currentPosition) > sensingRadius) 
+		}
+		if(distance(new float[] {(i+1)*size, j*size}, currentPosition) > sensingRadius) {
 			return false;
-		if(distance(new float[] {(i+1)*size, (j+1)*size}, currentPosition) > sensingRadius) 
-			return false;
-		return true;
+		}
+		return !(distance(new float[]{(i + 1) * size, (j + 1) * size}, currentPosition) > sensingRadius);
 	}
 	
 	/*
 	 * compute distance
 	 */
-	protected float distance(Point2D p, Point2D q) {
-		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2) + Math.pow(p.getY() - q.getY(), 2));
+	protected static float distance(Point2D p, Point2D q) {
+		return (float) Math.sqrt(StrictMath.pow(p.getX() - q.getX(), 2) + StrictMath.pow(p.getY() - q.getY(), 2));
 	}
 	
 	/*
 	 * compute distance
 	 */
-	private float distance(float[] p, Point2D q) {
-		return (float) Math.sqrt(Math.pow(p[0] - q.getX(), 2) + Math.pow(p[1] - q.getY(), 2));
+	private static float distance(float[] p, Point2D q) {
+		return (float) Math.sqrt(StrictMath.pow(p[0] - q.getX(), 2) + StrictMath.pow(p[1] - q.getY(), 2));
 	}
 
 	protected float distance(int[] cell, Point2D target) {
@@ -200,14 +201,13 @@ public abstract class Grid
 	 * find centre of the cell with indices i,j
 	 */
 	public Point2D findCentre(int i, int j) {
-		float x = i, y = j;
-		x += 0.5;
-		y += 0.5;
+		float x = i + 0.5F;
+		float y = j + 0.5F;
 		return new Point2D.Float(x * size, y * size);
 	}
 	
-	ArrayList<ArrayList<int[]>> findFrontiers(int minSize){
-		frontiers = new ArrayList<ArrayList<int[]>>();
+	ArrayList<ArrayList<int[]>> findFrontiers(){
+		frontiers = new ArrayList<>();
 		for(int i=0; i<numX; i++) {
 			for(int j=0; j<numY; j++) {
 				flag[i][j] = false;
@@ -240,10 +240,11 @@ public abstract class Grid
 	 * finds centre of a frontier
 	 */
 	protected Point2D findFrontierCenter(ArrayList<int[]> frontier) {
-		float x=size/2, y=size/2;
-		for(int i=0; i<frontier.size(); i++) {
-			x += frontier.get(i)[0];
-			y += frontier.get(i)[1];
+		float x=size/2;
+		float y=size/2;
+		for (int[] ints : frontier) {
+			x += ints[0];
+			y += ints[1];
 		}
 		
 		Point2D bestFrontier = new Point2D.Float(x/frontier.size()*size, y/frontier.size()*size); 
@@ -255,16 +256,15 @@ public abstract class Grid
 				bestD = distance(frontier.get(i), bestFrontier);
 			}
 		}
-		bestFrontier = findCentre(frontier.get(bestCell)[0], frontier.get(bestCell)[1]);
-		return bestFrontier;
+		return findCentre(frontier.get(bestCell)[0], frontier.get(bestCell)[1]);
 	}
 
 	/*
 	 * find frontier containing the cell with indices i,j
 	 */
 	private ArrayList<int[]> findFrontier(int i, int j, int level) {
-		ArrayList<int[]> frontier = new ArrayList<int[]>();
-		if(flag[i][j] == false) {
+		ArrayList<int[]> frontier = new ArrayList<>();
+		if(!flag[i][j]) {
 			flag[i][j] = true;
 			frontier.add(new int[] {i,j});
 			if(i+1 < numX) {
@@ -315,9 +315,9 @@ public abstract class Grid
 	 * print all frontiers
 	 */
 	public void printFrontiers() {
-		for(int i=0; i<frontiers.size(); i++) {
-			for(int j=0; j<frontiers.get(i).size(); j++) {
-				System.out.print("[" + frontiers.get(i).get(j)[0] + ", " + frontiers.get(i).get(j)[1] + "]  ");
+		for (Iterable<int[]> frontier : frontiers) {
+			for (int[] ints : frontier) {
+				System.out.print("[" + ints[0] + ", " + ints[1] + "]  ");
 			}
 			System.out.print("\n");
 		}
@@ -359,16 +359,15 @@ public abstract class Grid
 	
 	public boolean isExplored(Point2D p) {
 		int[] c = findCell(p);
-		if(grid[c[0]][c[1]] > 0)
-			return true;
-		return false;
+		return grid[c[0]][c[1]] > 0;
 	}
 	
 	public boolean exploredCompletely() {
 		for(int i=0; i<numX; i++) {
 			for(int j=0; j<numY; j++) {
-				if(grid[i][j] == 0)
+				if(grid[i][j] == 0) {
 					return false;
+				}
 			}
 		}
 		return true;

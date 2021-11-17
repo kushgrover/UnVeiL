@@ -4,7 +4,7 @@ import net.sf.javabdd.BDD;
 import settings.PlanningException;
 
 public class stackTODO {
-	todoNode top;
+	todoNode top = null;
 	
 	public void push(BDD state, BDD transitions) throws PlanningException {
 		todoNode newNode=new todoNode(state, transitions); 
@@ -27,10 +27,7 @@ public class stackTODO {
 	}
 	
 	public boolean isEmpty() {
-		if(top==null) {
-			return true;
-		}
-		return false;
+		return top == null;
 	}
 	
 }

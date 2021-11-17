@@ -10,6 +10,7 @@ import planningIO.printing.PrintProductAutomaton;
 import settings.PlanningException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 import modules.emptinessCheck.EmptinessCheck;
@@ -32,14 +33,24 @@ public class ProductAutomaton
 	 * apListProperty and apListSystem are lists of atomic props used in property and automaton resp.</p>
 	 */
 	BDD productAutomatonBDD;
-	BDD initStates;
+	BDD initStates = null;
 	static BDD propertyBDD;
-	public BDD sampledTransitions, sampledProductTransitions;
+	public BDD sampledTransitions;
+	public BDD sampledProductTransitions;
 	public static BDDFactory factory;
-	public static int numVars[];
-	public static int numAPSystem, threshold, maxLevelOfTransitions, varsBeforeSystemVars, numAllVars;
-	public static ArrayList<String> apListProperty, apListSystem;
-	static BDDPairing oldToNewPairing, newToOldPairing, statesToLabelPairing, newVarToOldVarSystemPairing, oldVarToNewVarSystemPairing;
+	public static int[] numVars;
+	public static int numAPSystem;
+	public static int threshold;
+	public static int maxLevelOfTransitions;
+	public static int varsBeforeSystemVars;
+	public static int numAllVars;
+	public static ArrayList<String> apListProperty;
+	public static ArrayList<String> apListSystem;
+	static BDDPairing oldToNewPairing;
+	static BDDPairing newToOldPairing;
+	static BDDPairing statesToLabelPairing;
+	static BDDPairing newVarToOldVarSystemPairing;
+	static BDDPairing oldVarToNewVarSystemPairing;
 	int[] counter;
 	int numStatesSystem;
 	static int numStates;
@@ -60,7 +71,7 @@ public class ProductAutomaton
 		varsBeforeSystemVars			= numVars[0] + numVars[1] + numVars[2];
 		numAllVars						= varsBeforeSystemVars + 2*numAPSystem;
 		numStates 						= numberOfStates();
-		numStatesSystem					= (int) Math.pow(2, numAPSystem);
+		numStatesSystem					= (int) StrictMath.pow(2, numAPSystem);
 		
 		initializeCounter();
 		
@@ -77,16 +88,7 @@ public class ProductAutomaton
 
 
 //-----------------------------------------------------------------------------------------------------------------
-	
-	/**
-	 * <p>propertyBDD stores the property automaton
-	 * numVars[0] = number of vars used in property automaton
-	 * numVars[1] = number of vars used in transition level
-	 * numVars[2] = number of vars used in label of transitions in property automaton = number of atomic props used in property automaton
-	 * numVars[3] = number of vars used in system automaton = 2 * numAPSystem
-	 * threshold and counter are to add level 1 transitions
-	 * apListProperty and apListSystem are lists of atomic props used in property and automaton resp.</p>
-	 */
+
 //-----------------------------------------------------------------------------------------------------------------
 
 	/**
@@ -95,10 +97,7 @@ public class ProductAutomaton
 	private void initializeCounter()
 	{
 		counter		= new int[(int) numStatesSystem];
-		for(int i=0; i<counter.length; i++)
-		{
-			counter[i]	= 0;
-		}
+		Arrays.fill(counter, 0);
 	}
 	
 	/**
@@ -181,9 +180,8 @@ public class ProductAutomaton
 	
 	
 //------------------------------------------------------------------------------------------------------------------	
-/**
- * For getters and setters
- */
+
+// *** For getters and setters
 	
 	/**
 	 * set the initial state
@@ -236,7 +234,7 @@ public class ProductAutomaton
 	 */
 	private static int numberOfStates()
 	{
-		return (int) Math.pow( 2 , 	numAPSystem + propertyDomainPre().varNum());
+		return (int) StrictMath.pow( 2 , 	numAPSystem + propertyDomainPre().varNum());
 	}
 	
 	/**
@@ -336,7 +334,7 @@ public class ProductAutomaton
 	 */
 	public static BDD allPreSystemVars() throws PlanningException 
 	{
-		BDD allPreVars		= factory.one();
+		BDD allPreVars = factory.one();
 		for(int i=0; i<numAPSystem; i++) 
 		{
 			allPreVars.andWith(ithVarSystemPre(i));
@@ -351,7 +349,7 @@ public class ProductAutomaton
 	 */
 	public static BDD allPostSystemVars() throws PlanningException 
 	{
-		BDD allPostVars		= factory.one();
+		BDD allPostVars	= factory.one();
 		for(int i=0; i<numAPSystem; i++) 
 		{
 			allPostVars.andWith(ithVarSystemPost(i));
@@ -393,7 +391,7 @@ public class ProductAutomaton
 
 	public static BDD allVars()
 	{
-		BDD allVars		= factory.one();
+		BDD allVars	= factory.one();
 		for(int i=0; i<numVars[0]+numVars[1]+numVars[2]+numVars[3]; i++) 
 		{
 			allVars.andWith(factory.ithVar(i));
@@ -407,7 +405,7 @@ public class ProductAutomaton
 	 * @return true if bdd has only pre system vars
 	 * @throws PlanningException 
 	 */
-	public boolean hasOnlyPreSystemVars(BDD bdd) throws PlanningException 
+	public static boolean hasOnlyPreSystemVars(BDD bdd) throws PlanningException
 	{
 		return ! (bdd.support().imp(allPreSystemVars()).isZero());
 	}
@@ -530,7 +528,7 @@ public class ProductAutomaton
 	 * @return
 	 * @throws PlanningException 
 	 */
-	public BDD changePreSystemVarsToPostSystemVars(BDD bdd) throws PlanningException 
+	public static BDD changePreSystemVarsToPostSystemVars(BDD bdd) throws PlanningException
 	{
 		if(! hasOnlyPreSystemVars(bdd)) 
 		{
@@ -931,7 +929,7 @@ public class ProductAutomaton
 	 * @throws PlanningException 
 	 * @throws PlanningException 
 	 */
-	private BDD restrictToLabelVarsInPreSystem(BDD states) throws PlanningException, PlanningException
+	private static BDD restrictToLabelVarsInPreSystem(BDD states) throws PlanningException, PlanningException
 	{
 		if(! hasOnlyPreSystemVars(states)) 
 		{

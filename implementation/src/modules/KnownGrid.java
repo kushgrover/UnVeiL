@@ -3,6 +3,7 @@ package modules;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.jgrapht.Graph;
@@ -11,7 +12,6 @@ import org.jgrapht.alg.shortestpath.DijkstraShortestPath;
 import org.jgrapht.alg.util.Pair;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.graph.SimpleDirectedGraph;
-import org.jgrapht.graph.SimpleGraph;
 
 import abstraction.ProductAutomaton;
 import environment.EdgeSupplier;
@@ -19,21 +19,20 @@ import environment.Environment;
 import environment.Vertex;
 import environment.VertexSupplier;
 import net.sf.javabdd.BDD;
-import planningIO.printing.ShowGraphKnown;
 import settings.PlanningSettings;
 
 public class KnownGrid extends Grid {
 
 	Graph<Vertex, DefaultEdge> graph;
-	private ArrayList<DefaultEdge> movement;
+	private final ArrayList<DefaultEdge> movement;
 	Environment env;
 
 	public KnownGrid(Environment env, float size) 
 	{
 		super(env, size);
 		this.env = env;
-		this.graph = new SimpleDirectedGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
-		this.movement = new ArrayList<DefaultEdge>();
+		this.graph = new SimpleDirectedGraph<>(new VertexSupplier(), new EdgeSupplier(), true);
+		this.movement = new ArrayList<>();
 	}
 	
 	public void initializeGraph() {
@@ -56,7 +55,8 @@ public class KnownGrid extends Grid {
 		Vertex rightV   = findTheVertex(right);
 		Vertex upV   = findTheVertex(up);
 		Vertex centreV = findTheVertex(centre);
-		int i = -1, j = -1;
+		int i;
+		int j;
 		try {
 			i = clampX(findCell(left)[0]);
 			j = clampY(findCell(left)[1]);
@@ -69,7 +69,7 @@ public class KnownGrid extends Grid {
 				}
 			}
 		}
-		catch (NullPointerException e){ }
+		catch (NullPointerException ignored){ }
 
 		try {
 			i = clampX(findCell(down)[0]);
@@ -83,7 +83,7 @@ public class KnownGrid extends Grid {
 				}
 			}
 		}
-		catch (NullPointerException e){ }
+		catch (NullPointerException ignored){ }
 
 		try {
 			i = clampX(findCell(right)[0]);
@@ -97,7 +97,7 @@ public class KnownGrid extends Grid {
 				}
 			}
 		}
-		catch (NullPointerException e){ }
+		catch (NullPointerException ignored){ }
 
 		try {
 			i = clampX(findCell(up)[0]);
@@ -111,7 +111,7 @@ public class KnownGrid extends Grid {
 				}
 			}
 		}
-		catch (NullPointerException e){ }
+		catch (NullPointerException ignored){ }
 
 	}
 	
@@ -122,8 +122,7 @@ public class KnownGrid extends Grid {
 	public void knowDiscretization(Environment env, 
 			ProductAutomaton productAutomaton, 
 			Point2D currentPosition, 
-			float sensingRadius) throws Exception 
-	{	
+			float sensingRadius) throws settings.PlanningException {
 		for(int i = 0; i<numX; i++) {
 			for(int j=0; j<numY; j++) {
 				if(cellInsideSensingRadius(i, j, currentPosition, sensingRadius)) {
@@ -155,15 +154,16 @@ public class KnownGrid extends Grid {
 	boolean isObstacleFreeCell(Environment env, int i, int j) {
 		float x = (float) i * size;
 		float y = (float) j * size;
-		if(! env.obstacleFreeAll(new Point2D.Float(x, y)))
+		if(! env.obstacleFreeAll(new Point2D.Float(x, y))) {
 			return false;
-		if(! env.obstacleFreeAll(new Point2D.Float(x+size, y)))
+		}
+		if(! env.obstacleFreeAll(new Point2D.Float(x+size, y))) {
 			return false;
-		if(! env.obstacleFreeAll(new Point2D.Float(x, y+size)))
+		}
+		if(! env.obstacleFreeAll(new Point2D.Float(x, y+size))) {
 			return false;
-		if(! env.obstacleFreeAll(new Point2D.Float(x+size, y+size)))
-			return false;
-		return true;
+		}
+		return env.obstacleFreeAll(new Point2D.Float(x + size, y + size));
 	}
 
 	/**
@@ -174,11 +174,8 @@ public class KnownGrid extends Grid {
 	protected Vertex findTheVertex(Point2D p) 
 	{
 		Set<Vertex> vertexSet 	= graph.vertexSet();
-		Iterator<Vertex> it 	= vertexSet.iterator();
-		Vertex temp;
-		while(it.hasNext()) {
-			temp 				= it.next();
-			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.00001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.00001) {
+		for (Vertex temp : vertexSet) {
+			if (Math.abs(temp.getPoint().getX() - p.getX()) < 0.00001 && Math.abs(temp.getPoint().getY() - p.getY()) < 0.00001) {
 				return temp;
 			}
 		}
@@ -187,32 +184,30 @@ public class KnownGrid extends Grid {
 		return null;
 	}
 
+	@Override
 	Pair<Point2D, Pair<Integer, Float>> findBestFrontier(ArrayList<ArrayList<int[]>> frontiers, Point2D xRobot){
-		Point2D currentPoint;
 		Point2D bestPoint = findFrontierCenter(frontiers.get(0));
-		float currentIG;
 		float bestIG = 0;
 		int bestIndex = 0;
 		for(int i=0;i<frontiers.size();i++) {
-			currentPoint = findFrontierCenter(frontiers.get(i));
+			Point2D currentPoint = findFrontierCenter(frontiers.get(i));
 			if(currentPoint.equals(xRobot)){
 				continue;
 			}
-			currentIG = (float) frontiers.get(i).size() / computeDistance(currentPoint, xRobot);
+			float currentIG = (float) frontiers.get(i).size() / computeDistance(currentPoint, xRobot);
 			if(currentIG > bestIG) {
 				bestPoint = currentPoint;
 				bestIG = currentIG;
 				bestIndex = i;
 			}
 		}
-		return new Pair<Point2D, Pair<Integer, Float>>(bestPoint, new Pair<Integer, Float>(bestIndex, bestIG));
+		return new Pair<>(bestPoint, new Pair<>(bestIndex, bestIG));
 	}
 
 
 
 	public float findAPath(Point2D currentPosition, Point2D newPosition) {
-		float pathLength = findAPath(findCell(currentPosition), findCell(newPosition));
-		return pathLength;
+		return findAPath(findCell(currentPosition), findCell(newPosition));
 	}
 
 
@@ -223,14 +218,12 @@ public class KnownGrid extends Grid {
 		Vertex targetV = findTheVertex(target);
 
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, sourceV, targetV);
-		ArrayList<DefaultEdge> pathList = new ArrayList<DefaultEdge>();
-		pathList.addAll(path.getEdgeList());
+		List<DefaultEdge> pathList = new ArrayList<>(path.getEdgeList());
 		Iterator<DefaultEdge> i = pathList.iterator();
 		float pathLength = 0;
-		DefaultEdge nextEdge;
 		while(i.hasNext()) {
-			nextEdge = i.next();
-			pathLength += graph.getEdgeWeight(nextEdge);
+			DefaultEdge nextEdge = i.next();
+			pathLength += (float) graph.getEdgeWeight(nextEdge);
 		}
 		return pathLength;
 	}
@@ -238,20 +231,22 @@ public class KnownGrid extends Grid {
 	/*
 	 * finds the best move according to the frontiers
 	 */
+	@Override
 	public Pair<Point2D, Integer> findAMove(Point2D xRobot)
 	{
-		ArrayList<ArrayList<int[]>> frontiers = findFrontiers(5);
-		if(frontiers.size() == 0) {
-			frontiers = findFrontiers(1);
+		ArrayList<ArrayList<int[]>> frontiers = findFrontiers();
+		if(frontiers.isEmpty()) {
+			frontiers = findFrontiers();
 		}
-		if(frontiers.size() == 0) {
+		if(frontiers.isEmpty()) {
 			return null;
 		}
 		Pair<Point2D, Pair<Integer, Float>> bestFrontier = findBestFrontier(frontiers, xRobot); // point, index, IG
 
-		if((boolean) PlanningSettings.get("debug"))
+		if((boolean) PlanningSettings.get("debug")) {
 			System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
-		return new Pair<Point2D, Integer>(bestFrontier.getFirst(), -1);
+		}
+		return new Pair<>(bestFrontier.getFirst(), -1);
 	}
 	
 	public void updateMovement(Point2D currentPosition, Point2D newPosition) {
@@ -284,14 +279,12 @@ public class KnownGrid extends Grid {
 		Vertex sourceV = findTheVertex(source);
 		Vertex targetV = findTheVertex(target);
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, sourceV, targetV);
-		ArrayList<DefaultEdge> tempPath = new ArrayList<DefaultEdge>();
-		tempPath.addAll(path.getEdgeList());
+		List<DefaultEdge> tempPath = new ArrayList<>(path.getEdgeList());
 		Iterator<DefaultEdge> it = tempPath.iterator();
-		DefaultEdge edge;
 		float length = 0;
 		while(it.hasNext()) {
-			edge = it.next();
-			length += graph.getEdgeWeight(edge);
+			DefaultEdge edge = it.next();
+			length += (float) graph.getEdgeWeight(edge);
 		}
 		return length;
 	}

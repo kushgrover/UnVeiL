@@ -10,7 +10,8 @@ import net.sf.javabdd.BDD;
 public class SCCNode {
 
 	int root;
-	ArrayList<Integer> last,acc;
+	ArrayList<Integer> last;
+	ArrayList<Integer> acc;
 	BDD rem;
 	SCCNode previous=null;
 	

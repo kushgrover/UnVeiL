@@ -4,16 +4,17 @@ import java.util.ArrayList;
 
 import abstraction.ProductAutomaton;
 import net.sf.javabdd.BDD;
+import settings.PlanningException;
 
 public interface Experiments
 {
 //	ProductAutomaton productAutomaton;
 
-	public BDD learn(BDD transition) throws Exception;
+	void learn(BDD transition) throws PlanningException;
 	
-	public ArrayList<BDD> getAdvice(BDD startingStates) throws Exception;
+	ArrayList<BDD> getAdvice(BDD startingStates) throws PlanningException;
 	
-	public ProductAutomaton getProductAutomaton();
+	ProductAutomaton getProductAutomaton();
 
 	
 }

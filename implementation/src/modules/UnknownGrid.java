@@ -3,6 +3,7 @@ package modules;
 import java.awt.geom.Point2D;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import abstraction.ProductAutomaton;
@@ -17,22 +18,22 @@ import com.infomatiq.jsi.Point;
 import com.infomatiq.jsi.SpatialIndex;
 import environment.Environment;
 import environment.Vertex;
-import gnu.trove.TIntProcedure;
+import settings.PlanningException;
 import settings.PlanningSettings;
 
 public class UnknownGrid extends Grid {
 
 	ArrayList<Pair<Point2D, Integer>> adviceFrontiers;
-	public int currentRank = -1;
+//	public int currentRank = -1;
 	Graph<Vertex, DefaultEdge> graph;
 	SpatialIndex tree;
-	ArrayList<Point> treePoints = new ArrayList<Point>();; // list of all the points in the Rtree/graphRRG
+	ArrayList<Point> treePoints; // list of all the points in the Rtree/graphRRG
 	Environment env;
 	
 	public UnknownGrid(Environment env, float size, Graph<Vertex, DefaultEdge> graph, SpatialIndex tree, ArrayList<Point> treePoints) 
 	{
 		super(env, size);
-		this.adviceFrontiers = new ArrayList<Pair<Point2D, Integer>>();
+		this.adviceFrontiers = new ArrayList<>();
 		this.graph = graph;
 		this.tree = tree;
 		this.env = env;
@@ -41,13 +42,12 @@ public class UnknownGrid extends Grid {
 
 	private Pair<Point2D, Pair<Integer, Float>> findBestAdviceFrontier(Point2D xRobot) {
 		Point2D bestPoint = findFrontierCenter(frontiers.get(0));
-		float currentIG;
 		float bestIG = 0;
 		int bestRank = -1;
 		int bestIndex = 0;
 		for(int i=0; i<adviceFrontiers.size(); i++) {
 			int currentRank = adviceFrontiers.get(i).getSecond();
-			currentIG = findIGInAdviceFrontier(adviceFrontiers.get(i), bestRank, xRobot);
+			float currentIG = findIGInAdviceFrontier(adviceFrontiers.get(i), bestRank, xRobot);
 			if(currentIG > bestIG) {
 				bestPoint = adviceFrontiers.get(i).getFirst();
 				bestIG = currentIG;
@@ -55,17 +55,17 @@ public class UnknownGrid extends Grid {
 				bestIndex = i;
 			}
 		}
-		return new Pair<Point2D, Pair<Integer, Float>>(bestPoint, new Pair<Integer, Float>(bestIndex, bestIG));
+		return new Pair<>(bestPoint, new Pair<>(bestIndex, bestIG));
 	}
 
 	/*
 	 * know the grid in the sensing radius
 	 */
+	@Override
 	public void knowDiscretization(Environment env,
 								   ProductAutomaton productAutomaton,
 								   Point2D currentPosition,
-								   float sensingRadius) throws Exception
-	{
+								   float sensingRadius) throws PlanningException {
 		for(int i = 0; i<numX; i++) {
 			for(int j=0; j<numY; j++) {
 				if(cellInsideSensingRadius(i, j, currentPosition, sensingRadius)) {
@@ -86,13 +86,14 @@ public class UnknownGrid extends Grid {
 	/*
 	 * finds the best move according to the frontiers
 	 */
+	@Override
 	public Pair<Point2D, Integer> findAMove(Point2D xRobot)
 	{
-		ArrayList<ArrayList<int[]>> frontiers = findFrontiers(5);
-		if(frontiers.size() == 0) {
-			frontiers = findFrontiers(1);
+		ArrayList<ArrayList<int[]>> frontiers = findFrontiers();
+		if(frontiers.isEmpty()) {
+			frontiers = findFrontiers();
 		}
-		if(frontiers.size() == 0) {
+		if(frontiers.isEmpty()) {
 			return null;
 		}
 		Pair<Point2D, Pair<Integer, Float>> bestFrontier = findBestFrontier(frontiers, xRobot); // point, index, IG
@@ -101,37 +102,39 @@ public class UnknownGrid extends Grid {
 		if(bestAdviceFrontier.getSecond().getSecond() > bestFrontier.getSecond().getSecond()) {
 			int index = bestAdviceFrontier.getSecond().getFirst();
 			adviceFrontiers.remove(index);
-			if((boolean) PlanningSettings.get("debug"))
+			if((boolean) PlanningSettings.get("debug")) {
 				System.out.println("Used Advice frontier: " + bestAdviceFrontier.getFirst() + " with IG = " + bestAdviceFrontier.getSecond().getSecond());
-			return new Pair<Point2D, Integer>(bestAdviceFrontier.getFirst(), bestAdviceFrontier.getSecond().getFirst());
+			}
+			return new Pair<>(bestAdviceFrontier.getFirst(), bestAdviceFrontier.getSecond().getFirst());
 		}
 		else {
-			if((boolean) PlanningSettings.get("debug"))
+			if((boolean) PlanningSettings.get("debug")) {
 				System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
-			return new Pair<Point2D, Integer>(bestFrontier.getFirst(), -1);
+			}
+			return new Pair<>(bestFrontier.getFirst(), -1);
 		}
 	}
 
 	public void addAdviceFrontier(Point2D p, Point2D currentPosition, int rank) {
-		Pair<Point2D, Integer> f = new Pair<Point2D, Integer>(p, rank);
-		if((boolean) PlanningSettings.get("debug"))
+		Pair<Point2D, Integer> f = new Pair<>(p, rank);
+		if((boolean) PlanningSettings.get("debug")) {
 			System.out.println("Added advice frontier " + p);
+		}
 		adviceFrontiers.add(f);
 	}
 	
+	@Override
 	Pair<Point2D, Pair<Integer, Float>> findBestFrontier(ArrayList<ArrayList<int[]>> frontiers, Point2D xRobot){
-		Point2D tempPoint;
 		Point2D bestPoint = findFrontierBestPoint(frontiers.get(0));
-		float currentIG;
 		float bestIG = 0;
 		int bestIndex = 0;
 		for(int i=0;i<frontiers.size();i++) {
-			tempPoint = findFrontierBestPoint(frontiers.get(i));
+			Point2D tempPoint = findFrontierBestPoint(frontiers.get(i));
 			if(tempPoint.equals(xRobot)) {
 //				printDiscretization();
 				continue;
 			}
-			currentIG = (float) frontiers.get(i).size() / computeDistance(graph, xRobot, tempPoint);
+			float currentIG = (float) frontiers.get(i).size() / computeDistance(graph, xRobot, tempPoint);
 //			if(distance(centers.get(i), xRobot) < distance(closest, xRobot)) {
 			if(currentIG > bestIG) {
 				bestPoint = tempPoint;
@@ -139,7 +142,7 @@ public class UnknownGrid extends Grid {
 				bestIndex = i;
 			}
 		}
-		return new Pair<Point2D, Pair<Integer, Float>>(bestPoint, new Pair<Integer, Float>(bestIndex, bestIG));
+		return new Pair<>(bestPoint, new Pair<>(bestIndex, bestIG));
 	}
 	
 	private Point2D findFrontierBestPoint(ArrayList<int[]> frontier) {
@@ -148,9 +151,8 @@ public class UnknownGrid extends Grid {
 	}
 
 	float findIGInAdviceFrontier(Pair<Point2D, Integer> adviceFrontier, int bestRank, Point2D xRobot) {
-		int currentRank = adviceFrontier.getSecond(); 
-		float currentIG = 5 / ((float) Math.pow(currentRank + 1, 2) * size * computeDistance(graph, xRobot, adviceFrontier.getFirst()));
-//		if(currentRank < bestRank && bestRank > -1) {
+		int currentRank = adviceFrontier.getSecond();
+		//		if(currentRank < bestRank && bestRank > -1) {
 //			currentIG = (currentRank - bestRank) / (size * distance(frontier.getFirst(), xRobot));
 //		}
 //		else if (currentRank > bestRank && bestRank > -1){
@@ -159,7 +161,7 @@ public class UnknownGrid extends Grid {
 //		else {
 //			currentIG = 1 / ((bestRank + 1) * size * distance(frontier.getFirst(), xRobot));
 //		}
-		return currentIG;
+		return 5 / ((float) StrictMath.pow(currentRank + 1, 2) * size * computeDistance(graph, xRobot, adviceFrontier.getFirst()));
 	}
 
 	/**
@@ -170,11 +172,8 @@ public class UnknownGrid extends Grid {
 	protected Vertex findTheVertex(Point2D p) 
 	{
 		Set<Vertex> vertexSet 	= graph.vertexSet();
-		Iterator<Vertex> it 	= vertexSet.iterator();
-		Vertex temp;
-		while(it.hasNext()) {
-			temp 				= it.next();
-			if(Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001  &&  Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) {
+		for (Vertex temp : vertexSet) {
+			if (Math.abs(temp.getPoint().getX() - p.getX()) < 0.0001 && Math.abs(temp.getPoint().getY() - p.getY()) < 0.0001) {
 				return temp;
 			}
 		}
@@ -186,25 +185,22 @@ public class UnknownGrid extends Grid {
 		Vertex sourceV = findTheVertex(source);
 		Vertex targetV = findTheVertex(target);
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, sourceV, targetV);
-		ArrayList<DefaultEdge> tempPath = new ArrayList<DefaultEdge>();
-		tempPath.addAll(path.getEdgeList());
+		List<DefaultEdge> tempPath = new ArrayList<>(path.getEdgeList());
 		Iterator<DefaultEdge> it = tempPath.iterator();
-		DefaultEdge edge;
 		float length = 0;
 		while(it.hasNext()) {
-			edge = it.next();
-			length += graph.getEdgeWeight(edge);
+			DefaultEdge edge = it.next();
+			length += (float) graph.getEdgeWeight(edge);
 		}
 		return length;
 	}
 
 	Point2D foundPoint = null;
-	boolean alreadyFound;
+	boolean alreadyFound = false;
 	private Point2D findClosestInCurrentGraph(Point2D target) {
 		alreadyFound = false;
 		tree.nearestN(convertPoint2DToPoint(target),
-			new TIntProcedure() {
-				public boolean execute(int i) {
+				i -> {
 					if(alreadyFound) {
 						return false;
 					}
@@ -214,25 +210,22 @@ public class UnknownGrid extends Grid {
 						alreadyFound = true;
 					}
 					return true;
-				}
-			},
+				},
 			50,
 			java.lang.Float.POSITIVE_INFINITY);
 		if(!alreadyFound) {
 			tree.nearestN(convertPoint2DToPoint(target),
-					new TIntProcedure() {
-						public boolean execute(int i) {
-							if(alreadyFound) {
-								return false;
-							}
-							Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
-							if(env.collisionFreeFromOpaqueObstacles(target, newPoint)) {
-								foundPoint = newPoint;
-								alreadyFound = true;
-							}	
-							return true;
-							
+					i -> {
+						if(alreadyFound) {
+							return false;
 						}
+						Point2D newPoint = convertPointToPoint2D(treePoints.get(i));
+						if(env.collisionFreeFromOpaqueObstacles(target, newPoint)) {
+							foundPoint = newPoint;
+							alreadyFound = true;
+						}
+						return true;
+
 					},
 					200,
 					java.lang.Float.POSITIVE_INFINITY);
@@ -240,11 +233,11 @@ public class UnknownGrid extends Grid {
 		return foundPoint;
 	}
 
-	private Point2D convertPointToPoint2D(Point point) {
+	private static Point2D convertPointToPoint2D(Point point) {
 		return new Point2D.Float(point.x, point.y);
 	}
 	
-	private Point convertPoint2DToPoint(Point2D point2D) {
+	private static Point convertPoint2DToPoint(Point2D point2D) {
 		return new Point((float) point2D.getX(), (float) point2D.getY());
 	}
 

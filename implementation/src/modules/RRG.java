@@ -30,28 +30,28 @@ import settings.PlanningSettings;
 public abstract class RRG {
 
 	Environment env;
-	ProductAutomaton productAutomaton;
+	ProductAutomaton productAutomaton = null;
 
 	SpatialIndex tree = new RTree();
 	Graph<Vertex, DefaultEdge> graph;
-	ArrayList<Point> treePoints = new ArrayList<Point>();; // list of all the points in the Rtree/graphRRG
-	ArrayList<Pair<Pair<BDD,BDD>, Vertex>> map = new ArrayList<Pair<Pair<BDD,BDD>, Vertex>>(); // map between abstraction and rtree
-	Vertex initVertex;  //initial vertex in the graphRRG
+	ArrayList<Point> treePoints = new ArrayList<>(); // list of all the points in the Rtree/graphRRG
+	List<Pair<Pair<BDD,BDD>, Vertex>> map = new ArrayList<>(); // map between abstraction and rtree
+	Vertex initVertex = null;  //initial vertex in the graphRRG
 
-	float rrgRadius;
+	float rrgRadius = 0.0F;
 	float maximumRRGStepSize;
 	double gamma; // parameter used in RRG radius
 	BDD forwardSampledTransitions; 
 
 	public int totalPoints = 0;
 	public int totalSampledPoints = 0;
-	public int[] adviceSampled = new int[] {0,0,0,0,0,0,0,0,0,0};
+	public int[] adviceSampled = {0,0,0,0,0,0,0,0,0,0};
 	int currentBatchSize = 0;
-	boolean endBatch; // flag for ending the current batch
-	BDD symbolicTransitionsInCurrentBatch;
-	int currentRank;
-	public ArrayList<DefaultEdge> movement = new ArrayList<DefaultEdge>();
-	public Point2D currentRobotPosition;
+	volatile boolean endBatch = false; // flag for ending the current batch
+	BDD symbolicTransitionsInCurrentBatch = null;
+	int currentRank = 0;
+	public ArrayList<DefaultEdge> movement = new ArrayList<>();
+	public Point2D currentRobotPosition = null;
 
 	// used for exporting graphRRG
 	boolean flagBin = false;
@@ -66,8 +66,8 @@ public abstract class RRG {
 	{
 		this.env 				= env;
 		this.maximumRRGStepSize = (float) PlanningSettings.get("eta");
-		float[] sub 			= new float[] {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
-		this.gamma 				= 2.0 * Math.pow(1.5,0.5) * Math.pow(sub[0]*sub[1]/Math.PI,0.5);
+		float[] sub 			= {env.getBoundsX()[1]-env.getBoundsX()[0], env.getBoundsY()[1]-env.getBoundsY()[0]};
+		this.gamma 				= 2.0 * StrictMath.pow(1.5,0.5) * StrictMath.pow(sub[0]*sub[1]/Math.PI,0.5);
 		this.graph 				= new SimpleDirectedGraph<Vertex, DefaultEdge>(new VertexSupplier(), new EdgeSupplier(), true);
 		this.forwardSampledTransitions = ProductAutomaton.factory.zero();
 		this.tree.init(null);
@@ -115,10 +115,11 @@ public abstract class RRG {
 	 * updates the RRG radius
 	 */
 	public void updateRrgRadius() {
-		if(totalPoints > 1)
-			rrgRadius = (float) Math.min(gamma * Math.pow(Math.log(totalPoints)/(totalPoints), (0.5)), maximumRRGStepSize);
-		else
+		if(totalPoints > 1) {
+			rrgRadius = (float) Math.min(gamma * StrictMath.pow(StrictMath.log(totalPoints)/(totalPoints), (0.5)), maximumRRGStepSize);
+		} else {
 			rrgRadius = maximumRRGStepSize;
+		}
 	}
 
 	/**
@@ -138,9 +139,8 @@ public abstract class RRG {
 			transition		= Environment.getLabelling().getLabel(target);
 			transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(source)));
 			symbolicTransitionsInCurrentBatch.orWith(transition);
-		}
-		catch (Exception e1) {
-			e1.printStackTrace();
+		} catch (PlanningException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -157,16 +157,15 @@ public abstract class RRG {
 		}
 		Vertex target = findTheVertex(newPosition);
 		GraphPath<Vertex, DefaultEdge> path = DijkstraShortestPath.findPathBetween(graph, source, target);
-		ArrayList<DefaultEdge> edges;
-		edges = (ArrayList<DefaultEdge>) path.getEdgeList();
+		List<DefaultEdge> edges = path.getEdgeList();
 		movement.addAll(edges);
 	}
 	
-	protected Point2D findCellCenter(Point2D p) {
+	protected static Point2D findCellCenter(Point2D p) {
 		float i = (float) Math.floor( p.getX() / (float) PlanningSettings.get("discretizationSize") );
 		float j = (float) Math.floor( p.getY() / (float) PlanningSettings.get("discretizationSize") );
-		i += 0.5;
-		j += 0.5;
+		i += 0.5F;
+		j += 0.5F;
 		i *= (float) PlanningSettings.get("discretizationSize");
 		j *= (float) PlanningSettings.get("discretizationSize");
 		return new Point2D.Float(i, j);
@@ -180,13 +179,17 @@ public abstract class RRG {
 	 * @param transition
 	 * @return
 	 */
-	protected int findRank(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition) {
+	protected static int findRank(ArrayList<BDD> advice, Point2D xNearest2D, Point2D xNew2D, BDD transition) {
 		try {
-			if(Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) return -1;
-			for(int i=0;i<advice.size();i++) {
-				if(! transition.and(advice.get(i)).isZero()) return i;
+			if(Environment.getLabelling().getLabel(xNearest2D).equals(Environment.getLabelling().getLabel(xNew2D))) {
+				return -1;
 			}
-		} catch (Exception e) {
+			for(int i=0;i<advice.size();i++) {
+				if(! transition.and(advice.get(i)).isZero()) {
+					return i;
+				}
+			}
+		} catch (PlanningException e) {
 			e.printStackTrace();
 		}
 		return -1;
@@ -197,14 +200,14 @@ public abstract class RRG {
 	 * @param rank
 	 * @return
 	 */
-	protected float getProb(int rank) 
+	protected static float getProb(int rank)
 	{
 
 		if(rank == -1) {
 			return (float) PlanningSettings.get("biasProb");
 		}
 		else {
-			return 1f;
+			return 1.0f;
 		}
 	}
 	
@@ -223,8 +226,7 @@ public abstract class RRG {
 			int rank = findRank(advice, xNearest2D, xNew2D, transition);
 			float prob = getProb(rank);
 			float rand = (float) Math.random();
-			if(rand < prob) return true;
-			return false;
+			return rand < prob;
 		} else {
 			return true;
 		}
@@ -237,12 +239,8 @@ public abstract class RRG {
 	 */
 	private Vertex findTheVertex(BDD source, BDD target)
 	{
-		Iterator<Pair<Pair<BDD, BDD>, Vertex>> it = map.iterator();
-		while(it.hasNext())
-		{
-			Pair<Pair<BDD, BDD>, Vertex> n = (Pair<Pair<BDD, BDD>, Vertex>) it.next();
-			if(! n.getFirst().getFirst().and(source).isZero() && ! n.getFirst().getSecond().and(target).isZero())
-			{
+		for (Pair<Pair<BDD, BDD>, Vertex> n : map) {
+			if (!n.getFirst().getFirst().and(source).isZero() && !n.getFirst().getSecond().and(target).isZero()) {
 				return n.getSecond();
 			}
 		}
@@ -257,13 +255,8 @@ public abstract class RRG {
 	protected Vertex findTheVertex(Point2D p) 
 	{
 		Set<Vertex> vertexSet 	= graph.vertexSet();
-		Iterator<Vertex> it 	= vertexSet.iterator();
-		Vertex temp;
-		while(it.hasNext()) 
-		{
-			temp 				= it.next();
-			if(temp.getPoint().getX() == p.getX()  &&  temp.getPoint().getY() == p.getY())
-			{
+		for (Vertex temp : vertexSet) {
+			if (temp.getPoint().getX() == p.getX() && temp.getPoint().getY() == p.getY()) {
 				return temp;
 			}
 		}
@@ -278,8 +271,9 @@ public abstract class RRG {
 		try {
 			BDD source = Environment.getLabelling().getLabel(sourceV.getPoint());
 			BDD target = Environment.getLabelling().getLabel(targetV.getPoint());
-			if(! source.equals(target) && findTheVertex(source, target) == null)
+			if(! source.equals(target) && findTheVertex(source, target) == null) {
 				map.add(new Pair<Pair<BDD, BDD>, Vertex>(new Pair<BDD, BDD>(source, target), targetV));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -291,8 +285,8 @@ public abstract class RRG {
 	 * @param q
 	 * @return
 	 */
-	float distance(Point p, Point q) {
-		return (float) Math.sqrt(Math.pow(p.x - q.x, 2) + Math.pow(p.y - q.y, 2));
+	static float distance(Point p, Point q) {
+		return (float) Math.sqrt(StrictMath.pow(p.x - q.x, 2) + StrictMath.pow(p.y - q.y, 2));
 	}
 	
 	/**
@@ -301,8 +295,8 @@ public abstract class RRG {
 	 * @param q
 	 * @return
 	 */
-	protected float distance(Point2D p, Point2D q) {
-		return (float) Math.sqrt(Math.pow(p.getX() - q.getX(), 2)+Math.pow(p.getY() - q.getY(), 2));
+	protected static float distance(Point2D p, Point2D q) {
+		return (float) Math.sqrt(StrictMath.pow(p.getX() - q.getX(), 2)+ StrictMath.pow(p.getY() - q.getY(), 2));
 	}
 	
 	/**
@@ -318,8 +312,7 @@ public abstract class RRG {
 			return dest;
 		}
 		else {
-			Point2D temp = new Point2D.Float((float) (source.getX() + ((maximumRRGStepSize - 0.00001) * (dest.getX() - source.getX())/d)), (float) (source.getY() + ((maximumRRGStepSize - 0.00001) * (dest.getY() - source.getY())/d)));
-			return temp;
+			return new Point2D.Float((float) (source.getX() + ((maximumRRGStepSize - 0.00001) * (dest.getX() - source.getX())/d)), (float) (source.getY() + ((maximumRRGStepSize - 0.00001) * (dest.getY() - source.getY())/d)));
 		}
 	}
 	
@@ -345,7 +338,7 @@ public abstract class RRG {
 			}
 			addToMap(source, target);
 			addToMap(target, source);
-		} catch (Exception IllegalArgumentException) {}		
+		} catch (RuntimeException ignored) {}
 	}
 	
 	/**
@@ -353,7 +346,7 @@ public abstract class RRG {
 	 * @param p
 	 * @return
 	 */
-	Point2D convertPointToPoint2D(Point p) {
+	static Point2D convertPointToPoint2D(Point p) {
 		return new Point2D.Float(p.x, p.y);
 	}
 	
@@ -362,7 +355,7 @@ public abstract class RRG {
 	 * @param p
 	 * @return
 	 */
-	protected Point convertPoint2DToPoint(Point2D p) {
+	protected static Point convertPoint2DToPoint(Point2D p) {
 		return new Point((float) p.getX(), (float)p.getY());
 	}
 
@@ -371,27 +364,25 @@ public abstract class RRG {
 	 * @param path
 	 * @return 
 	 */
-	public List<DefaultEdge> liftPath(ArrayList<BDD> path) {
+	public List<DefaultEdge> liftPath(List<BDD> path) {
 		Vertex source = findTheVertex(currentRobotPosition);
-		Vertex target;
-		List<DefaultEdge> finalPath = new ArrayList<DefaultEdge>();
+		List<DefaultEdge> finalPath = new ArrayList<>();
 		Iterator<BDD> it = path.iterator();
 		BDD currentState = it.next(); // first point is already there
-		BDD nextState;
 
 		while(it.hasNext())
 		{
-			nextState = it.next();
+			BDD nextState = it.next();
 			if(nextState.equals(currentState)) {
 				continue;
 			}
-			target = findTheVertex(currentState, nextState);
+			Vertex target = findTheVertex(currentState, nextState);
 			try {
 				GraphPath<Vertex, DefaultEdge> nextPath = DijkstraShortestPath.findPathBetween(graph, source, target);
 				finalPath.addAll(nextPath.getEdgeList());
 				source = target;
 				currentState = nextState;
-			} catch(Exception e) {
+			} catch(RuntimeException e) {
 				System.out.println(source.getPoint().toString() + " , " + source.getLabel());
 				System.out.println(nextState);
 //				System.out.println(target.getPoint().toString() + " , " + target.getLabel());
@@ -407,9 +398,9 @@ public abstract class RRG {
 	 * @return
 	 * @throws PlanningException
 	 */
-	private ArrayList<String> findAPList(BDD state) throws PlanningException 
+	private static ArrayList<String> findAPList(BDD state) throws PlanningException
 	{
-		ArrayList<String> list		= new ArrayList<String>();
+		ArrayList<String> list		= new ArrayList<>();
 		for(int i=0; i<ProductAutomaton.numAPSystem; i++) 
 		{
 			if(! state.and(ProductAutomaton.ithVarSystemPre(i)).isZero()) 
@@ -426,7 +417,7 @@ public abstract class RRG {
 	 * @param state
 	 * @throws PlanningException
 	 */
-	public void printAPList(BDD state) throws PlanningException 
+	public static void printAPList(BDD state) throws PlanningException
 	{
 		ArrayList<String> apList	= findAPList(state);
 		System.out.print("[");
@@ -434,7 +425,7 @@ public abstract class RRG {
 		{
 			if(j < apList.size() - 1) 
 			{
-				System.out.print(apList.get(j)+",");
+				System.out.print(apList.get(j)+ ',');
 			}
 			else 
 			{
