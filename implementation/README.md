@@ -12,7 +12,7 @@ For user defined environments, three input files are required ($DIR is the direc
 <ol>
 <li>$DIR/file_name.env -> specifying the environment</li>
 <li>$DIR/file_name.lb -> specifying the labelling</li>
-<li>$DIR/file_name.pr -> specifying the property in LTL (optional if given the automaton file in HOA forma)</li>
+<li>$DIR/file_name.pr -> specifying the property in LTL (optional if given the automaton file in HOA format)</li>
 </ol>
 
 As an example, we'll use the files in the directory "Examples/6rooms/" named 'example'
@@ -27,7 +27,7 @@ For our example, this would correspond to
 java -jar planning.jar Examples/random/random
 ```
 For generating a random 6-room office like environment, use python script ran_env_gen.py (use flag --see-through for 
-an enviroment with see through obstacles):
+an environment with see through obstacles):
 ```console
 python3 ran_env_gen.py $OUTPUTDIR
 ```

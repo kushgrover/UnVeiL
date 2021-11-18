@@ -31,7 +31,7 @@ public final class PlanningSettings
 	public static final String OUTPUT_DIRECTORY				=	"outputDirectory";
 	public static final String TIMEOUT						=	"timeout";
 	public static final String EXPORT_PLOT_DATA				=	"exportPlotData";
-	public static final String EXPORT_VIDEO_DATA				=	"exportVideoData";
+	public static final String EXPORT_VIDEO_DATA			=	"exportVideoData";
 
 
 	public static void outputParameters() {
@@ -85,10 +85,10 @@ public final class PlanningSettings
 																					"Maximum radius to find the neighbours to which current point can have an edge"},
 			
 			{ FLOAT_TYPE,		SENSING_RADIUS,							"Sensing radius around the robot",		"1.0", 			1.0F,																"",
-																					"The radius of the sensing area arond the robot"},
+																					"The radius of the sensing area around the robot"},
 			
 			{ INTEGER_TYPE,		BATCH_SIZE,								"Size of one batch",					"1.0", 			50,															"",
-																					"Maximun size of each batch"},
+																					"Maximum size of each batch"},
 			
 			{ FLOAT_TYPE, 		GRID_SIZE,								"Size of grid for frontiers",			"1.0", 			0.05F,															"",
 																					"The size of each cell for computation of frontiers"},
@@ -109,7 +109,7 @@ public final class PlanningSettings
 																					"Flag for not having see through obstacles"},
 
 			{ INTEGER_TYPE,		NUMBER_OF_RUNS,							"number of runs to take average",		"1.0", 			1,															"",
-																					"Run the current configuration for these many times and take averange of the performance"},
+																					"Run the current configuration for these many times and take average of the performance"},
 
 			{ BOOLEAN_TYPE,		GENERATE_PLOT,							"Show a plot of output",				"1.0", 			Boolean.FALSE,															"",
 																					"Generate plot showing the RRG graph and the trajectory"},
