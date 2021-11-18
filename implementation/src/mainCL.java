@@ -1,5 +1,6 @@
 import net.sf.javabdd.BDDFactory;
 import net.sf.javabdd.BuDDyFactory;
+import settings.PlanningException;
 import settings.PlanningSettings;
 
 import java.io.BufferedWriter;
@@ -10,7 +11,7 @@ public final class mainCL {
 	private mainCL() {
 	}
 
-	public static void main(String[] args) throws Exception {
+	public static void main(String[] args) throws PlanningException, java.io.IOException {
 		// set parameters
 		new PlanningSettings(args);
 		if((boolean) PlanningSettings.get("debug")) {

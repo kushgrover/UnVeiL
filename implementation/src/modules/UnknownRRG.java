@@ -120,7 +120,7 @@ public class UnknownRRG extends RRG
 			BDD transition 		= ProductAutomaton.factory.zero();
 			try {
 				transition		= Environment.getLabelling().getLabel(xNearest2D);
-				transition 		= transition.and(productAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
+				transition 		= transition.and(ProductAutomaton.changePreSystemVarsToPostSystemVars(Environment.getLabelling().getLabel(xNew2D)));
 			} catch (PlanningException e) {
 				e.printStackTrace();
 			}
@@ -346,7 +346,7 @@ public class UnknownRRG extends RRG
 		
 	/**
 	 * Plot the graphRRG
-	 * @return
+	 * @return A pair of float storing movement length and remaining length
 	 */
 	public Pair<Float, Float> plotGraph(List<DefaultEdge> finalPath)  
 	{

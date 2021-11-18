@@ -76,7 +76,6 @@ public abstract class RRG {
 	
 	/**
 	 * set the product automaton
-	 * @param productAutomaton
 	 */
 	public void setProductAutomaton(ProductAutomaton productAutomaton) {
 		this.productAutomaton = productAutomaton;
@@ -89,9 +88,8 @@ public abstract class RRG {
 	/**
 	 * Set initial point
 	 * @param p2D
-	 * @throws Exception 
 	 */
-	public void setStartingPoint(Point2D p2D) throws Exception 
+	public void setStartingPoint(Point2D p2D) throws PlanningException
 	{
 		this.initVertex = new Vertex(p2D);
 		graph.addVertex(initVertex);
@@ -144,7 +142,7 @@ public abstract class RRG {
 		}
 	}
 	
-	public void updateMovement(Point2D newPosition) throws Exception {
+	public void updateMovement(Point2D newPosition) throws PlanningException {
 		Vertex source = findTheVertex(currentRobotPosition);
 		if(source == null) {
 			source = new Vertex(currentRobotPosition);
@@ -272,7 +270,7 @@ public abstract class RRG {
 			BDD source = Environment.getLabelling().getLabel(sourceV.getPoint());
 			BDD target = Environment.getLabelling().getLabel(targetV.getPoint());
 			if(! source.equals(target) && findTheVertex(source, target) == null) {
-				map.add(new Pair<Pair<BDD, BDD>, Vertex>(new Pair<BDD, BDD>(source, target), targetV));
+				map.add(new Pair<>(new Pair<>(source, target), targetV));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -448,8 +446,8 @@ public abstract class RRG {
 	 * sample one batch and add them in the graphs accordingly
 	 * @param advice
 	 * @return
-	 * @throws Exception
+	 * @throws PlanningException
 	 */
-	public abstract BDD sampleBatch(ArrayList<BDD> advice, int iterNum) throws Exception;
+	public abstract BDD sampleBatch(ArrayList<BDD> advice, int iterNum) throws PlanningException;
 
 }

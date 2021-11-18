@@ -56,8 +56,7 @@ public class Planning
      * @param factory BDD factory
 	 * @see BDDFactory
      */
-	public Planning(BDDFactory factory) throws Exception
-	{
+	public Planning(BDDFactory factory) throws java.io.IOException, PlanningException {
 		beginTime				= System.nanoTime();
 		
 		Initialize initialize	= new Initialize(factory);// read the files and initialise everything
@@ -166,7 +165,7 @@ public class Planning
 	 * sample a batch
 	 * @return A set of transitions sampled in current batch
 	 */
-	BDD sampleBatch(RRG rrg) throws Exception {
+	BDD sampleBatch(RRG rrg) throws PlanningException {
 		startTime = System.nanoTime(); 
     	BDD transitions = rrg.sampleBatch(advice, iterationNumber);
     	samplingTime += System.nanoTime() - startTime;
@@ -196,8 +195,7 @@ public class Planning
 	/**
 	 * Do exploration and planning simultaneously
 	 */
-	public Object[] explAndPlanTogether() throws Exception
-	{
+	public Object[] explAndPlanTogether() throws PlanningException, java.io.IOException {
 		boolean debug = (boolean) PlanningSettings.get("debug");
 		System.out.println("Starting planning ... ");
 		UnknownRRG urrg = (UnknownRRG) rrg;
@@ -301,8 +299,7 @@ public class Planning
 	 * The Naive Algorithm:
 	 * Do exploration first, then do the planning.
 	 */
-	public Object[] firstExplThenPlan() throws Exception
-	{
+	public Object[] firstExplThenPlan() throws PlanningException, java.io.IOException {
 		boolean debug = (boolean) PlanningSettings.get("debug");
 		KnownGrid grid = new KnownGrid(env, (float) PlanningSettings.get("gridSize"));
 
