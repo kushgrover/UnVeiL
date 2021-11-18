@@ -231,8 +231,7 @@ public class KnownGrid extends Grid {
 	/*
 	 * finds the best move according to the frontiers
 	 */
-	@Override
-	public Pair<Point2D, Integer> findAMove(Point2D xRobot)
+	public Point2D findAMove(Point2D xRobot)
 	{
 		ArrayList<ArrayList<int[]>> frontiers = findFrontiers();
 		if(frontiers.isEmpty()) {
@@ -246,7 +245,7 @@ public class KnownGrid extends Grid {
 		if((boolean) PlanningSettings.get("debug")) {
 			System.out.println("Used frontier: " + bestFrontier.getFirst() + " with IG = " + bestFrontier.getSecond().getSecond());
 		}
-		return new Pair<>(bestFrontier.getFirst(), -1);
+		return bestFrontier.getFirst();
 	}
 	
 	public void updateMovement(Point2D currentPosition, Point2D newPosition) {

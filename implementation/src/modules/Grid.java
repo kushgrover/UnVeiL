@@ -373,7 +373,7 @@ public abstract class Grid
 		return true;
 	}
 	
-	public abstract Pair<Point2D, Integer> findAMove(Point2D xRobot);
+//	public abstract Pair<Point2D, Integer> findAMove(Point2D xRobot);
 	
 	abstract Pair<Point2D, Pair<Integer, Float>> findBestFrontier(ArrayList<ArrayList<int[]>> frontiers, Point2D xRobot);
 

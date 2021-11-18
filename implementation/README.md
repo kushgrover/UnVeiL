@@ -69,7 +69,7 @@ First number specifies how many random environments to be used and the second nu
 each environment should be run. The results will be written in a new directory "results".
 
 
-<h1>Compiling sources</h1>
+<h1>Build from sources</h1>
 
 
 <h1>Setting up Intellij</h1>

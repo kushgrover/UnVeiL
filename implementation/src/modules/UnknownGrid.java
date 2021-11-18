@@ -86,7 +86,6 @@ public class UnknownGrid extends Grid {
 	/*
 	 * finds the best move according to the frontiers
 	 */
-	@Override
 	public Pair<Point2D, Integer> findAMove(Point2D xRobot)
 	{
 		ArrayList<ArrayList<int[]>> frontiers = findFrontiers();

@@ -81,9 +81,8 @@ public class Planning
 	/**
 	 * outputs the results and times
 	 */
-	void printOutput() throws java.io.IOException, settings.PlanningException {
-
-
+	void printOutput() throws java.io.IOException, settings.PlanningException
+	{
 		Pair<Float, Float> length = new Pair<>(0.0f, 0.0f);
 		if((boolean) PlanningSettings.get("firstExplThenPlan")) {
 			length.setFirst(moveLength);
@@ -199,7 +198,7 @@ public class Planning
 	 */
 	public Object[] explAndPlanTogether() throws Exception
 	{
-		boolean debug 						= (boolean) PlanningSettings.get("debug");
+		boolean debug = (boolean) PlanningSettings.get("debug");
 		System.out.println("Starting planning ... ");
 		UnknownRRG urrg = (UnknownRRG) rrg;
 		urrg.grid.knowDiscretization(env,
@@ -207,6 +206,8 @@ public class Planning
 				Environment.getInit(),
 				(float) PlanningSettings.get("sensingRadius"));
 		boolean computePath = false;
+
+		// Main loop of this algo
 		while( true )
         {
         	if( debug ) {
@@ -218,31 +219,42 @@ public class Planning
         	}
         	
         	iterationNumber++;
-        	if((boolean) PlanningSettings.get("debug")) {
+        	if(debug) {
 				System.out.println("Iteration num: " + iterationNumber);
 			}
 
+			// Update advice
         	if ((boolean) PlanningSettings.get("useAdvice") ) {
 				updateAdvice();
 			}
 
+			// Sample a new batch
 			BDD transitions = sampleBatch(urrg);
 			if ( transitions == null ) {
 				continue;
 			}
+			// Start looking for a path once an accepting transition is added to the product automaton
         	if( productAutomaton.isAcceptingTransition(transitions) ) {
 				computePath = true;
 			}
+			// Learn similar transition
         	learn(transitions);
         	startTime = System.nanoTime();
+
+			// Look for an accepting path in the product automaton
         	if( computePath ) {
+				// Find an accepting path in the product automaton
 				ArrayList<BDD> path	= productAutomaton.findAcceptingPath();
 				if( path != null ) {
+					// Find the remaining symbolic path from current state in the product automaton to satisfy the specification
 					ArrayList<BDD> remainingPath = urrg.findRemainingPath();
         			System.out.println("\nPath found :D :D :D");
-					if((boolean) PlanningSettings.get("debug")) {
+					if(debug) {
+						// Output the symbolic path
 						ProductAutomaton.printPath(path);
-						System.out.println("Concrete movement: ");
+
+						//Output the path in RRG graph
+						System.out.println("Concrete movement (RRG): ");
 						Iterator<DefaultEdge> it_move = urrg.movement.iterator();
 						DefaultEdge e = it_move.next();
 						Point2D e_p = urrg.getGraph().getEdgeSource(e).getPoint();
@@ -252,12 +264,13 @@ public class Planning
 							System.out.println("(" + e_p.getX() + ", " + e_p.getY() + ") \t" + Environment.getLabelling().getLabel(e_p));
 							e = it_move.next();
 						}
-						System.out.println("\nMovement: ");
+						System.out.println("\nAbstract movement (Abstraction): ");
 						ProductAutomaton.printPath(urrg.movementBDD);
-						System.out.println("\nRemaining path: ");
+						System.out.println("\nRemaining path (Abstraction): ");
 						ProductAutomaton.printPath(remainingPath);
 					}
 					if(remainingPath !=null) {
+						// lift the remaining path in product automaton to RRG level and print it
 						finalPath = urrg.liftPath(remainingPath);
 					}
             		break;
@@ -265,12 +278,14 @@ public class Planning
         	}
         	pathTime += System.nanoTime() - startTime;
         }
+		// print necessary output
         printOutput();
-		if((boolean) PlanningSettings.get("debug")) {
+		if(debug) {
 			System.out.print("Moving time (in ms):");
 			System.out.println(urrg.moveTime / 1000000);
 		}
 
+		// final result
 		return new Object[] {
 				iterationNumber,
 				rrg.totalSampledPoints,
@@ -283,16 +298,22 @@ public class Planning
     }
 	
 	/**
-	 * Do exploration first, then do the planning
+	 * The Naive Algorithm:
+	 * Do exploration first, then do the planning.
 	 */
-	public Object[] firstExplThenPlan() throws Exception {
+	public Object[] firstExplThenPlan() throws Exception
+	{
+		boolean debug = (boolean) PlanningSettings.get("debug");
 		KnownGrid grid = new KnownGrid(env, (float) PlanningSettings.get("gridSize"));
+
+		// Do exploration until everything is explored
 		startTime = System.nanoTime();
 		System.out.print("Starting exploration ...");
-		moveLength = exploreDiscretization(grid);
+		moveLength = exploreDiscretization(grid); // returns length of exploration path
 		System.out.println(" finished");
 		explTime = System.nanoTime() - startTime;
 
+		// initialization
 		KnownRRG krrg = (KnownRRG) rrg;
 		krrg.setGrid(grid);
 		krrg.setStartingPoint(krrg.currentRobotPosition);
@@ -300,39 +321,43 @@ public class Planning
 		movementBDD.add(Environment.getLabelling().getLabel(krrg.currentRobotPosition));
 
 		System.out.print("Starting planning ... ");
-		double timeout = (double) PlanningSettings.get("timeout");
-		double currentTime = System.nanoTime()/1000000.0F;
 
+		// Time out for stopping
+		double timeout = (double) PlanningSettings.get("timeout");
+
+		double currentTime = System.nanoTime()/1000000.0F;
 		boolean computePath = true;
-		while( currentTime - (beginTime/1000000) < timeout ){
+		while( currentTime - (beginTime/1000000.0F) < timeout ){
 			iterationNumber++;
 
-			if((boolean) PlanningSettings.get("debug")) {
+			if(debug) {
 				System.out.println("Iteration num: " + iterationNumber);
 			}
-        	
+        	// Update advice if needed
         	if ( (boolean) PlanningSettings.get("useAdvice") ) {
 				updateAdvice();
 			}
-
+			// sample a new batch
 			BDD transitions = sampleBatch(rrg);
 			if ( transitions == null ) {
 				continue;
 			}
-        	if( productAutomaton.isAcceptingTransition(transitions) ) {
-				computePath = true;
-			}
+			// Learn procedure
         	learn(transitions);
-        	
+
+			// If no timeout specified, stopping criterion is inside this
         	if(((double) PlanningSettings.get("timeout")) == Double.MAX_VALUE ) {
 				startTime = System.nanoTime();
 				if (computePath) {
+					// Look for an accepting path in the product automaton
 					ArrayList<BDD> path = productAutomaton.findAcceptingPath(movementBDD);
 					if (path != null) {
 						System.out.println("Path found :D");
-						if ((boolean) PlanningSettings.get("debug")) {
+						if (debug) {
+							// print the accepting path (Abstraction)
 							ProductAutomaton.printPath(path);
 						}
+						// Lift the path to RRG level and print it
 						finalPath = rrg.liftPath(path);
 						break;
 					}
@@ -342,27 +367,37 @@ public class Planning
 			currentTime = System.nanoTime()/1000000.0F;
 		}
 
+		// If timeout is specified
 		if(((double) PlanningSettings.get("timeout")) < Double.MAX_VALUE ) {
 			startTime = System.nanoTime();
+			// Look for an accepting path in the product automaton
 			ArrayList<BDD> path = productAutomaton.findAcceptingPath(movementBDD);
 			if (path != null) {
 				System.out.println("Path found :D");
-				if ((boolean) PlanningSettings.get("debug")) {
+				if (debug) {
+					// print the accepting path (Abstraction)
 					ProductAutomaton.printPath(path);
 				}
+				// Lift the path to RRG level and print it
 				finalPath = rrg.liftPath(path);
 			}
 			else {
-				System.out.println("No path found :(");
+				System.out.println("No path found in the given timeout :(");
 			}
 			pathTime += System.nanoTime() - startTime;
 		}
-		System.out.print("Plotting...");
+		if(debug) {
+			System.out.print("Plotting...");
+		}
+		// compute length of the path and generate plot if necessary
 		Pair<Float, Float> length = krrg.plotGraph(finalPath, grid.getGraph());
-		System.out.println("done");
+		if(debug) {
+			System.out.println("done");
+		}
 		pathLength = length.getSecond();
 		printOutput();
 
+		// final result
 		return new Object[] {
 				iterationNumber,
 				rrg.totalSampledPoints,
@@ -374,23 +409,29 @@ public class Planning
 		};
 	}
 
-	private float exploreDiscretization(KnownGrid grid) throws PlanningException {
-		Point2D currentPosition = Environment.getInit();
+	private float exploreDiscretization(KnownGrid grid) throws PlanningException
+	{
+		//initialize grid
 		grid.initializeGraph();
+		Point2D currentPosition = Environment.getInit();
+		// know environment around current position
 		grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		grid.updateInitPoint(currentPosition);
 		float length = 0;
+		// until explored completely
 		while(! grid.exploredCompletely()) {
-			Pair<Point2D, Integer> newMove = grid.findAMove(currentPosition);
+			// new point to move
+			Point2D newMove = grid.findAMove(currentPosition);
 			if(newMove == null) {
 				break;
 			}
-			Point2D newPosition = newMove.getFirst();
-			grid.updateMovement(currentPosition, newPosition);
-			length += grid.findAPath(currentPosition, newPosition);
-			currentPosition = newPosition;
+			// Go to the new point
+			grid.updateMovement(currentPosition, newMove);
+			length += grid.findAPath(currentPosition, newMove);
+			currentPosition = newMove;
 			grid.knowDiscretization(env, productAutomaton, currentPosition, (float) PlanningSettings.get("sensingRadius"));
 		}
+		// migrate things from grid object to rrg object
 		rrg.setMovement(grid.getMovement());
 		rrg.currentRobotPosition = currentPosition;
 		return length;
